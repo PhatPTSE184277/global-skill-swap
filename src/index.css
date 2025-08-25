@@ -1,0 +1,17 @@
+:root {
+    --font-sans: 'Be Vietnam Pro', ui-sans-serif, system-ui, sans-serif;
+    --color-bg: #ffffff;
+    --color-text: #222222;
+    --color-link: #2563eb;
+    --color-link-hover: #1d4ed8;
+    --border-radius: 0.5rem;
+    --transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    color-scheme: light;
+    font-size: 16px;
+    line-height: 1.5;
+    font-family: var(--font-sans);
+    background-color: var(--color-bg);
+    color: var(--color-text);
+    scroll-behavior: smooth;
+}
+@import 'tailwindcss';
