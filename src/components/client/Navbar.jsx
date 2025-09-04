@@ -7,7 +7,6 @@ const Navbar = () => {
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        // gọi API user (ví dụ lấy id=1)
         const data = await axiosClient.get("/user/1");
         setUser(data);
       } catch (err) {
@@ -23,8 +22,7 @@ const Navbar = () => {
       <div className="max-w-7xl mx-auto px-6 flex items-center justify-between h-16">
         {/* Logo */}
         <div className="flex items-center gap-2">
-          <img src="/logo.png" alt="GlobalSkill Logo" className="h-8 w-8" />
-          <span className="text-lg font-bold text-gray-800">GlobalSkill</span>
+          <span className="text-lg font-bold text-purple-950">GlobalSkill</span>
         </div>
 
         {/* Menu */}

@@ -8,6 +8,7 @@ import {
   Navigation,
   SendHorizontal,
 } from "lucide-react";
+import blogApi from "../../../apis/blogApi"; // Thêm nếu chưa có
 
 const BlogDetail = () => {
   const { id } = useParams();
@@ -82,6 +83,17 @@ const BlogDetail = () => {
       ],
     },
   ];
+
+  // State cho bài viết mới nhất
+  const [latestPosts, setLatestPosts] = React.useState([]);
+
+  React.useEffect(() => {
+    const fetchLatest = async () => {
+      const res = await blogApi.getLatestPosts?.();
+      if (res?.data) setLatestPosts(res.data.slice(0, 3)); // Lấy 3 bài viết
+    };
+    fetchLatest();
+  }, []);
 
   return (
     <div className="w-full font-['Noto Sans'] min-h-screen p-10">
@@ -291,9 +303,59 @@ const BlogDetail = () => {
               </div>
             </div>
           </article>
-          
+
+          {/* You Might Also Like */}
+          <div className="mt-12">
+            <h2 className="text-lg font-bold mb-6 text-orange-500">
+              You Might Also Like...
+            </h2>
+            <div className="space-y-6">
+              {latestPosts.map((post) => (
+                <div
+                  key={post.id}
+                  className="flex gap-5 cursor-pointer hover:bg-gray-50 rounded-xl p-3 transition"
+                  onClick={() => (window.location.href = `/blog/${post.id}`)}
+                >
+                  <img
+                    src={post.image}
+                    alt={post.alt}
+                    className="w-36 h-24 object-cover rounded-xl flex-shrink-0"
+                  />
+                  <div className="flex-1">
+                    <div className="flex gap-2 mb-2">
+                      {post.tags?.map((tag, idx) => (
+                        <span
+                          key={idx}
+                          className={`px-2 py-1 text-xs font-medium rounded ${
+                            idx % 2 === 0
+                              ? "bg-blue-100 text-blue-600"
+                              : "bg-purple-100 text-purple-600"
+                          }`}
+                        >
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+                    <h3 className="font-semibold text-base mb-1">
+                      {post.title}
+                    </h3>
+                    <div className="flex items-center text-xs text-gray-500 mb-1">
+                      <div className="w-5 h-5 bg-gray-300 rounded-full mr-2"></div>
+                      <span>{post.author}</span>
+                      <span className="mx-2">•</span>
+                      <span>{post.date}</span>
+                      <span className="mx-2">•</span>
+                      <span>{post.readTime} Min. To Read</span>
+                    </div>
+                    <p className="text-sm text-gray-600 line-clamp-2">
+                      {post.description}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
-        
 
         {/* Right Sidebar - same position as BlogHome */}
         <div className="mt-0">
