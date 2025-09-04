@@ -1,8 +1,7 @@
 import { Outlet } from "react-router-dom";
 import { Header } from "../../components/client";
 
-
-const LoginPageLayout = () => {
+const AuthPageLayout = () => {
     return (
         <>
             <Header />
@@ -11,4 +10,4 @@ const LoginPageLayout = () => {
     );
 };
 
-export default LoginPageLayout;
+export default AuthPageLayout;
