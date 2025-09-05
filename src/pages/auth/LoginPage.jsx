@@ -106,6 +106,14 @@ const LoginPage = () => {
                           onChange={handleChange}
                           required
                         />
+                        <div className="flex justify-end mt-2">
+                          <Link
+                            to="/forgot-password"
+                            className="text-sm text-[#4D2C5E] hover:underline font-semibold"
+                          >
+                            Quên mật khẩu?
+                          </Link>
+                        </div>
                       </div>
                       <button
                         type="button"
