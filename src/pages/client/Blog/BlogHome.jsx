@@ -240,7 +240,7 @@ const BlogHome = () => {
           {/* Main Content */}
           <div className="space-y-6">
             {/* Tab Navigation - sticky */}
-            <div className="bg-white  pt-6 sticky top-0 z-20 ">
+            <div className="bg-white  pt-6 sticky top-16 z-20 ">
               <div className="flex border-b border-gray-200 mb-0">
                 <button
                   onClick={() => setActiveTab("following")}
@@ -403,7 +403,7 @@ const BlogHome = () => {
         <div className="mt-6 relative group">
           <div
             className="
-      sticky top-6 
+      sticky top-18 
       h-[calc(100vh-3rem)] 
       overflow-y-auto 
       no-scrollbar

@@ -341,14 +341,14 @@ const BlogDetail = () => {
           </div>
         </div>
 
-        {/* Right Sidebar - same position as BlogHome */}
+        {/* Right Sidebar */}
         <div className=" relative group">
           <div
             className="
-      sticky top-6 
+      sticky top-18 
       h-[calc(100vh-3rem)] 
       overflow-y-auto 
-      no-scrollbar 
+      no-scrollbar
       pointer-events-none 
       group-hover:pointer-events-auto
     "
