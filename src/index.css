@@ -14,4 +14,15 @@
     color: var(--color-text);
     scroll-behavior: smooth;
 }
+
+.no-scrollbar::-webkit-scrollbar {
+    display: none;
+    /* Chrome, Safari */
+}
+
+.no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
 @import 'tailwindcss';

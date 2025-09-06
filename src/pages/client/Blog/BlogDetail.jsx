@@ -104,29 +104,13 @@ const BlogDetail = () => {
           <article className="bg-white rounded-xl shadow-sm overflow-hidden">
             {/* Hero Image */}
             <img
-              src={blogPost.image}
+              src="https://images.pexels.com/photos/2101187/pexels-photo-2101187.jpeg"
               alt={blogPost.title}
-              className="w-full h-64 md:h-96 object-cover"
+              className="w-full h-50 object-cover rounded-xl"
             />
 
             {/* Content */}
             <div className="p-10">
-              {/* Tags */}
-              <div className="flex flex-wrap gap-2 mb-4">
-                {blogPost.tags.map((tag, index) => (
-                  <span
-                    key={index}
-                    className={`px-2 py-1 text-xs font-medium rounded ${
-                      index % 2 === 0
-                        ? "bg-blue-100 text-blue-600"
-                        : "bg-purple-100 text-purple-600"
-                    }`}
-                  >
-                    {tag}
-                  </span>
-                ))}
-              </div>
-
               {/* Title */}
               <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-4">
                 {blogPost.title}
@@ -307,7 +291,7 @@ const BlogDetail = () => {
           {/* You Might Also Like */}
           <div className="mt-12">
             <h2 className="text-lg font-bold mb-6 text-orange-500">
-              You Might Also Like...
+              Có thể bạn sẽ thích...
             </h2>
             <div className="space-y-6">
               {latestPosts.map((post) => (
@@ -358,8 +342,19 @@ const BlogDetail = () => {
         </div>
 
         {/* Right Sidebar - same position as BlogHome */}
-        <div className="mt-0">
-          <RightSidebar />
+        <div className=" relative group">
+          <div
+            className="
+      sticky top-6 
+      h-[calc(100vh-3rem)] 
+      overflow-y-auto 
+      no-scrollbar 
+      pointer-events-none 
+      group-hover:pointer-events-auto
+    "
+          >
+            <RightSidebar />
+          </div>
         </div>
       </section>
     </div>

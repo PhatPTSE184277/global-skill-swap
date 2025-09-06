@@ -2,6 +2,7 @@ import BlogPageLayout from "../layouts/client/BlogPageLayout";
 import BlogDetail from "../pages/client/Blog/BlogDetail";
 import BlogHome from "../pages/client/Blog/BlogHome";
 import BlogList from "../pages/client/Blog/BlogList";
+import UserDetail from "../pages/user/UserDetail";
 
 const BlogPageRoutes = [
   {

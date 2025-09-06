@@ -11,7 +11,6 @@ const BlogHome = () => {
   // State để quản lý dữ liệu từ API
   const [followingPosts, setFollowingPosts] = React.useState([]);
   const [suggestedPosts, setSuggestedPosts] = React.useState([]);
-  const [latestPosts, setLatestPosts] = React.useState([]);
   const [loading, setLoading] = React.useState(false);
 
   // Function để handle click vào bài viết
@@ -24,16 +23,14 @@ const BlogHome = () => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const [followingResponse, suggestedResponse, latestResponse] =
-          await Promise.all([
-            blogApi.getFollowingPosts(),
-            blogApi.getSuggestedPosts(),
-            blogApi.getLatestPosts(),
-          ]);
+        const [followingResponse, suggestedResponse] = await Promise.all([
+          blogApi.getFollowingPosts(),
+          blogApi.getSuggestedPosts(),
+          blogApi.getLatestPosts(),
+        ]);
 
         setFollowingPosts(followingResponse.data);
         setSuggestedPosts(suggestedResponse.data);
-        setLatestPosts(latestResponse.data);
       } catch (error) {
         console.error("Error fetching blog posts:", error);
       } finally {
@@ -69,6 +66,7 @@ const BlogHome = () => {
       .custom-scrollbar::-webkit-scrollbar-thumb:hover {
         background-color: #4d2c5e;
       }
+        
     `;
     document.head.appendChild(style);
 
@@ -237,13 +235,13 @@ const BlogHome = () => {
           </aside>
         </section>
       </main>
-   <section className="grid grid-cols-1 lg:grid-cols-[2fr_2fr_1.5fr] gap-6 max-w-7xl mx-auto">
+      <section className="grid grid-cols-1 lg:grid-cols-[2fr_2fr_1.5fr] gap-6 max-w-7xl mx-auto">
         <div className="col-span-2">
           {/* Main Content */}
           <div className="space-y-6">
-            {/* Tab Navigation */}
-            <div className="bg-white rounded-xl p-6 ">
-              <div className="flex border-b border-gray-200 mb-6">
+            {/* Tab Navigation - sticky */}
+            <div className="bg-white  pt-6 sticky top-0 z-20 ">
+              <div className="flex border-b border-gray-200 mb-0">
                 <button
                   onClick={() => setActiveTab("following")}
                   className={`pb-3 px-4 font-semibold border-b-2 transition-colors ${
@@ -265,8 +263,9 @@ const BlogHome = () => {
                   <span> Đề Xuất Cho Bạn</span>
                 </button>
               </div>
-
-              {/* Tab Content */}
+            </div>
+            {/* Tab Content - scroll bình thường */}
+            <div>
               {activeTab === "following" && (
                 <div>
                   {loading ? (
@@ -323,28 +322,7 @@ const BlogHome = () => {
                           </div>
                         </article>
                       ))}
-                      {/* Button Xem Thêm */}
-                      <div className="flex justify-end mt-8">
-                        <button className="flex items-center gap-2 bg-orange-500 text-white px-6 py-2 rounded-full font-semibold hover:bg-orange-600 transition-all duration-200">
-                          Xem Thêm
-                          <span>
-                            <svg
-                              width="20"
-                              height="20"
-                              fill="none"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                stroke="white"
-                                strokeWidth="2"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                d="M5 12h14m-7-7l7 7-7 7"
-                              />
-                            </svg>
-                          </span>
-                        </button>
-                      </div>
+                      *bạn đã xem hết
                     </div>
                   ) : (
                     <div className="text-center py-8 text-gray-500">
@@ -410,28 +388,6 @@ const BlogHome = () => {
                           </div>
                         </article>
                       ))}
-                      {/* Button Xem Thêm */}
-                      <div className="flex justify-end mt-8">
-                        <button className="flex items-center gap-2 bg-orange-500 text-white px-6 py-2 rounded-full font-semibold hover:bg-orange-600 transition-all duration-200">
-                          Xem Thêm
-                          <span>
-                            <svg
-                              width="20"
-                              height="20"
-                              fill="none"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                stroke="white"
-                                strokeWidth="2"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                d="M5 12h14m-7-7l7 7-7 7"
-                              />
-                            </svg>
-                          </span>
-                        </button>
-                      </div>
                     </div>
                   ) : (
                     <div className="text-center py-8 text-gray-500">
@@ -441,107 +397,22 @@ const BlogHome = () => {
                 </div>
               )}
             </div>
-
-            {/* Bài Viết Mới Nhất Section */}
-            <div className="bg-white rounded-xl p-6">
-              {/* Header với button */}
-              <div className="bg-purple-950 text-white rounded-xl p-6 mb-6 text-center">
-                <h2 className="text-xl font-bold mb-3">
-                  "Bắt Đầu Bài Viết Tuyệt Vời Của Bạn"
-                </h2>
-                <button className="bg-white/20 backdrop-blur-sm border border-white/30 text-white px-6 py-2 rounded-full hover:bg-white/30 transition-all duration-200">
-                  Bài viết mới...
-                </button>
-              </div>
-
-              <h2 className="text-xl font-bold mb-4">
-                Bài Viết <span className="text-orange-500">Mới Nhất</span>
-              </h2>
-
-              {loading ? (
-                <div className="text-center py-8">
-                  <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500"></div>
-                  <p className="mt-2 text-gray-500">Đang tải...</p>
-                </div>
-              ) : latestPosts.length > 0 ? (
-                <div className="space-y-4">
-                  {latestPosts.map((post) => (
-                    <article key={post.id}>
-                      <div
-                        onClick={() => handlePostClick(post.id)}
-                        className="flex cursor-pointer items-center "
-                      >
-                        <img
-                          src={post.image}
-                          alt={post.alt}
-                          className="w-60 h-35 object-cover rounded-xl"
-                        />
-                        <div className="flex-1 p-4">
-                          <div className="flex gap-2 mb-2">
-                            {post.tags.map((tag, index) => (
-                              <span
-                                key={index}
-                                className={`px-2 py-1 text-xs font-medium rounded ${
-                                  index % 2 === 0
-                                    ? "bg-blue-100 text-blue-600"
-                                    : "bg-purple-100 text-purple-600"
-                                }`}
-                              >
-                                {tag}
-                              </span>
-                            ))}
-                          </div>
-
-                          <h3 className="font-semibold text-lg mb-2">
-                            {post.title}
-                          </h3>
-
-                          <div className="flex items-center text-xs text-gray-500 mb-2">
-                            <div className="w-6 h-6 bg-gray-300 rounded-full mr-2"></div>
-                            <span>{post.author}</span>
-                            <span className="mx-2">•</span>
-                            <span>{post.date}</span>
-                            <span className="mx-2">•</span>
-                            <span>{post.readTime} Min. To Read</span>
-                          </div>
-
-                          <p className="text-sm text-gray-600 line-clamp-2">
-                            {post.description}
-                          </p>
-                        </div>
-                      </div>
-                    </article>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-8 text-gray-500">
-                  Không có bài viết mới nào
-                </div>
-              )}
-            </div>
-
-            {/* Button Xem Thêm */}
-            <div className="flex justify-end mt-8">
-              <button className="flex items-center gap-2 bg-orange-500 text-white px-6 py-2 rounded-full font-semibold hover:bg-orange-600 transition-all duration-200">
-                Xem Thêm
-                <span>
-                  <svg width="20" height="20" fill="none" viewBox="0 0 24 24">
-                    <path
-                      stroke="white"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M5 12h14m-7-7l7 7-7 7"
-                    />
-                  </svg>
-                </span>
-              </button>
-            </div>
           </div>
         </div>
         {/* Right Sidebar */}
-        <div className="mt-6">
-          <RightSidebar />
+        <div className="mt-6 relative group">
+          <div
+            className="
+      sticky top-6 
+      h-[calc(100vh-3rem)] 
+      overflow-y-auto 
+      no-scrollbar
+      pointer-events-none 
+      group-hover:pointer-events-auto
+    "
+          >
+            <RightSidebar />
+          </div>
         </div>
       </section>
     </div>
