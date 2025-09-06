@@ -1,20 +1,27 @@
 import React from "react";
+import { useNavigate } from "react-router-dom";
 
 // Component cho tác giả nổi bật
-const TopAuthor = ({ avatar, name, title, description }) => (
-  <div className="flex items-start space-x-3 p-3 hover:bg-gray-50 rounded-lg transition-colors cursor-pointer">
-    <img
-      src={avatar}
-      alt={name}
-      className="w-12 h-12 rounded-full object-cover"
-    />
-    <div className="flex-1">
-      <h4 className="font-semibold text-gray-900 text-sm">{name}</h4>
-      <p className="text-xs text-gray-500 mb-1">{title}</p>
-      <p className="text-xs text-gray-600 line-clamp-2">{description}</p>
+const TopAuthor = ({ avatar, name, title, description, id }) => {
+  const navigate = useNavigate();
+  return (
+    <div
+      className="flex items-start space-x-3 p-3 hover:bg-gray-50 rounded-lg transition-colors cursor-pointer"
+      onClick={() => navigate(`/user/${id}`)}
+    >
+      <img
+        src={avatar}
+        alt={name}
+        className="w-12 h-12 rounded-full object-cover"
+      />
+      <div className="flex-1">
+        <h4 className="font-semibold text-gray-900 text-sm">{name}</h4>
+        <p className="text-xs text-gray-500 mb-1">{title}</p>
+        <p className="text-xs text-gray-600 line-clamp-2">{description}</p>
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 // Component cho danh mục với biểu đồ tròn
 const CategoryItem = ({ name, count }) => (
@@ -117,26 +124,8 @@ const RightSidebar = () => {
   return (
     <div className="space-y-6">
       {/* Search Box */}
-      <div className="bg-white "></div>
 
-      {/* Top Tác Giả Nổi Bật */}
-      <div className="bg-white rounded-2xl shadow p-6">
-        <h3 className="text-lg font-bold text-gray-900 mb-4">
-          Top Tác Giả Nổi Bật
-        </h3>
-        <div className="space-y-1">
-          {topAuthors.map((author) => (
-            <TopAuthor
-              key={author.id}
-              avatar={author.avatar}
-              name={author.name}
-              title={author.title}
-              description={author.description}
-            />
-          ))}
-        </div>
-      </div>
-      <div className="relative">
+      <div className="relative m-3 mb-8">
         <input
           type="text"
           placeholder="Tìm Kiếm..."
@@ -156,6 +145,7 @@ const RightSidebar = () => {
           />
         </svg>
       </div>
+
       {/* Tag Cloud */}
       <div className="bg-white rounded-2xl ">
         <h3 className="text-lg font-semibold text-gray-600 mb-4">
@@ -172,6 +162,26 @@ const RightSidebar = () => {
           ))}
         </div>
       </div>
+
+      {/* Top Tác Giả Nổi Bật */}
+      <div className="bg-white rounded-2xl shadow p-6">
+        <h3 className="text-lg font-bold text-gray-900 mb-4">
+          Top Tác Giả Nổi Bật
+        </h3>
+        <div className="space-y-1">
+          {topAuthors.map((author) => (
+            <TopAuthor
+              key={author.id}
+              id={author.id}
+              avatar={author.avatar}
+              name={author.name}
+              title={author.title}
+              description={author.description}
+            />
+          ))}
+        </div>
+      </div>
+
       {/* Danh Mục Bài Viết */}
       <div className="bg-white rounded-2xl shadow p-6">
         <h3 className="text-lg font-bold text-gray-900 mb-4">
