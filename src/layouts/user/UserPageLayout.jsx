@@ -7,7 +7,7 @@ const UserPageLayout = () => {
     <>
       <Navbar />
       <UserHeader />
-      <main className="max-w-4xl mx-auto py-10">
+      <main className="max-w-4xl mx-auto pt-10">
         <Outlet />
       </main>
     </>

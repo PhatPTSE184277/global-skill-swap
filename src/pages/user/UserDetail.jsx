@@ -1,6 +1,8 @@
 import React, { useEffect, useRef, useState } from "react";
 import blogApi from "../../apis/blogApi";
 import UserAbout from "./UserAbout";
+import UserFeedback from "./UserFeedback";
+import MentorSchedule from "./MentorSchedule";
 
 const UserDetail = () => {
   const [posts, setPosts] = useState([]);
@@ -125,16 +127,8 @@ const UserDetail = () => {
               Đây là phần Bài giảng.
             </div>
           )}
-          {activeTab === "reviews" && (
-            <div className="text-center text-gray-500 py-10">
-              Đây là phần Đánh giá.
-            </div>
-          )}
-          {activeTab === "schedule" && (
-            <div className="text-center text-gray-500 py-10">
-              Đây là phần Lịch trình.
-            </div>
-          )}
+          {activeTab === "reviews" && <UserFeedback />}
+          {activeTab === "schedule" && <MentorSchedule />}
         </div>
       </div>
     </div>
