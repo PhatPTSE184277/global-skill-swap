@@ -68,7 +68,7 @@ const MentorSchedule = () => {
     d1.getFullYear() === d2.getFullYear();
 
   return (
-    <div className="flex justify-between p-8 bg-white min-h-screen text-gray-800">
+    <div className="flex justify-between p-8 bg-white -screen text-gray-800">
       {/* Calendar */}
 
       <div>

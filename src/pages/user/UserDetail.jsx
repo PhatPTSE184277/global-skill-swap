@@ -39,7 +39,7 @@ const UserDetail = () => {
   }, [activeTab]);
 
   return (
-    <div className="font-['Noto Sans'] min-h-screen">
+    <div className="font-['Noto Sans'] ">
       <div>
         {/* Tabs chữ */}
         <div className="relative flex gap-8 max-w-4xl mx-auto border-b-2 border-gray-200 ml-4">
