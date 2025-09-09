@@ -1,8 +1,10 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom"; // Thêm dòng này
 
 const MentorSchedule = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(new Date());
+  const navigate = useNavigate(); // Thêm dòng này
 
   // Fake data: khung giờ theo ngày (demo)
   const timeSlotsByDate = {
@@ -139,7 +141,10 @@ const MentorSchedule = () => {
                   <p className="font-medium">{slot.label}</p>
                   <p className="text-sm text-gray-500">{slot.time}</p>
                 </div>
-                <button className="px-4 py-1 bg-gray-100 rounded-lg hover:bg-purple-950 hover:text-white transition">
+                <button
+                  className="px-4 py-1 bg-gray-100 rounded-lg hover:bg-purple-950 hover:text-white transition"
+                  onClick={() => navigate("/paymentconfirmation")} // Sửa dòng này
+                >
                   Đặt
                 </button>
               </div>
