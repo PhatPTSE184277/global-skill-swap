@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import VNPayLogo from "../../img/svg/vnpay.svg";
 import MoMoLogo from "../../img/svg/momo.svg";
 
-export default function PaymentConfirm() {
+const PaymentConfirm = () => {
   // Data giả (mock)
   const mockData = {
     mentor: {
@@ -141,4 +141,5 @@ export default function PaymentConfirm() {
       </div>
     </div>
   );
-}
+};
+export default PaymentConfirm;
