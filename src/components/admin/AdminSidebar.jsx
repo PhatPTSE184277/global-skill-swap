@@ -13,78 +13,89 @@ export default function AdminSidebar() {
 
   const menu = [
     {
-      label: 'Dashboard',
+      label: 'Bảng điều khiển',
       path: '/admin/dashboard',
       icon: <FaTachometerAlt className="w-5 h-5 mr-3 text-cyan-500" />,
       color: 'cyan',
+      desc: 'Tổng quan & thống kê',
     },
     {
-      label: 'Accounts',
+      label: 'Tài khoản',
       path: '/admin/accounts',
       icon: <FaUser className="w-5 h-5 mr-3 text-blue-500" />,
       color: 'blue',
+      desc: 'Quản lý tài khoản người dùng',
     },
     {
-      label: 'Mentor CVs',
+      label: 'Hồ sơ Mentor',
       path: '/admin/mentorcv',
       icon: <FaChalkboardTeacher className="w-5 h-5 mr-3 text-purple-500" />,
       color: 'purple',
+      desc: 'Quản lý hồ sơ mentor',
     },
     {
-      label: 'Forum',
+      label: 'Diễn đàn',
       path: '/admin/forum',
       icon: <FaComments className="w-5 h-5 mr-3 text-green-500" />,
       color: 'green',
+      desc: 'Bài viết & bình luận',
       children: [
-        { label: 'Posts', path: '/admin/forum/posts', icon: <FaRegFileAlt className="w-4 h-4 mr-2 text-green-400" /> },
-        { label: 'Comments', path: '/admin/forum/comments', icon: <FaClipboardList className="w-4 h-4 mr-2 text-green-400" /> },
+        { label: 'Bài viết', path: '/admin/forum/posts', icon: <FaRegFileAlt className="w-4 h-4 mr-2 text-green-400" /> },
+        { label: 'Bình luận', path: '/admin/forum/comments', icon: <FaClipboardList className="w-4 h-4 mr-2 text-green-400" /> },
       ],
     },
     {
-      label: 'Payments',
+      label: 'Thanh toán',
       path: '/admin/payments',
       icon: <FaMoneyCheckAlt className="w-5 h-5 mr-3 text-yellow-500" />,
       color: 'yellow',
+      desc: 'Quản lý thanh toán',
     },
     {
-      label: 'Bookings',
+      label: 'Đặt lịch',
       path: '/admin/bookings',
       icon: <FaCalendarAlt className="w-5 h-5 mr-3 text-pink-500" />,
       color: 'pink',
+      desc: 'Quản lý đặt lịch',
     },
     {
-      label: 'Calendars',
+      label: 'Lịch',
       path: '/admin/calendars',
       icon: <FaBook className="w-5 h-5 mr-3 text-indigo-500" />,
       color: 'indigo',
+      desc: 'Quản lý lịch',
     },
     {
-      label: 'Documents',
+      label: 'Tài liệu',
       path: '/admin/documents',
       icon: <FaFolderOpen className="w-5 h-5 mr-3 text-orange-500" />,
       color: 'orange',
+      desc: 'Quản lý tài liệu',
     },
     {
-      label: 'Meeting Rooms',
+      label: 'Phòng họp',
       path: '/admin/meetingrooms',
       icon: <FaDoorOpen className="w-5 h-5 mr-3 text-teal-500" />,
       color: 'teal',
+      desc: 'Phòng họp & lịch sử họp',
       children: [
-        { label: 'Rooms', path: '/admin/meetingrooms', icon: <FaDoorOpen className="w-4 h-4 mr-2 text-teal-400" /> },
-        { label: 'History', path: '/admin/meetinghistory', icon: <FaHistory className="w-4 h-4 mr-2 text-teal-400" /> },
+        { label: 'Phòng', path: '/admin/meetingrooms', icon: <FaDoorOpen className="w-4 h-4 mr-2 text-teal-400" /> },
+        { label: 'Lịch sử', path: '/admin/meetinghistory', icon: <FaHistory className="w-4 h-4 mr-2 text-teal-400" /> },
       ],
     },
     {
-      label: 'Mentor Feedback',
+      label: 'Phản hồi Mentor',
       path: '/admin/mentorfeedback',
       icon: <FaClipboardList className="w-5 h-5 mr-3 text-red-500" />,
       color: 'red',
+      desc: 'Phản hồi về mentor',
     },
     {
-      label: 'Register for Study',
+      label: 'Đăng ký học',
       path: '/admin/registerforstudy',
       icon: <FaClipboardList className="w-5 h-5 mr-3 text-gray-500" />,
       color: 'gray',
+      desc: 'Quản lý đăng ký học',
     },
   ];
 
@@ -118,7 +129,7 @@ export default function AdminSidebar() {
                 if (item.children) {
                   setOpenMenu(openMenu === item.path ? null : item.path);
                 } else {
-                  navigate(item.path); // Chuyển route nếu không có submenu
+                  navigate(item.path);
                 }
               }}
             >
@@ -134,17 +145,7 @@ export default function AdminSidebar() {
                   )}
                 </div>
                 <div className="text-xs text-gray-500">
-                  {item.label === 'Dashboard' && 'Overview & statistics'}
-                  {item.label === 'Accounts' && 'Manage user accounts'}
-                  {item.label === 'Mentor CVs' && 'Manage mentor profiles'}
-                  {item.label === 'Forum' && 'Forum posts & comments'}
-                  {item.label === 'Payments' && 'Manage payments'}
-                  {item.label === 'Bookings' && 'Manage bookings'}
-                  {item.label === 'Calendars' && 'Manage calendars'}
-                  {item.label === 'Documents' && 'Manage documents'}
-                  {item.label === 'Meeting Rooms' && 'Rooms & meeting history'}
-                  {item.label === 'Mentor Feedback' && 'Feedback for mentors'}
-                  {item.label === 'Register for Study' && 'Study registrations'}
+                  {item.desc}
                 </div>
               </div>
             </div>

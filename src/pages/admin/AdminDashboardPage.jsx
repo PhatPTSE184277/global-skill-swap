@@ -43,7 +43,7 @@ export default function AdminDashboardPage() {
         bookings: bookingsRes.data.items || [],
       });
     } catch (err) {
-      toast.error('Error loading dashboard stats');
+      toast.error('Lỗi tải dữ liệu tổng quan');
     } finally {
       setLoading(false);
     }
@@ -55,7 +55,7 @@ export default function AdminDashboardPage() {
   const totalAdmins = stats.accounts.filter(a => a.role === 'admin').length;
 
   const rolePieData = {
-    labels: ['Users', 'Mentors', 'Admins'],
+    labels: ['Người dùng', 'Mentor', 'Quản trị viên'],
     datasets: [
       {
         data: [totalUsers, totalMentors, totalAdmins],
@@ -66,10 +66,10 @@ export default function AdminDashboardPage() {
   };
 
   const postBarData = {
-    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+    labels: ['Th1', 'Th2', 'Th3', 'Th4', 'Th5', 'Th6'],
     datasets: [
       {
-        label: 'Forum Posts',
+        label: 'Bài viết diễn đàn',
         data: [12, 19, 8, 15, 10, 17],
         backgroundColor: '#6366f1',
       },
@@ -77,10 +77,10 @@ export default function AdminDashboardPage() {
   };
 
   const paymentLineData = {
-    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+    labels: ['Th1', 'Th2', 'Th3', 'Th4', 'Th5', 'Th6'],
     datasets: [
       {
-        label: 'Payments',
+        label: 'Thanh toán',
         data: [200, 400, 350, 500, 420, 600],
         borderColor: '#f59e42',
         backgroundColor: 'rgba(245,158,66,0.2)',
@@ -91,7 +91,7 @@ export default function AdminDashboardPage() {
   };
 
   const bookingDoughnutData = {
-    labels: ['Completed', 'Pending', 'Cancelled'],
+    labels: ['Hoàn thành', 'Đang chờ', 'Đã hủy'],
     datasets: [
       {
         data: [30, 12, 5],
@@ -108,9 +108,9 @@ export default function AdminDashboardPage() {
             <span className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-gradient-to-br from-cyan-400 to-blue-300 shadow mr-3">
               <FaTachometerAlt className="text-white text-2xl" />
             </span>
-            Admin Dashboard
+            Bảng điều khiển
           </h1>
-          <p className="text-gray-600 mt-2">Overview & statistics</p>
+          <p className="text-gray-600 mt-2">Tổng quan & thống kê</p>
         </div>
       </div>
 
@@ -120,7 +120,7 @@ export default function AdminDashboardPage() {
             <FaUsers className="text-indigo-600 text-xl" />
           </div>
           <div>
-            <p className="text-gray-600 text-sm font-medium">Total Members</p>
+            <p className="text-gray-600 text-sm font-medium">Tổng thành viên</p>
             <p className="text-2xl font-bold text-indigo-600">{totalMembers}</p>
           </div>
         </div>
@@ -129,7 +129,7 @@ export default function AdminDashboardPage() {
             <FaUser className="text-green-600 text-xl" />
           </div>
           <div>
-            <p className="text-gray-600 text-sm font-medium">Users</p>
+            <p className="text-gray-600 text-sm font-medium">Người dùng</p>
             <p className="text-2xl font-bold text-green-600">{totalUsers}</p>
           </div>
         </div>
@@ -138,7 +138,7 @@ export default function AdminDashboardPage() {
             <FaUserPlus className="text-blue-600 text-xl" />
           </div>
           <div>
-            <p className="text-gray-600 text-sm font-medium">Mentors</p>
+            <p className="text-gray-600 text-sm font-medium">Mentor</p>
             <p className="text-2xl font-bold text-blue-600">{totalMentors}</p>
           </div>
         </div>
@@ -147,7 +147,7 @@ export default function AdminDashboardPage() {
             <FaUserShield className="text-red-600 text-xl" />
           </div>
           <div>
-            <p className="text-gray-600 text-sm font-medium">Admins</p>
+            <p className="text-gray-600 text-sm font-medium">Quản trị viên</p>
             <p className="text-2xl font-bold text-red-600">{totalAdmins}</p>
           </div>
         </div>
@@ -155,19 +155,19 @@ export default function AdminDashboardPage() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         <div className="bg-white rounded-xl shadow p-6">
-          <h2 className="text-lg font-semibold mb-4">Role Distribution</h2>
+          <h2 className="text-lg font-semibold mb-4">Tỉ lệ vai trò</h2>
           <Pie data={rolePieData} />
         </div>
         <div className="bg-white rounded-xl shadow p-6">
-          <h2 className="text-lg font-semibold mb-4">Forum Posts (6 months)</h2>
+          <h2 className="text-lg font-semibold mb-4">Bài viết diễn đàn (6 tháng)</h2>
           <Bar data={postBarData} />
         </div>
         <div className="bg-white rounded-xl shadow p-6">
-          <h2 className="text-lg font-semibold mb-4">Payments (6 months)</h2>
+          <h2 className="text-lg font-semibold mb-4">Thanh toán (6 tháng)</h2>
           <Line data={paymentLineData} />
         </div>
         <div className="bg-white rounded-xl shadow p-6">
-          <h2 className="text-lg font-semibold mb-4">Booking Status</h2>
+          <h2 className="text-lg font-semibold mb-4">Trạng thái đặt lịch</h2>
           <Doughnut data={bookingDoughnutData} />
         </div>
       </div>
@@ -175,7 +175,7 @@ export default function AdminDashboardPage() {
       {loading && (
         <div className="flex justify-center items-center py-16">
           <FaSpinner className="animate-spin h-8 w-8 text-indigo-500 mr-2" />
-          <span className="text-gray-500 text-lg">Loading dashboard...</span>
+          <span className="text-gray-500 text-lg">Đang tải dữ liệu...</span>
         </div>
       )}
     </div>

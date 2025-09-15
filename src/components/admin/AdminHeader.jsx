@@ -7,7 +7,7 @@ export default function AdminHeader() {
   const [showDropdown, setShowDropdown] = useState(false);
 
   const profile = {
-    name: 'Admin User',
+    name: 'Quản trị viên',
     email: 'admin@example.com',
     isAdmin: true,
   };
@@ -31,14 +31,12 @@ export default function AdminHeader() {
 
   return (
     <header className="bg-white fixed top-0 left-0 right-0 z-50 font-poppins border-b border-gray-200 shadow-lg h-16 flex items-center px-8">
-      {/* Logo */}
-      <Link to="/admin/teams" className="flex items-center group transition-all duration-300 hover:scale-105">
+      <Link to="/admin/dashboard" className="flex items-center group transition-all duration-300 hover:scale-105">
         <div className="w-10 h-10 admin-avatar rounded-full flex items-center justify-center mr-3 shadow-md group-hover:shadow-lg transition-shadow">
           <span className="text-white font-bold text-sm">⚽</span>
         </div>
-        <span className="text-gray-900 text-xl font-extrabold tracking-tight">ADMIN PANEL</span>
+        <span className="text-gray-900 text-xl font-extrabold tracking-tight">BẢNG ĐIỀU KHIỂN</span>
       </Link>
-      {/* User section right-aligned */}
       <div className="flex items-center gap-4 ml-auto">
         <div className="relative user-dropdown">
           <button
@@ -62,7 +60,7 @@ export default function AdminHeader() {
                 {profile.name}
               </p>
               <p className="text-xs text-gray-500">
-                {profile.isAdmin ? 'Admin' : 'Member'}
+                {profile.isAdmin ? 'Quản trị viên' : 'Thành viên'}
               </p>
             </div>
             <svg
@@ -100,16 +98,15 @@ export default function AdminHeader() {
                       {profile.isAdmin ? (
                         <>
                           <Crown className="w-5 h-5 mr-1 inline-block align-middle text-yellow-500" />
-                          Admin
+                          Quản trị viên
                         </>
                       ) : (
-                        'Member'
+                        'Thành viên'
                       )}
                     </span>
                   </div>
                 </div>
               </div>
-              {/* Menu Items */}
               <div className="py-2">
                 <Link
                   to="/profile"
@@ -121,7 +118,7 @@ export default function AdminHeader() {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                     </svg>
                   </div>
-                  <span className="font-medium">Profile</span>
+                  <span className="font-medium">Thông tin cá nhân</span>
                 </Link>
                 <Link
                   to="/profile/change-password"
@@ -133,7 +130,7 @@ export default function AdminHeader() {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm6-10V7a4 4 0 10-8 0v2" />
                     </svg>
                   </div>
-                  <span className="font-medium">Change Password</span>
+                  <span className="font-medium">Đổi mật khẩu</span>
                 </Link>
                 {profile.isAdmin && (
                   <Link
@@ -156,13 +153,11 @@ export default function AdminHeader() {
                         />
                       </svg>
                     </div>
-                    <span className="font-medium">Home</span>
+                    <span className="font-medium">Trang chủ</span>
                   </Link>
                 )}
               </div>
-              {/* Divider */}
               <div className="border-t border-gray-100/50 my-2"></div>
-              {/* Logout Button */}
               <div className="px-2 pb-2">
                 <button
                   onClick={handleLogout}
@@ -173,7 +168,7 @@ export default function AdminHeader() {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                     </svg>
                   </div>
-                  <span className="font-medium">Logout</span>
+                  <span className="font-medium">Đăng xuất</span>
                 </button>
               </div>
             </div>
