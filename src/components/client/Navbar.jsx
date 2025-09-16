@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import axiosClient from "../../apis/axiosClient";
+import { Link } from "react-router-dom";
 
 const Navbar = () => {
   const [user, setUser] = useState(null);
@@ -28,10 +29,9 @@ const Navbar = () => {
 
   return (
     <nav
-      className={`w-full font-['Noto Sans'] sticky top-0 z-50 transition-all duration-300 ${scrolled
-          ? "bg-white shadow-lg"
-          : "bg-[#fdf8ee] shadow"
-        }`}
+      className={`w-full font-['Noto Sans'] sticky top-0 z-50 transition-all duration-300 ${
+        scrolled ? "bg-white shadow-lg" : "bg-[#fdf8ee] shadow"
+      }`}
     >
       <div className="max-w-7xl mx-auto px-6 flex items-center justify-between h-16">
         <div className="flex items-center gap-2">
@@ -41,7 +41,9 @@ const Navbar = () => {
           <li className="hover:text-purple-700 cursor-pointer">Trang chủ</li>
           <li className="hover:text-purple-700 cursor-pointer">Giới Thiệu</li>
           <li className="hover:text-purple-700 cursor-pointer">Bài Viết</li>
-          <li className="hover:text-purple-700 cursor-pointer">Phòng học</li>
+          <li className="hover:text-purple-700 cursor-pointer">
+            <Link to="/room">Phòng học</Link>
+          </li>
           <li className="hover:text-purple-700 cursor-pointer">Mentor</li>
           <li className="hover:text-purple-700 cursor-pointer">Dịch Vụ</li>
         </ul>
