@@ -3,12 +3,14 @@ import HomePageRoutes from './HomePageRoutes';
 import AuthPageRoutes from './AuthPageRoutes';
 import BlogPageRoutes from './BlogPageRoutes';
 import UserPageRoutes from './UserPageRoutes';
+import RoomPageRoutes from './RoomPageRoutes';
 
 const routes = [
     ...HomePageRoutes,
     ...AuthPageRoutes,
     ...BlogPageRoutes,
     ...UserPageRoutes,
+    ...RoomPageRoutes,
     // {
     //     path: '*',
     //     element: <NotFoundPage />
