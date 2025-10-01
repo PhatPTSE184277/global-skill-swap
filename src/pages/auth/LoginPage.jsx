@@ -1,40 +1,62 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, Loader2 } from 'lucide-react';
+import { useDispatch } from 'react-redux';
 import Illustration from '../../img/svg/Illustration.svg'
 import GoogleIcon from '../../img/svg/icons8-google.svg';
+import authService from '../../services/authService';
+import { addAuth } from '../../reduxs/reducers/AuthReducer';
+import { toast } from 'react-toastify';
 
 const LoginPage = () => {
   const [formData, setFormData] = useState({
     usernameOrEmail: '',
-    password: '',
-    rememberMe: false
+    password: ''
   });
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
 
   const navigate = useNavigate();
+  const dispatch = useDispatch();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setError('');
 
     try {
-      navigate('/admin');
+      const response = await authService.login(formData);
+      const res = response.data;
+
+      if (res.success) {
+        const user = res.data;
+        const token = user.access_token;
+
+        dispatch(addAuth({ user, token }));
+
+        const storagePayload = JSON.stringify({
+          token: token,
+          username: user.username,
+          email: user.email
+        });
+        localStorage.setItem('authData', storagePayload);
+
+        toast.success('Đăng nhập thành công');
+        navigate('/');
+      }
     } catch (err) {
-      setError('Đăng nhập thất bại');
+      console.error('Login error:', err);
+      const msg = err?.response?.data?.message || err.message || 'Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin.';
+      toast.error(msg);
     } finally {
       setLoading(false);
     }
   };
 
   const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
+    const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: type === 'checkbox' ? checked : value
+      [name]: value
     }));
   };
 
@@ -123,17 +145,7 @@ const LoginPage = () => {
                         {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                       </button>
                     </div>
-                    <div className="flex items-center justify-between mt-4">
-                      <label className="flex items-center gap-2 text-sm text-gray-600">
-                        <input
-                          type="checkbox"
-                          name="rememberMe"
-                          checked={formData.rememberMe}
-                          onChange={handleChange}
-                          className="accent-[#4D2C5E] w-4 h-4 rounded focus:ring-[#4D2C5E] border-gray-300 cursor-pointer"
-                        />
-                        Ghi nhớ đăng nhập
-                      </label>
+                    <div className="flex justify-end mt-4">
                       <button
                         type="submit"
                         disabled={loading}
@@ -142,18 +154,12 @@ const LoginPage = () => {
                         {loading ? (
                           <>
                             <Loader2 className="animate-spin mr-2" size={20} />
-                            Đang đăng nhập...
                           </>
                         ) : (
                           'ĐĂNG NHẬP'
                         )}
                       </button>
                     </div>
-                    {error && (
-                      <div className="text-red-600 text-sm text-center bg-red-50 py-2 px-4 rounded-xl">
-                        {error}
-                      </div>
-                    )}
                   </form>
                   <div className="text-center mt-10">
                     <span className="text-gray-500">Chưa có tài khoản? </span>

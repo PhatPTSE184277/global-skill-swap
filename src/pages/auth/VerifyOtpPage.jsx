@@ -1,12 +1,19 @@
 import Illustration from '../../img/svg/Illustration.svg';
 import { useState, useRef } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useParams, useLocation } from 'react-router-dom';
+import { toast } from 'react-toastify';
+import authService from '../../services/authService';
 
 const VerifyOtpPage = () => {
     const [otp, setOtp] = useState(['', '', '', '', '', '']);
     const [error, setError] = useState('');
+    const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
     const inputRefs = useRef([]);
+    const { token } = useParams();
+    const location = useLocation();
+
+    const userId = location.state?.userId || 1; // fallback tạm là 1
 
     const handleChange = (e, idx) => {
         const value = e.target.value.replace(/\D/, '');
@@ -39,13 +46,29 @@ const VerifyOtpPage = () => {
         }
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
         const code = otp.join('');
-        if (code.length === 6) {
-            navigate('/reset-password');
-        } else {
+        if (code.length !== 6) {
             setError('Mã OTP không hợp lệ');
+            toast.error('Mã OTP không hợp lệ');
+            return;
+        }
+        setLoading(true);
+        try {
+            // Nếu backend yêu cầu gửi token (từ URL) + OTP, bạn có thể sửa lại body cho phù hợp
+            // Ở đây ví dụ gọi resetPassword với userId và token (token lấy từ URL)
+            await authService.resetPassword(userId, token);
+            toast.success('Xác thực OTP thành công! Vui lòng đặt lại mật khẩu.');
+            navigate('/reset-password', { state: { userId, token } });
+        } catch (err) {
+            toast.error(
+                err?.response?.data?.message ||
+                err.message ||
+                'Xác thực OTP thất bại. Vui lòng thử lại.'
+            );
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -107,9 +130,10 @@ const VerifyOtpPage = () => {
                                         {error && <div className="text-red-600 text-sm text-center">{error}</div>}
                                         <button
                                             type="submit"
+                                            disabled={loading}
                                             className="w-full bg-[#4D2C5E] hover:bg-[#3c204a] text-white font-semibold py-3 rounded-full transition"
                                         >
-                                            Xác nhận
+                                            {loading ? "Đang xác thực..." : "Xác nhận"}
                                         </button>
                                     </form>
                                     <div className="text-center mt-6">

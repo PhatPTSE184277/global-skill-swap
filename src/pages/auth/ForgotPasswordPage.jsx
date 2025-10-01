@@ -2,19 +2,33 @@ import Illustration from '../../img/svg/Illustration.svg';
 import { Link } from 'react-router-dom';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import authService from '../../services/authService';
+import { toast } from 'react-toastify';
 
 const ForgotPasswordPage = () => {
     const [email, setEmail] = useState('');
-    const [sent, setSent] = useState(false);
+    const [loading, setLoading] = useState(false);
 
     const navigate = useNavigate();
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        setSent(true);
-        setTimeout(() => {
-            navigate('/verify-otp');
-        }, 1000);
+        setLoading(true);
+        try {
+            await authService.forgotPassword(email);
+            toast.success('Yêu cầu đặt lại mật khẩu đã được gửi đến email của bạn.');
+            setTimeout(() => {
+                navigate('/verify-otp');
+            }, 1500);
+        } catch (err) {
+            toast.error(
+                err?.response?.data?.message ||
+                err.message ||
+                'Có lỗi xảy ra, vui lòng thử lại.'
+            );
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
@@ -51,34 +65,29 @@ const ForgotPasswordPage = () => {
                             <div className="lg:w-1/2 p-6 lg:p-8 flex items-center justify-center">
                                 <div className="w-full max-w-sm mx-auto">
                                     <h2 className="text-2xl font-bold text-[#4D2C5E] mb-6 text-center">Quên mật khẩu</h2>
-                                    {sent ? (
-                                        <div className="text-center text-green-600 font-medium">
-                                            Nếu email tồn tại, hướng dẫn đặt lại mật khẩu đã được gửi đến email của bạn.
+                                    <form onSubmit={handleSubmit} className="space-y-6">
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                Nhập email của bạn
+                                            </label>
+                                            <input
+                                                type="email"
+                                                name="email"
+                                                placeholder="Nhập email"
+                                                className="w-full h-12 px-4 border-b border-gray-300 focus:border-[#4D2C5E] outline-none text-base placeholder-gray-400 transition"
+                                                value={email}
+                                                onChange={e => setEmail(e.target.value)}
+                                                required
+                                            />
                                         </div>
-                                    ) : (
-                                        <form onSubmit={handleSubmit} className="space-y-6">
-                                            <div>
-                                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                                    Nhập email của bạn
-                                                </label>
-                                                <input
-                                                    type="email"
-                                                    name="email"
-                                                    placeholder="Nhập email"
-                                                    className="w-full h-12 px-4 border-b border-gray-300 focus:border-[#4D2C5E] outline-none text-base placeholder-gray-400 transition"
-                                                    value={email}
-                                                    onChange={e => setEmail(e.target.value)}
-                                                    required
-                                                />
-                                            </div>
-                                            <button
-                                                type="submit"
-                                                className="w-full bg-[#4D2C5E] hover:bg-[#3c204a] text-white font-semibold py-3 rounded-full transition"
-                                            >
-                                                Gửi yêu cầu
-                                            </button>
-                                        </form>
-                                    )}
+                                        <button
+                                            type="submit"
+                                            disabled={loading}
+                                            className="w-full bg-[#4D2C5E] hover:bg-[#3c204a] text-white font-semibold py-3 rounded-full transition disabled:opacity-50"
+                                        >
+                                            {loading ? "Đang gửi..." : "Gửi yêu cầu"}
+                                        </button>
+                                    </form>
                                     <div className="text-center mt-6">
                                         <Link to="/login" className="text-[#4D2C5E] hover:underline font-medium">
                                             Quay lại đăng nhập
