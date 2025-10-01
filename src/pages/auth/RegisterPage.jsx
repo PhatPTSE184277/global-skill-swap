@@ -3,6 +3,8 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, Loader2 } from 'lucide-react';
 import Illustration from '../../img/svg/Illustration.svg'
 import GoogleIcon from '../../img/svg/icons8-google.svg';
+import authService from '../../services/authService';
+import { toast } from 'react-toastify';
 
 const RegisterPage = () => {
     const [formData, setFormData] = useState({
@@ -10,36 +12,38 @@ const RegisterPage = () => {
         email: '',
         password: '',
         confirmPassword: '',
-        acceptTerms: false
     });
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [loading, setLoading] = useState(false);
-    const [error, setError] = useState('');
 
     const navigate = useNavigate();
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
-        setError('');
 
-        if (!formData.acceptTerms) {
-            setError('Bạn phải đồng ý với điều khoản sử dụng');
-            setLoading(false);
-            return;
-        }
         if (formData.password !== formData.confirmPassword) {
-            setError('Mật khẩu xác nhận không khớp');
+            toast.error('Mật khẩu xác nhận không khớp');
             setLoading(false);
             return;
         }
 
         try {
-
-            navigate('/admin');
+            const response = await authService.register(formData);
+            const res = response.data;
+            if (res.success) {
+                toast.success('Đăng ký thành công! Vui lòng đăng nhập.');
+                navigate('/login');
+            } else {
+                toast.error(res.message || 'Đăng ký thất bại');
+            }
         } catch (err) {
-            setError(err.message);
+            toast.error(
+                err?.response?.data?.message ||
+                err.message ||
+                'Đăng ký thất bại. Vui lòng thử lại.'
+            );
         } finally {
             setLoading(false);
         }
@@ -170,14 +174,6 @@ const RegisterPage = () => {
                                         </div>
                                         <div className="flex items-center justify-between mt-4">
                                             <label className="flex items-center gap-2 text-sm text-gray-600">
-                                                <input
-                                                    type="checkbox"
-                                                    name="acceptTerms"
-                                                    checked={formData.acceptTerms}
-                                                    onChange={handleChange}
-                                                    className="accent-[#4D2C5E] w-4 h-4 rounded focus:ring-[#4D2C5E] border-gray-300"
-                                                />
-                                                Tôi đồng ý với <span className="underline">điều khoản sử dụng</span>
                                             </label>
                                             <button
                                                 type="submit"
@@ -187,18 +183,12 @@ const RegisterPage = () => {
                                                 {loading ? (
                                                     <>
                                                         <Loader2 className="animate-spin mr-2" size={20} />
-                                                        Đang đăng ký...
                                                     </>
                                                 ) : (
                                                     'ĐĂNG KÝ'
                                                 )}
                                             </button>
                                         </div>
-                                        {error && (
-                                            <div className="text-red-600 text-sm text-center bg-red-50 py-2 px-4 rounded-xl">
-                                                {error}
-                                            </div>
-                                        )}
                                     </form>
                                     <div className="text-center mt-10">
                                         <span className="text-gray-500">Đã có tài khoản? </span>

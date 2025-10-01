@@ -6,9 +6,23 @@ const localDataNames = {
 
 const initialState = {
     token: '',
-    _id: '',
-    name: '',
-    rule: 0
+    username: '',
+    email: ''
+};
+
+
+const getInitialAuth = () => {
+    let data = {};
+    try {
+        data = JSON.parse(localStorage.getItem(localDataNames.authData)) || {};
+    } catch {
+        data = {};
+    }
+    return {
+        token: data.token || '',
+        username: data.username || '',
+        email: data.email || ''
+    };
 };
 
 const syncLocal = (data) => {
@@ -18,16 +32,23 @@ const syncLocal = (data) => {
 const authSlice = createSlice({
     name: 'auth',
     initialState: {
-        data: initialState
+        data: getInitialAuth()
     },
     reducers: {
         addAuth: (state, action) => {
-            state.data = action.payload;
-            syncLocal(action.payload);
+            const { user, token } = action.payload;
+            const payload = {
+                token: token,
+                _id: user.id,
+                username: user.username,
+                email: user.email
+            };
+            state.data = payload;
+            syncLocal(payload);
         },
         removeAuth: (state) => {
             state.data = initialState;
-            syncLocal({});
+            localStorage.removeItem(localDataNames.authData);
         }
     }
 });

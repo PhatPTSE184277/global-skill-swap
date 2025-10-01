@@ -21,6 +21,10 @@ const AuthRoutes = [
       {
         path: "/verify-otp",
         element: <VerifyOtpPage />
+      },
+      {
+        path: "/verify-otp/:token",
+        element: <VerifyOtpPage />
       }
     ],
   },

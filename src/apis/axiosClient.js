@@ -1,43 +1,33 @@
 import axios from 'axios';
-import queryString from 'query-string';
+const baseUrl = import.meta.env.VITE_API_BASE_URL;
 
-const baseURL = import.meta.env.VITE_API_BASE_URL;
-const AUTH_KEY = 'Auth_Data';
-
-const getAccessToken = () => {
-    const res = localStorage.getItem(AUTH_KEY);
-    return res ? JSON.parse(res).token : '';
+const config = {
+     baseURL: baseUrl
 };
 
-const axiosClient = axios.create({
-    baseURL,
-    paramsSerializer: (params) => queryString.stringify(params)
-});
+const api = axios.create(config);
 
-axiosClient.interceptors.request.use((config) => {
-    const accessToken = getAccessToken();
-
-    config.headers = {
-        Authorization: accessToken ? `Bearer ${accessToken}` : '',
-        Accept: 'application/json',
-        ...config.headers
-    };
-
-    return { ...config, data: config.data ?? null };
-});
-
-axiosClient.interceptors.response.use(
-    (res) => {
-        if (res.data && res.status >= 200 && res.status < 300) {
-            return res.data;
-        } else {
-            return Promise.reject(res.data);
+const handleBefore = (config) => {
+    const authData = localStorage.getItem('authData');
+    let token = null;
+    if (authData) {
+        try {
+            token = JSON.parse(authData).token;
+        } catch {
+            token = null;
         }
-    },
-    (error) => {
-        const { response } = error;
-        return Promise.reject(response?.data || { message: error.message });
     }
-);
 
-export default axiosClient;
+    if (token) {
+        config.headers = config.headers || {};
+        config.headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    return config;
+};
+
+const handleRequestError = (error) => Promise.reject(error);
+
+api.interceptors.request.use(handleBefore, handleRequestError);
+
+export default api;
