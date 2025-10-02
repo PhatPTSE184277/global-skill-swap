@@ -1,8 +1,11 @@
+
 import { useNavigate } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import { authSelector, removeAuth } from "../../reduxs/reducers/AuthReducer";
 import { useState, useRef, useEffect } from "react";
 import { LogOut, User, ChevronDown } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import axiosClient from "../../apis/axiosClient";
 
 const handleLogoClick = (navigate) => {
   if (window.location.pathname === "/") {
@@ -51,8 +54,12 @@ const Header = () => {
         <ul className="flex items-center gap-8 text-gray-700 text-sm font-medium">
           <li className="hover:text-purple-700 cursor-pointer">Trang chủ</li>
           <li className="hover:text-purple-700 cursor-pointer">Giới Thiệu</li>
-          <li className="hover:text-purple-700 cursor-pointer">Bài Viết</li>
-          <li className="hover:text-purple-700 cursor-pointer">Phòng học</li>
+          <li className="hover:text-purple-700 cursor-pointer">
+            <Link to="/blog">Bài Viết</Link>
+          </li>
+          <li className="hover:text-purple-700 cursor-pointer">
+            <Link to="/room">Phòng học</Link>
+          </li>
           <li className="hover:text-purple-700 cursor-pointer">Mentor</li>
           <li className="hover:text-purple-700 cursor-pointer">Dịch Vụ</li>
         </ul>
