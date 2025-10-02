@@ -428,10 +428,8 @@ const HomePage = () => {
           </div>
         </section>
       </div>
-
       <NewBlog />
-
-      <SubscribeSection/>
+      <SubscribeSection />
     </div>
   );
 };

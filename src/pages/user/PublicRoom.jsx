@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import TQ from "../../img/svg/tq.svg";
 
 import {
@@ -50,6 +51,11 @@ const data = [
 
 export default function PublicRoom() {
   const [page, setPage] = useState(1);
+  const navigate = useNavigate();
+
+  const handleJoinRoom = (roomId) => {
+    navigate(`/room/${roomId}`);
+  };
 
   return (
     <div className="p-8 max-w-5xl mx-auto">
@@ -98,7 +104,7 @@ export default function PublicRoom() {
             <img
               src={item.img}
               alt={item.title}
-              className="w-full h-32  rounded-2xl"
+              className="w-full h-35  rounded-2xl"
             />
             <div className="p-4 flex flex-col flex-1">
               <div className="flex justify-between items-center mb-2">
@@ -124,7 +130,10 @@ export default function PublicRoom() {
                   <span className="font-semibold">{item.joined}</span>
                 </div>
               </div>
-              <button className="self-center px-8 py-1.5 bg-orange-500 hover:bg-orange-600 text-white rounded-full font-semibold  ">
+              <button
+                className="self-center px-8 py-1.5 bg-orange-500 hover:bg-orange-600 text-white rounded-full font-semibold"
+                onClick={() => handleJoinRoom(item.id)}
+              >
                 Tham gia
               </button>
             </div>
