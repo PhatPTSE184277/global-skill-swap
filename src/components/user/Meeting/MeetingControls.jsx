@@ -13,14 +13,14 @@ import {
 import { Button, Tooltip } from "antd";
 import useAgora from "../../../hooks/useAgora";
 
-export default function MeetingControls({ onLeave }) {
-  const { 
-    isCameraOn, 
-    isMicOn, 
+export default function MeetingControls({ onLeave, isLeaving }) {
+  const {
+    isCameraOn,
+    isMicOn,
     isScreenSharing,
-    toggleCamera, 
+    toggleCamera,
     toggleMicrophone,
-    toggleScreenShare 
+    toggleScreenShare,
   } = useAgora();
 
   const handleToggleCamera = async () => {
@@ -83,7 +83,9 @@ export default function MeetingControls({ onLeave }) {
         />
       </Tooltip>
 
-      <Tooltip title={isScreenSharing ? "Dừng chia sẻ màn hình" : "Chia sẻ màn hình"}>
+      <Tooltip
+        title={isScreenSharing ? "Dừng chia sẻ màn hình" : "Chia sẻ màn hình"}
+      >
         <Button
           type={isScreenSharing ? "primary" : "default"}
           shape="circle"
@@ -107,6 +109,7 @@ export default function MeetingControls({ onLeave }) {
           size="large"
           icon={<PhoneOff className="w-5 h-5" />}
           onClick={onLeave}
+          loading={isLeaving}
         />
       </Tooltip>
 

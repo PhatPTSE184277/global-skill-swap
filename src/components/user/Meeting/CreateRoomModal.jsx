@@ -1,6 +1,15 @@
 import React, { useState } from "react";
-import { Button, Input, Form, Card, message, Modal } from "antd";
-import { User, Users, Calendar, Link } from "lucide-react";
+import {
+  Button,
+  Input,
+  Form,
+  Card,
+  message,
+  Modal,
+  DatePicker,
+  Select,
+} from "antd";
+import { User, Users, Calendar, Link, Clock, FileText } from "lucide-react";
 import apiService from "../../../services/apiService";
 
 const CreateRoomModal = ({ visible, onCancel, onRoomCreated }) => {
@@ -11,29 +20,58 @@ const CreateRoomModal = ({ visible, onCancel, onRoomCreated }) => {
   const handleSubmit = async (values) => {
     setLoading(true);
     try {
+      // Xử lý logic thời gian
+      const now = new Date();
+      const startTime = values.startTime ? new Date(values.startTime) : now;
+
+      // Nếu không có endTime, tự động +1 giờ từ startTime
+      let endTime = null;
+      if (values.endTime) {
+        endTime = new Date(values.endTime);
+      } else if (values.startTime) {
+        endTime = new Date(startTime.getTime() + 60 * 60 * 1000); // +1 hour
+      }
+
+      // Tạo room data KHÔNG có meeting_link ban đầu
       const roomData = {
-        room_name: values.roomName,
-        mentor_id: values.mentorId || 1, // Default mentor ID
-        user_id: values.userId || 2, // Default user ID
-        start_time: new Date().toISOString(),
-        status: "scheduled",
+        room_name: values.roomName || "Meeting Room",
+        mentor_id: parseInt(values.mentorId) || 1,
+        user_id: parseInt(values.userId) || 2,
+        start_time: startTime.toISOString(),
+        end_time: endTime ? endTime.toISOString() : null,
+        status: values.status || "scheduled",
+        details: {
+          meeting_link: null, // Sẽ được tạo sau
+          meeting_password: values.meetingPassword || null,
+          notes: values.notes || null,
+          recorded_url: null,
+        },
+        participants: [],
       };
 
+      console.log("Creating room with data:", roomData);
+
       const response = await apiService.createMeetingRoom(roomData);
+      console.log("Room created response:", response);
 
-      message.success("Tạo phòng thành công!");
-      setCreatedRoom(response);
+      // Extract room data from response
+      const roomResult = response.data?.room || response.data || response;
 
-      // Generate meeting link
-      const meetingLink = `${window.location.origin}/meeting/${
-        response.id
-      }?userName=${encodeURIComponent(values.userName)}`;
+      setCreatedRoom(roomResult);
+      message.success(
+        "✅ Tạo phòng thành công! Meeting link đã được tự động tạo."
+      );
+
+      // Tạo meeting link để redirect (backend đã tự tạo link rồi)
+      const redirectLink = `${window.location.origin}/meeting/${
+        roomResult.id
+      }?userName=${encodeURIComponent(values.userName || "Anonymous")}`;
 
       if (onRoomCreated) {
         onRoomCreated({
-          ...response,
-          meetingLink,
-          userName: values.userName,
+          ...roomResult,
+          meetingLink: redirectLink,
+          userName: values.userName || "Anonymous",
         });
       }
 
@@ -49,10 +87,10 @@ const CreateRoomModal = ({ visible, onCancel, onRoomCreated }) => {
   const copyMeetingLink = () => {
     if (createdRoom) {
       const userName = form.getFieldValue("userName");
-      const meetingLink = `${window.location.origin}/meeting/${
+      const copyLink = `${window.location.origin}/meeting/${
         createdRoom.id
       }?userName=${encodeURIComponent(userName)}`;
-      navigator.clipboard.writeText(meetingLink);
+      navigator.clipboard.writeText(copyLink);
       message.success("Đã copy link meeting!");
     }
   };
@@ -72,13 +110,10 @@ const CreateRoomModal = ({ visible, onCancel, onRoomCreated }) => {
         initialValues={{
           mentorId: 1,
           userId: 2,
+          status: "scheduled",
         }}
       >
-        <Form.Item
-          name="userName"
-          label="Tên người dùng"
-          rules={[{ required: true, message: "Vui lòng nhập tên người dùng!" }]}
-        >
+        <Form.Item name="userName" label="Tên người dùng">
           <Input
             prefix={<User size={16} />}
             placeholder="Nhập tên của bạn"
@@ -86,11 +121,7 @@ const CreateRoomModal = ({ visible, onCancel, onRoomCreated }) => {
           />
         </Form.Item>
 
-        <Form.Item
-          name="roomName"
-          label="Tên phòng meeting"
-          rules={[{ required: true, message: "Vui lòng nhập tên phòng!" }]}
-        >
+        <Form.Item name="roomName" label="Tên phòng meeting">
           <Input
             prefix={<Users size={16} />}
             placeholder="Nhập tên phòng meeting"
@@ -106,6 +137,53 @@ const CreateRoomModal = ({ visible, onCancel, onRoomCreated }) => {
           <Input type="number" placeholder="ID của user" size="large" />
         </Form.Item>
 
+        <Form.Item name="startTime" label="Thời gian bắt đầu">
+          <DatePicker
+            showTime
+            placeholder="Chọn thời gian bắt đầu"
+            size="large"
+            style={{ width: "100%" }}
+            format="DD/MM/YYYY HH:mm"
+          />
+        </Form.Item>
+
+        <Form.Item
+          name="endTime"
+          label="Thời gian kết thúc (tự động +1h nếu bỏ trống)"
+        >
+          <DatePicker
+            showTime
+            placeholder="Chọn thời gian kết thúc"
+            size="large"
+            style={{ width: "100%" }}
+            format="DD/MM/YYYY HH:mm"
+          />
+        </Form.Item>
+
+        <Form.Item name="status" label="Trạng thái">
+          <Select size="large" placeholder="Chọn trạng thái">
+            <Select.Option value="scheduled">Đã lên lịch</Select.Option>
+            <Select.Option value="ongoing">Đang diễn ra</Select.Option>
+            <Select.Option value="completed">Đã kết thúc</Select.Option>
+            <Select.Option value="canceled">Đã hủy</Select.Option>
+          </Select>
+        </Form.Item>
+
+        <Form.Item name="meetingPassword" label="Mật khẩu phòng (tùy chọn)">
+          <Input.Password
+            placeholder="Nhập mật khẩu bảo vệ phòng"
+            size="large"
+          />
+        </Form.Item>
+
+        <Form.Item name="notes" label="Ghi chú (tùy chọn)">
+          <Input.TextArea
+            rows={3}
+            placeholder="Thêm ghi chú về cuộc họp..."
+            size="large"
+          />
+        </Form.Item>
+
         {createdRoom && (
           <Card
             size="small"
@@ -116,24 +194,61 @@ const CreateRoomModal = ({ visible, onCancel, onRoomCreated }) => {
               borderColor: "#b7eb8f",
             }}
           >
-            <p>
-              <strong>Tên phòng:</strong> {createdRoom.room_name}
-            </p>
-            <p>
-              <strong>Room ID:</strong> {createdRoom.id}
-            </p>
-            <p>
-              <strong>Status:</strong> {createdRoom.status}
-            </p>
+            <div
+              style={{ display: "flex", flexDirection: "column", gap: "8px" }}
+            >
+              <p>
+                <strong>📝 Tên phòng:</strong> {createdRoom.room_name}
+              </p>
+              <p>
+                <strong>🆔 Room ID:</strong> {createdRoom.id}
+              </p>
+              <p>
+                <strong>📊 Trạng thái:</strong> {createdRoom.status}
+              </p>
+              {createdRoom.start_time && (
+                <p>
+                  <strong>⏰ Bắt đầu:</strong>{" "}
+                  {new Date(createdRoom.start_time).toLocaleString("vi-VN")}
+                </p>
+              )}
+              {createdRoom.end_time && (
+                <p>
+                  <strong>⏰ Kết thúc:</strong>{" "}
+                  {new Date(createdRoom.end_time).toLocaleString("vi-VN")}
+                </p>
+              )}
+              {createdRoom.meetingroomdetails?.[0]?.meeting_password && (
+                <p>
+                  <strong>🔒 Mật khẩu:</strong>{" "}
+                  {createdRoom.meetingroomdetails[0].meeting_password}
+                </p>
+              )}
+              {createdRoom.meetingroomdetails?.[0]?.notes && (
+                <div>
+                  <strong>📄 Ghi chú:</strong>
+                  <div
+                    style={{
+                      marginTop: "4px",
+                      padding: "8px",
+                      backgroundColor: "#f9f9f9",
+                      borderRadius: "4px",
+                    }}
+                  >
+                    {createdRoom.meetingroomdetails[0].notes}
+                  </div>
+                </div>
+              )}
+            </div>
 
-            <div style={{ marginTop: 12 }}>
+            <div style={{ marginTop: 16 }}>
               <Button
                 type="primary"
                 icon={<Link size={16} />}
                 onClick={copyMeetingLink}
                 block
               >
-                Copy Link Meeting
+                📋 Copy Link Meeting
               </Button>
             </div>
           </Card>

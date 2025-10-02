@@ -1,98 +1,159 @@
-import React, { useEffect, useState, useMemo } from "react";
-import { Input, Button, List, Avatar, Typography, Space } from "antd";
-import { Send, MessageCircle } from "lucide-react";
-import { initRtm, leaveRtm, sendMessage } from "../../../agora/RtmService";
+import React, { useEffect, useState, useRef } from "react";
+import { Input, Button, List, Avatar, Typography, Space, Badge } from "antd";
+import { Send, MessageCircle, User } from "lucide-react";
+import socketService from "../../../services/socketService";
 
 const { Text } = Typography;
 
-export default function ChatBox({ roomId, userName }) {
+export default function ChatBox({ roomId, userName, userId }) {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [connected, setConnected] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [isVisible, setIsVisible] = useState(true);
 
-  // Generate stable UID only once
-  const uid = useMemo(() => Math.floor(Math.random() * 100000), []);
-  const channelName = useMemo(() => `room_${roomId}_chat`, [roomId]);
+  const messagesEndRef = useRef(null);
+  const chatContainerRef = useRef(null);
+
+  // Scroll to bottom when new messages arrive
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
 
   useEffect(() => {
-    const startChat = async () => {
-      if (!roomId) return;
+    scrollToBottom();
+  }, [messages]);
 
-      try {
-        const appId = import.meta.env.VITE_AGORA_APP_ID;
-        if (!appId) {
-          console.warn("VITE_AGORA_APP_ID not configured, chat disabled");
-          setMessages([
-            {
-              id: 1,
-              sender: "System",
-              text: "Chat chưa được cấu hình. Vui lòng thiết lập VITE_AGORA_APP_ID.",
-              timestamp: new Date().toLocaleTimeString("vi-VN", {
-                hour: "2-digit",
-                minute: "2-digit",
-              }),
-              isSystem: true,
-            },
-          ]);
-          return;
-        }
+  // Initialize socket connection and set up chat listeners
+  useEffect(() => {
+    if (!roomId || !userName) {
+      console.log("❌ Missing roomId or userName:", { roomId, userName });
+      return;
+    }
 
-        const success = await initRtm(
-          appId,
-          uid,
-          channelName,
-          (text, sender) => {
-            setMessages((prev) => [
-              ...prev,
-              {
-                id: Date.now() + Math.random(),
-                sender,
-                text,
-                timestamp: new Date().toLocaleTimeString("vi-VN", {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                }),
-              },
-            ]);
-          }
-        );
-        setConnected(success);
-      } catch (error) {
-        console.error("Chat initialization error:", error);
+    console.log("💬 Initializing chat for room:", roomId, "user:", userName);
+
+    // Connect to socket if not already connected
+    const socket = socketService.connect();
+    console.log(
+      "🔌 Socket instance:",
+      socket.id,
+      "connected:",
+      socket.connected
+    );
+    setConnected(socket.connected);
+
+    // DON'T join room here - let MeetingPage handle it
+    // We'll just set up listeners
+
+    // Set up message listener - only use NEW project pattern
+    const handleReceiveMessage = (message) => {
+      console.log("💬 Received receive-message:", message);
+      // Convert NEW project format to our format
+      const formattedMessage = {
+        id: Date.now().toString(),
+        message: message.message,
+        userName: message.displayName,
+        userId: message.userId,
+        timestamp: message.timestamp
+      };
+      setMessages((prev) => [...prev, formattedMessage]);
+
+      // Increment unread count if chat is not visible
+      if (!isVisible) {
+        setUnreadCount((prev) => prev + 1);
       }
     };
 
-    startChat();
+    // Listen for receive-message only (NEW project pattern)
+    const unsubscribeReceiveMessage = socketService.onReceiveMessage(handleReceiveMessage);
+
+    // Add welcome message
+    setMessages([
+      {
+        id: "welcome",
+        message: `Chào mừng ${userName} đến với cuộc họp! (Room: ${roomId})`,
+        userName: "Hệ thống",
+        timestamp: new Date(),
+        isSystem: true,
+      },
+    ]);
 
     return () => {
-      leaveRtm();
+      unsubscribeReceiveMessage();
+    };
+  }, [roomId, userName, isVisible]);
+
+  // Handle socket connection status
+  useEffect(() => {
+    const handleConnect = () => {
+      console.log("💬 Chat connected");
+      setConnected(true);
+      // DON'T re-join room here - let MeetingPage handle it
+    };
+
+    const handleDisconnect = () => {
+      console.log("💬 Chat disconnected");
       setConnected(false);
     };
-  }, [roomId, channelName, uid]); // Stable values from useMemo
+
+    const handleError = (error) => {
+      console.error("💬 Socket error:", error);
+    };
+
+    socketService.on("connect", handleConnect);
+    socketService.on("disconnect", handleDisconnect);
+    socketService.on("connect_error", handleError);
+
+    return () => {
+      socketService.off("connect", handleConnect);
+      socketService.off("disconnect", handleDisconnect);
+      socketService.off("connect_error", handleError);
+    };
+  }, []);
 
   const handleSend = async () => {
-    if (input.trim() && connected) {
-      try {
-        const success = await sendMessage(input);
-        if (success) {
-          setMessages((prev) => [
-            ...prev,
-            {
-              id: Date.now() + Math.random(),
-              sender: userName || "Me",
-              text: input,
-              timestamp: new Date().toLocaleTimeString("vi-VN", {
-                hour: "2-digit",
-                minute: "2-digit",
-              }),
-              isMe: true,
-            },
-          ]);
-          setInput("");
-        }
-      } catch (error) {
-        console.error("Error sending message:", error);
+    if (!input.trim() || !connected) {
+      console.log("❌ Cannot send message:", {
+        input: input.trim(),
+        connected,
+        roomId,
+        userName,
+      });
+      return;
+    }
+
+    try {
+      // Use only NEW project pattern to avoid duplicates
+      const messageData = {
+        roomId: String(roomId), // Ensure string
+        message: input.trim(),
+        displayName: userName,
+        userId: String(userId), // Use consistent userId
+      };
+      
+      console.log("📤 Sending message:", messageData);
+      const success = socketService.sendMessage(messageData);
+
+      if (success) {
+        // Add message locally for sender (like in NEW project)
+        const localMessage = {
+          id: Date.now().toString(),
+          message: input.trim(),
+          userName: userName,
+          userId: String(userId), // Use consistent userId
+          timestamp: new Date().toISOString(),
+          isOwn: true // Mark as own message
+        };
+        setMessages((prev) => [...prev, localMessage]);
+        
+        setInput("");
+        console.log("✅ Message sent successfully");
+      } else {
+        console.log("❌ Failed to send message");
       }
+    } catch (error) {
+      console.error("❌ Error sending message:", error);
     }
   };
 
@@ -103,100 +164,159 @@ export default function ChatBox({ roomId, userName }) {
     }
   };
 
+  const toggleVisibility = () => {
+    setIsVisible(!isVisible);
+    if (!isVisible) {
+      setUnreadCount(0); // Reset unread count when opening chat
+    }
+  };
+
+  const formatTime = (timestamp) => {
+    return new Date(timestamp).toLocaleTimeString("vi-VN", {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
+
+  const getAvatarColor = (userName) => {
+    const colors = [
+      "#f56565",
+      "#48bb78",
+      "#ed8936",
+      "#4299e1",
+      "#9f7aea",
+      "#38b2ac",
+    ];
+    const hash = userName.split("").reduce((a, b) => {
+      a = (a << 5) - a + b.charCodeAt(0);
+      return a & a;
+    }, 0);
+    return colors[Math.abs(hash) % colors.length];
+  };
+
   return (
-    <div className="flex flex-col h-full">
-      {/* Header */}
-      <div className="p-4 border-b">
-        <div className="flex items-center gap-2">
-          <MessageCircle size={16} />
-          <h3 className="font-semibold">Chat</h3>
+    <div className="h-full flex flex-col">
+      {/* Chat Header */}
+      <div
+        className="flex items-center justify-between p-3 border-b bg-gray-50 cursor-pointer"
+        onClick={toggleVisibility}
+      >
+        <div className="flex items-center space-x-2">
+          <MessageCircle size={18} className="text-blue-500" />
+          <Text strong>Chat</Text>
+          {unreadCount > 0 && <Badge count={unreadCount} size="small" />}
+        </div>
+
+        <div className="flex items-center space-x-2">
           <div
             className={`w-2 h-2 rounded-full ${
               connected ? "bg-green-500" : "bg-red-500"
             }`}
           />
+          <Text type="secondary" className="text-xs">
+            {connected ? "Đã kết nối" : "Mất kết nối"}
+          </Text>
+          <Text type="secondary" className="text-xs">
+            (Room: {roomId})
+          </Text>
         </div>
       </div>
 
-      {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-4">
-        <List
-          dataSource={messages}
-          renderItem={(message) => (
-            <List.Item style={{ border: "none", padding: "8px 0" }}>
-              <div
-                className={`w-full ${
-                  message.isSystem
-                    ? "text-center"
-                    : message.isMe
-                    ? "text-right"
-                    : "text-left"
-                }`}
-              >
+      {isVisible && (
+        <>
+          {/* Messages */}
+          <div
+            ref={chatContainerRef}
+            className="flex-1 overflow-y-auto p-3 space-y-3"
+            style={{ maxHeight: "400px" }}
+          >
+            {messages.length === 0 ? (
+              <div className="text-center text-gray-500 py-8">
+                <MessageCircle size={32} className="mx-auto mb-2 opacity-50" />
+                <Text type="secondary">Chưa có tin nhắn nào</Text>
+              </div>
+            ) : (
+              messages.map((msg) => (
                 <div
-                  className={`inline-block max-w-[80%] p-2 rounded-lg ${
-                    message.isSystem
-                      ? "bg-yellow-100 text-yellow-800 border border-yellow-300"
-                      : message.isMe
-                      ? "bg-blue-500 text-white"
-                      : "bg-gray-100 text-gray-800"
+                  key={msg.id}
+                  className={`flex ${
+                    msg.isSystem ? "justify-center" : "justify-start"
                   }`}
                 >
-                  {!message.isMe && !message.isSystem && (
-                    <Text
-                      strong
-                      style={{
-                        fontSize: "12px",
-                        color: message.isMe ? "#fff" : "#666",
-                        display: "block",
-                        marginBottom: "2px",
-                      }}
-                    >
-                      {message.sender}
-                    </Text>
+                  {msg.isSystem ? (
+                    <div className="bg-gray-100 px-3 py-1 rounded-full">
+                      <Text type="secondary" className="text-xs">
+                        {msg.message}
+                      </Text>
+                    </div>
+                  ) : (
+                    <div className={`flex space-x-2 max-w-xs ${
+                      msg.isOwn ? 'ml-auto' : ''
+                    }`}>
+                      <Avatar
+                        size="small"
+                        style={{
+                          backgroundColor: getAvatarColor(msg.userName),
+                        }}
+                        icon={<User size={12} />}
+                      >
+                        {msg.userName?.charAt(0)?.toUpperCase()}
+                      </Avatar>
+                      <div className="flex-1">
+                        <div className="flex items-center space-x-2 mb-1">
+                          <Text strong className="text-sm">
+                            {msg.userName}
+                            {msg.isOwn && (
+                              <Text type="secondary" className="text-xs ml-1">
+                                (Bạn)
+                              </Text>
+                            )}
+                          </Text>
+                          <Text type="secondary" className="text-xs">
+                            {formatTime(msg.timestamp)}
+                          </Text>
+                        </div>
+                        <div className={`border rounded-lg px-3 py-2 shadow-sm ${
+                          msg.isOwn ? 'bg-blue-50 border-blue-200' : 'bg-white'
+                        }`}>
+                          <Text className="text-sm">{msg.message}</Text>
+                        </div>
+                      </div>
+                    </div>
                   )}
-                  <div style={{ wordBreak: "break-word" }}>{message.text}</div>
-                  <Text
-                    style={{
-                      fontSize: "10px",
-                      color: message.isSystem
-                        ? "rgba(180, 83, 9, 0.7)"
-                        : message.isMe
-                        ? "rgba(255,255,255,0.7)"
-                        : "#999",
-                      display: "block",
-                      marginTop: "2px",
-                    }}
-                  >
-                    {message.timestamp}
-                  </Text>
                 </div>
-              </div>
-            </List.Item>
-          )}
-          locale={{ emptyText: "Chưa có tin nhắn nào" }}
-        />
-      </div>
+              ))
+            )}
+            <div ref={messagesEndRef} />
+          </div>
 
-      {/* Input */}
-      <div className="p-4 border-t">
-        <Space.Compact style={{ width: "100%" }}>
-          <Input
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyPress={handleKeyPress}
-            placeholder={connected ? "Nhập tin nhắn..." : "Đang kết nối..."}
-            disabled={!connected}
-            maxLength={200}
-          />
-          <Button
-            type="primary"
-            icon={<Send size={16} />}
-            onClick={handleSend}
-            disabled={!connected || !input.trim()}
-          />
-        </Space.Compact>
-      </div>
+          {/* Input */}
+          <div className="p-3 border-t bg-white">
+            <Space.Compact className="w-full">
+              <Input
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyPress={handleKeyPress}
+                placeholder={connected ? "Nhập tin nhắn..." : "Đang kết nối..."}
+                disabled={!connected}
+                maxLength={500}
+              />
+              <Button
+                type="primary"
+                icon={<Send size={16} />}
+                onClick={handleSend}
+                disabled={!connected || !input.trim()}
+              />
+            </Space.Compact>
+
+            {input.length > 0 && (
+              <Text type="secondary" className="text-xs">
+                {input.length}/500 ký tự
+              </Text>
+            )}
+          </div>
+        </>
+      )}
     </div>
   );
 }

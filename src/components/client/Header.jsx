@@ -1,5 +1,3 @@
-
-import { useNavigate } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import { authSelector, removeAuth } from "../../reduxs/reducers/AuthReducer";
 import { useState, useRef, useEffect } from "react";
@@ -22,13 +20,9 @@ const Header = () => {
   const [showDropdown, setShowDropdown] = useState(false);
   const dropdownRef = useRef(null);
 
-
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(event.target)
-      ) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
         setShowDropdown(false);
       }
     };
@@ -86,8 +80,9 @@ const Header = () => {
                 </span>
               </div>
               <ChevronDown
-                className={`w-4 h-4 ml-1 text-purple-700 transition-transform ${showDropdown ? "rotate-180" : ""
-                  }`}
+                className={`w-4 h-4 ml-1 text-purple-700 transition-transform ${
+                  showDropdown ? "rotate-180" : ""
+                }`}
               />
             </div>
             {showDropdown && (
