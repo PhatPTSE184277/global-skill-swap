@@ -7,6 +7,7 @@ import MeetingHeader from "../../components/user/Meeting/MeetingHeader";
 import VideoSection from "../../components/user/Meeting/VideoSection";
 import Participants from "../../components/user/Meeting/Participants";
 import useAgora from "../../hooks/useAgora";
+import socketService from "../../services/socketService";
 
 export default function MeetingPage() {
   const { roomId } = useParams();
@@ -19,7 +20,41 @@ export default function MeetingPage() {
     return uidFromParams || Math.floor(Math.random() * 100000);
   }, [searchParams]);
 
-  // Validate required params
+  const [isLeaving, setIsLeaving] = useState(false);
+
+  // Join socket room when component mounts
+  useEffect(() => {
+    if (roomId && userName && uid) {
+      console.log("🔌 Joining socket room...", { roomId, userName, uid });
+      console.log("🔍 Debug: MeetingPage roomId =", roomId, "type:", typeof roomId);
+      
+      // Connect first
+      const socket = socketService.connect();
+      
+      // Wait for connection then join
+      const joinWhenReady = () => {
+        if (socket.connected) {
+          socketService.joinRoom({
+            roomId: String(roomId), // Ensure string
+            userName,
+            userId: String(uid), // Ensure string
+          });
+        } else {
+          setTimeout(joinWhenReady, 100);
+        }
+      };
+      
+      joinWhenReady();
+    }
+
+    return () => {
+      if (roomId) {
+        console.log("🔌 Leaving socket room...", { roomId });
+        socketService.leaveRoom({ roomId: String(roomId) });
+      }
+    };
+  }, [roomId, userName, uid]);
+
   useEffect(() => {
     if (!roomId) {
       message.error("Room ID không hợp lệ");
@@ -38,8 +73,21 @@ export default function MeetingPage() {
     }
   }, [roomId, userName, uid, navigate]);
 
-  const handleBackToLobby = () => {
-    if (window.confirm("Bạn có chắc muốn rời khỏi cuộc họp?")) {
+  const handleLeaveMeeting = async () => {
+    console.log("🚪 Starting leave process...", { roomId, uid });
+    setIsLeaving(true);
+    try {
+      // Leave Agora channel via hook
+      console.log("🎥 Leaving Agora channel...");
+      await leaveChannel();
+      console.log("✅ Left Agora channel successfully");
+
+      message.success("Đã rời khỏi cuộc họp");
+      navigate("/meeting-lobby");
+    } catch (error) {
+      console.error("❌ Error leaving meeting:", error);
+      message.error("Lỗi khi rời khỏi cuộc họp");
+      // Still navigate back even if there's an error
       navigate("/meeting-lobby");
     }
   };
@@ -81,12 +129,8 @@ export default function MeetingPage() {
               userId={uid}
             />
           </div>
-          <div className="flex-1 overflow-hidden">
-            <ChatBox 
-              roomId={roomId} 
-              userName={userName} 
-              userId={uid}
-            />
+          <div className="flex-1 border-t overflow-hidden">
+            <ChatBox roomId={roomId} userName={userName} userId={uid} />
           </div>
         </div>
       </div>

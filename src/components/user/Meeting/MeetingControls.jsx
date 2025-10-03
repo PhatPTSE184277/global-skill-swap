@@ -3,33 +3,29 @@ import { Camera, CameraOff, Monitor, MonitorOff, Mic, MicOff, PhoneOff } from "l
 import { Button, Tooltip } from "antd";
 import useAgora from "../../../hooks/useAgora";
 
-export default function MeetingControls({ 
-  onLeave, 
-  isLeaving,
-  isCameraOn,
-  isMicOn,
-  isScreenSharing,
-  remoteScreenUser,
-  toggleCamera,
-  toggleMicrophone,
-  toggleScreenShare
-}) {
-  // Debug states
-  console.log('🎮 MeetingControls states:', {
+export default function MeetingControls({ onLeave, isLeaving }) {
+  const {
     isCameraOn,
     isMicOn,
     isScreenSharing,
-    hasToggleCamera: !!toggleCamera,
-    hasToggleMic: !!toggleMicrophone
-  });
+    toggleCamera,
+    toggleMicrophone,
+    toggleScreenShare,
+  } = useAgora();
 
-  // Handle camera toggle with debug
-  const handleCameraToggle = () => {
-    console.log('📹 Camera button clicked, current state:', isCameraOn);
-    if (toggleCamera) {
-      toggleCamera();
-    } else {
-      console.error('❌ toggleCamera function not available');
+  const handleToggleCamera = async () => {
+    try {
+      await toggleCamera();
+    } catch (error) {
+      console.error("Error toggling camera:", error);
+    }
+  };
+
+  const handleToggleMic = async () => {
+    try {
+      await toggleMicrophone();
+    } catch (error) {
+      console.error("Error toggling microphone:", error);
     }
   };
 
@@ -70,13 +66,9 @@ export default function MeetingControls({
         />
       </Tooltip>
 
-      <Tooltip title={
-        !canShareScreen && remoteScreenUser 
-          ? `User ${remoteScreenUser.uid} đang chia sẻ màn hình`
-          : isScreenSharing 
-          ? "Dừng chia sẻ màn hình" 
-          : "Chia sẻ màn hình"
-      }>
+      <Tooltip
+        title={isScreenSharing ? "Dừng chia sẻ màn hình" : "Chia sẻ màn hình"}
+      >
         <Button
           type={isScreenSharing ? "primary" : "default"}
           shape="circle"
@@ -96,6 +88,32 @@ export default function MeetingControls({
           icon={<PhoneOff className="w-5 h-5" />}
           onClick={onLeave}
           loading={isLeaving}
+        />
+      </Tooltip>
+
+      <Tooltip title="Chat">
+        <Button
+          type="default"
+          shape="circle"
+          size="large"
+          icon={<MessageSquare className="w-5 h-5" />}
+          onClick={() => {
+            // TODO: Toggle chat panel
+            console.log("Chat toggle not implemented yet");
+          }}
+        />
+      </Tooltip>
+
+      <Tooltip title="Thêm">
+        <Button
+          type="default"
+          shape="circle"
+          size="large"
+          icon={<MoreHorizontal className="w-5 h-5" />}
+          onClick={() => {
+            // TODO: Show more options
+            console.log("More options not implemented yet");
+          }}
         />
       </Tooltip>
     </div>
