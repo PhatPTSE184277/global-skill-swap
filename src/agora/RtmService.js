@@ -97,14 +97,17 @@ export const sendScreenSharingStatus = async (isSharing) => {
       return false;
     }
 
-    socket.emit('screen-sharing-status', {
+    const statusData = {
       roomId: currentChannelName,
       uid: currentUid,
       isSharing,
-      userName: `User_${currentUid}`
-    });
+      userName: `User_${currentUid}`,
+      timestamp: Date.now()
+    };
 
-    console.log('📺 Screen sharing status sent:', { uid: currentUid, isSharing });
+    socket.emit('screen-sharing-status', statusData);
+
+    console.log('📺 Screen sharing status sent:', statusData);
     return true;
   } catch (error) {
     console.error('Error sending screen sharing status:', error);
@@ -115,9 +118,18 @@ export const sendScreenSharingStatus = async (isSharing) => {
 // Listen for screen sharing status from other users
 export const onScreenSharingStatusReceived = (callback) => {
   if (socket) {
+    // Remove any existing listener first to avoid duplicates
+    socket.off('screen-sharing-status');
+    
     socket.on('screen-sharing-status', (data) => {
       console.log('📺 Received screen sharing status:', data);
-      callback(data);
+      
+      // Only process if it's not from current user
+      if (data.uid !== currentUid) {
+        callback(data);
+      } else {
+        console.log('📺 Ignoring own screen sharing status signal');
+      }
     });
   }
 };

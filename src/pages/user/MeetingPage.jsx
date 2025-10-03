@@ -8,7 +8,7 @@ import VideoSection from "../../components/user/Meeting/VideoSection";
 import MeetingControls from "../../components/user/Meeting/MeetingControls";
 import Participants from "../../components/user/Meeting/Participants";
 import useAgora from "../../hooks/useAgora";
-import apiService from "../../services/apiService";
+import socketService from "../../services/socketService";
 
 export default function MeetingPage() {
   const { roomId } = useParams();
@@ -27,6 +27,39 @@ export default function MeetingPage() {
   }, [searchParams]);
 
   const [isLeaving, setIsLeaving] = useState(false);
+
+  // Join socket room when component mounts
+  useEffect(() => {
+    if (roomId && userName && uid) {
+      console.log("🔌 Joining socket room...", { roomId, userName, uid });
+      console.log("🔍 Debug: MeetingPage roomId =", roomId, "type:", typeof roomId);
+      
+      // Connect first
+      const socket = socketService.connect();
+      
+      // Wait for connection then join
+      const joinWhenReady = () => {
+        if (socket.connected) {
+          socketService.joinRoom({
+            roomId: String(roomId), // Ensure string
+            userName,
+            userId: String(uid), // Ensure string
+          });
+        } else {
+          setTimeout(joinWhenReady, 100);
+        }
+      };
+      
+      joinWhenReady();
+    }
+
+    return () => {
+      if (roomId) {
+        console.log("🔌 Leaving socket room...", { roomId });
+        socketService.leaveRoom({ roomId: String(roomId) });
+      }
+    };
+  }, [roomId, userName, uid]);
 
   useEffect(() => {
     if (!roomId) {
@@ -52,21 +85,7 @@ export default function MeetingPage() {
     console.log("🚪 Starting leave process...", { roomId, uid });
     setIsLeaving(true);
     try {
-      // 1. Call backend API to leave room first
-      try {
-        const leaveData = {
-          roomId: parseInt(roomId),
-          uid: parseInt(uid),
-        };
-        console.log("📡 Calling backend leave API...", leaveData);
-        const response = await apiService.leaveRoom(roomId, leaveData);
-        console.log("✅ Backend leave response:", response);
-      } catch (apiError) {
-        console.error("❌ Error leaving room via API:", apiError);
-        // Continue with Agora cleanup even if API fails
-      }
-
-      // 2. Leave Agora channel
+      // Leave Agora channel via hook
       console.log("🎥 Leaving Agora channel...");
       await leaveChannel();
       console.log("✅ Left Agora channel successfully");
@@ -134,7 +153,7 @@ export default function MeetingPage() {
             <Participants roomId={roomId} />
           </div>
           <div className="flex-1 border-t overflow-hidden">
-            <ChatBox roomId={roomId} userName={userName} />
+            <ChatBox roomId={roomId} userName={userName} userId={uid} />
           </div>
         </div>
       </div>
