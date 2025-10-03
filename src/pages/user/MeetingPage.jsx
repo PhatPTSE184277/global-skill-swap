@@ -5,7 +5,6 @@ import { ArrowLeft } from "lucide-react";
 import ChatBox from "../../components/user/Meeting/ChatBox";
 import MeetingHeader from "../../components/user/Meeting/MeetingHeader";
 import VideoSection from "../../components/user/Meeting/VideoSection";
-import MeetingControls from "../../components/user/Meeting/MeetingControls";
 import Participants from "../../components/user/Meeting/Participants";
 import useAgora from "../../hooks/useAgora";
 import socketService from "../../services/socketService";
@@ -14,19 +13,17 @@ export default function MeetingPage() {
   const { roomId } = useParams();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { leaveChannel } = useAgora();
 
   const userName = searchParams.get("userName") || "Anonymous";
-
-  // Use useMemo to ensure uid doesn't change on re-renders
   const uid = useMemo(() => {
     const uidFromParams = searchParams.get("uid");
-    const generatedUid = uidFromParams || Math.floor(Math.random() * 100000);
-    console.log("UID generated/retrieved:", generatedUid);
-    return generatedUid;
+    return uidFromParams || Math.floor(Math.random() * 100000);
   }, [searchParams]);
 
   const [isLeaving, setIsLeaving] = useState(false);
+
+  // Get Agora hook values
+  const { leaveChannel, remoteUsers, isJoined } = useAgora();
 
   // Join socket room when component mounts
   useEffect(() => {
@@ -71,15 +68,19 @@ export default function MeetingPage() {
     if (!userName || userName === "Anonymous") {
       const newUserName = prompt("Nhập tên của bạn:");
       if (newUserName) {
-        const newUrl = `/meeting/${roomId}?userName=${encodeURIComponent(
-          newUserName
-        )}&uid=${uid}`;
+        const newUrl = `/meeting/${roomId}?userName=${encodeURIComponent(newUserName)}&uid=${uid}`;
         navigate(newUrl, { replace: true });
       } else {
         navigate("/meeting-lobby");
       }
     }
   }, [roomId, userName, uid, navigate]);
+
+  const handleBackToLobby = () => {
+    if (window.confirm("Bạn có chắc muốn rời khỏi cuộc họp?")) {
+      navigate("/meeting-lobby");
+    }
+  };
 
   const handleLeaveMeeting = async () => {
     console.log("🚪 Starting leave process...", { roomId, uid });
@@ -97,32 +98,13 @@ export default function MeetingPage() {
       message.error("Lỗi khi rời khỏi cuộc họp");
       // Still navigate back even if there's an error
       navigate("/meeting-lobby");
-    } finally {
-      setIsLeaving(false);
     }
   };
 
-  const handleBackToLobby = () => {
-    navigate("/meeting-lobby");
-  };
-
-  if (!roomId) {
-    return (
-      <div className="h-screen flex items-center justify-center">
-        <div className="text-center">
-          <h2>Room không tồn tại</h2>
-          <Button type="primary" onClick={handleBackToLobby}>
-            Quay lại Lobby
-          </Button>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="h-screen flex flex-col">
+    <div className="h-screen flex flex-col bg-gray-100">
       {/* Header */}
-      <div className="flex items-center justify-between bg-white border-b px-4 py-2">
+      <div className="flex items-center justify-between p-4 bg-white border-b">
         <Button
           type="text"
           icon={<ArrowLeft size={16} />}
@@ -135,7 +117,7 @@ export default function MeetingPage() {
         </div>
       </div>
 
-      {/* Main */}
+      {/* Main Content */}
       <div className="flex flex-1 overflow-hidden">
         {/* Video Section */}
         <div className="flex flex-col flex-1 p-4">
@@ -143,14 +125,20 @@ export default function MeetingPage() {
             roomId={roomId}
             userName={userName}
             uid={parseInt(uid)}
+            onLeave={() => navigate("/meeting-lobby")}
           />
-          <MeetingControls onLeave={handleLeaveMeeting} isLeaving={isLeaving} />
         </div>
 
         {/* Sidebar */}
         <div className="w-80 border-l flex flex-col h-full">
           <div className="h-1/3 overflow-hidden">
-            <Participants roomId={roomId} />
+            <Participants 
+              roomId={roomId} 
+              userName={userName}
+              userId={uid}
+              remoteUsers={remoteUsers}
+              isJoined={isJoined}
+            />
           </div>
           <div className="flex-1 border-t overflow-hidden">
             <ChatBox roomId={roomId} userName={userName} userId={uid} />

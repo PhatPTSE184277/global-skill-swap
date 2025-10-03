@@ -1,29 +1,20 @@
 import React from "react";
-import {
-  Camera,
-  CameraOff,
-  Monitor,
-  MonitorOff,
-  Mic,
-  MicOff,
-  PhoneOff,
-  MessageSquare,
-  MoreHorizontal,
-} from "lucide-react";
+import { Camera, CameraOff, Monitor, MonitorOff, Mic, MicOff, PhoneOff, MessageSquare, MoreHorizontal } from "lucide-react";
 import { Button, Tooltip } from "antd";
-import useAgora from "../../../hooks/useAgora";
 
-export default function MeetingControls({ onLeave, isLeaving }) {
-  const {
-    isCameraOn,
-    isMicOn,
-    isScreenSharing,
-    toggleCamera,
-    toggleMicrophone,
-    toggleScreenShare,
-  } = useAgora();
+export default function MeetingControls({ 
+  onLeave, 
+  isLeaving,
+  isCameraOn,
+  isMicOn,
+  isScreenSharing,
+  remoteScreenUser,
+  toggleCamera,
+  toggleMicrophone,
+  toggleScreenShare
+}) {
 
-  const handleToggleCamera = async () => {
+  const handleCameraToggle = async () => {
     try {
       await toggleCamera();
     } catch (error) {
@@ -31,7 +22,7 @@ export default function MeetingControls({ onLeave, isLeaving }) {
     }
   };
 
-  const handleToggleMic = async () => {
+  const handleMicToggle = async () => {
     try {
       await toggleMicrophone();
     } catch (error) {
@@ -39,13 +30,8 @@ export default function MeetingControls({ onLeave, isLeaving }) {
     }
   };
 
-  const handleToggleScreenShare = async () => {
-    try {
-      await toggleScreenShare();
-    } catch (error) {
-      console.error("Error toggling screen share:", error);
-    }
-  };
+  // Disable screen share button if someone else is sharing (like NEW project)
+  const canShareScreen = !remoteScreenUser || isScreenSharing;
 
   return (
     <div className="flex justify-center gap-4 py-4 bg-white border-t">
@@ -55,14 +41,8 @@ export default function MeetingControls({ onLeave, isLeaving }) {
           danger={!isCameraOn}
           shape="circle"
           size="large"
-          icon={
-            isCameraOn ? (
-              <Camera className="w-5 h-5" />
-            ) : (
-              <CameraOff className="w-5 h-5" />
-            )
-          }
-          onClick={handleToggleCamera}
+          icon={isCameraOn ? <Camera className="w-5 h-5" /> : <CameraOff className="w-5 h-5" />}
+          onClick={handleCameraToggle}
         />
       </Tooltip>
 
@@ -72,14 +52,8 @@ export default function MeetingControls({ onLeave, isLeaving }) {
           danger={!isMicOn}
           shape="circle"
           size="large"
-          icon={
-            isMicOn ? (
-              <Mic className="w-5 h-5" />
-            ) : (
-              <MicOff className="w-5 h-5" />
-            )
-          }
-          onClick={handleToggleMic}
+          icon={isMicOn ? <Mic className="w-5 h-5" /> : <MicOff className="w-5 h-5" />}
+          onClick={handleMicToggle}
         />
       </Tooltip>
 
@@ -90,14 +64,9 @@ export default function MeetingControls({ onLeave, isLeaving }) {
           type={isScreenSharing ? "primary" : "default"}
           shape="circle"
           size="large"
-          icon={
-            isScreenSharing ? (
-              <MonitorOff className="w-5 h-5" />
-            ) : (
-              <Monitor className="w-5 h-5" />
-            )
-          }
-          onClick={handleToggleScreenShare}
+          disabled={!canShareScreen} // NEW: Disable if someone else is sharing
+          icon={isScreenSharing ? <MonitorOff className="w-5 h-5" /> : <Monitor className="w-5 h-5" />}
+          onClick={toggleScreenShare}
         />
       </Tooltip>
 

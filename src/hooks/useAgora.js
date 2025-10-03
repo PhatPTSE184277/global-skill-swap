@@ -4,10 +4,14 @@ import socketService from '../services/socketService';
 import apiService from '../services/apiService';
 
 const useAgora = () => {
+  // Debug log to ensure file is loaded correctly
+  console.log('🔧 useAgora hook initialized with remoteScreenUser support');
+  
   const [localVideoTrack, setLocalVideoTrack] = useState(null);
   const [localAudioTrack, setLocalAudioTrack] = useState(null);
   const [localScreenTrack, setLocalScreenTrack] = useState(null);
   const [remoteUsers, setRemoteUsers] = useState([]);
+  const [remoteScreenUser, setRemoteScreenUser] = useState(null); // NEW: Track remote screen share
   const [isJoined, setIsJoined] = useState(false);
   const [isCameraOn, setIsCameraOn] = useState(false);
   const [isMicOn, setIsMicOn] = useState(false);
@@ -123,6 +127,16 @@ const useAgora = () => {
 
   // Setup socket event listeners (simplified)
   useEffect(() => {
+    // Debug log states
+    console.log('DEBUG: useAgora hook states:', {
+      remoteScreenUser,
+      isJoined,
+      isCameraOn,
+      isMicOn,
+      isScreenSharing,
+      remoteUsersCount: remoteUsers.length
+    });
+
     const cleanupFunctions = [];
 
     // Media status updates
@@ -356,32 +370,66 @@ const useAgora = () => {
         
         // Try to create and publish video track
         try {
+          console.log('📹 Attempting to create camera video track...');
           const videoTrack = await AgoraRTC.createCameraVideoTrack({
             optimizationMode: 'motion',
             encoderConfig: '480p_1'
           });
+          console.log('📹 Camera track created successfully, publishing...');
           await client.publish(videoTrack);
           setLocalVideoTrack(videoTrack);
           setIsCameraOn(true);
           console.log('✅ Camera enabled and published');
         } catch (cameraError) {
-          console.warn('⚠️ Camera not available:', cameraError.message);
-          // Continue without camera
+          console.error('❌ Camera error details:', {
+            code: cameraError.code,
+            message: cameraError.message,
+            name: cameraError.name,
+            stack: cameraError.stack
+          });
+          
+          // Specific error handling
+          if (cameraError.code === 'PERMISSION_DENIED') {
+            console.error('❌ Camera permission denied by user');
+          } else if (cameraError.code === 'DEVICE_NOT_FOUND') {
+            console.error('❌ No camera device found');
+          } else if (cameraError.code === 'DEVICE_BUSY') {
+            console.error('❌ Camera is being used by another application');
+          }
+          
+          // Continue without camera but log the error
         }
 
         // Try to create and publish audio track
         try {
+          console.log('🎤 Attempting to create microphone audio track...');
           const audioTrack = await AgoraRTC.createMicrophoneAudioTrack({
             echoCancellation: true,
             noiseSuppression: true
           });
+          console.log('🎤 Audio track created successfully, publishing...');
           await client.publish(audioTrack);
           setLocalAudioTrack(audioTrack);
           setIsMicOn(true);
           console.log('✅ Microphone enabled and published');
         } catch (micError) {
-          console.warn('⚠️ Microphone not available:', micError.message);
-          // Continue without microphone
+          console.error('❌ Microphone error details:', {
+            code: micError.code,
+            message: micError.message,
+            name: micError.name,
+            stack: micError.stack
+          });
+          
+          // Specific error handling
+          if (micError.code === 'PERMISSION_DENIED') {
+            console.error('❌ Microphone permission denied by user');
+          } else if (micError.code === 'DEVICE_NOT_FOUND') {
+            console.error('❌ No microphone device found');
+          } else if (micError.code === 'DEVICE_BUSY') {
+            console.error('❌ Microphone is being used by another application');
+          }
+          
+          // Continue without microphone but log the error
         }
 
       } catch (mediaError) {
@@ -402,22 +450,31 @@ const useAgora = () => {
   const toggleCamera = useCallback(async () => {
     try {
       if (!localVideoTrack) {
+        console.log('📹 Turning camera ON...');
         const videoTrack = await AgoraRTC.createCameraVideoTrack({
           encoderConfig: '720p_2'
         });
         
-        if (isJoined) {
+        if (isJoined && clientRef.current) {
+          console.log('📹 Publishing video track...');
           await clientRef.current.publish(videoTrack);
+          console.log('📹 Video track published successfully');
         }
         
         setLocalVideoTrack(videoTrack);
         setIsCameraOn(true);
+        console.log('✅ Camera turned ON');
       } else {
-        await clientRef.current.unpublish(localVideoTrack);
+        console.log('📹 Turning camera OFF...');
+        if (isJoined && clientRef.current) {
+          await clientRef.current.unpublish(localVideoTrack);
+          console.log('📹 Video track unpublished');
+        }
         localVideoTrack.stop();
         localVideoTrack.close();
         setLocalVideoTrack(null);
         setIsCameraOn(false);
+        console.log('✅ Camera turned OFF');
       }
 
       // Notify others via socket
@@ -431,7 +488,23 @@ const useAgora = () => {
       }
 
     } catch (error) {
-      console.error('❌ Error toggling camera:', error);
+      console.error('❌ Error toggling camera:', {
+        code: error.code,
+        message: error.message,
+        name: error.name
+      });
+      
+      // Specific error handling
+      if (error.code === 'PERMISSION_DENIED') {
+        alert('Vui lòng cấp quyền truy cập camera để sử dụng chức năng này');
+      } else if (error.code === 'DEVICE_NOT_FOUND') {
+        alert('Không tìm thấy camera trên thiết bị');
+      } else if (error.code === 'DEVICE_BUSY') {
+        alert('Camera đang được sử dụng bởi ứng dụng khác');
+      } else {
+        alert('Lỗi khi bật/tắt camera: ' + error.message);
+      }
+      
       throw error;
     }
   }, [localVideoTrack, isJoined, isCameraOn, isMicOn]);
@@ -588,6 +661,7 @@ const useAgora = () => {
     localAudioTrack,
     localScreenTrack,
     remoteUsers,
+    remoteScreenUser: remoteScreenUser || null, // NEW: Expose remote screen user with fallback
     isJoined,
     isCameraOn,
     isMicOn,

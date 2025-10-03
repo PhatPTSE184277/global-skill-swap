@@ -2,15 +2,12 @@ import React, { useState, useEffect } from "react";
 import { MicOff, VideoOff, Mic, Video, RefreshCw, User, Monitor } from "lucide-react";
 import { Button, Avatar, Badge, List, Typography } from "antd";
 import socketService from "../../../services/socketService";
-import useAgora from "../../../hooks/useAgora";
 
 const { Text } = Typography;
 
-export default function Participants({ roomId }) {
+export default function Participants({ roomId, remoteUsers, isJoined }) {
   const [participants, setParticipants] = useState([]);
   const [loading, setLoading] = useState(false);
-  
-  const { remoteUsers, isJoined } = useAgora();
 
   // Combine socket participants with Agora remote users
   useEffect(() => {
