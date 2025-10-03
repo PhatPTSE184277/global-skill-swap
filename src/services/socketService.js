@@ -7,11 +7,13 @@ class SocketService {
     this.eventListeners = new Map();
   }
 
-  connect(serverUrl = 'http://localhost:3000') {
+  connect(serverUrl = import.meta.env.VITE_SOCKET_URL || 'http://localhost:3000') {
     if (this.socket && this.isConnected) {
       return this.socket;
     }
 
+    console.log('🔌 Connecting to Socket.IO server:', serverUrl);
+    
     this.socket = io(serverUrl, {
       transports: ['websocket', 'polling'],
       autoConnect: true,

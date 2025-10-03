@@ -32,6 +32,7 @@ export default function ChatBox({ roomId, userName, userId }) {
     }
 
     console.log("💬 Initializing chat for room:", roomId, "user:", userName);
+    console.log("🔌 Socket URL from env:", import.meta.env.VITE_SOCKET_URL);
 
     // Connect to socket if not already connected
     const socket = socketService.connect();
