@@ -6,17 +6,42 @@ import useAgora from "../../../hooks/useAgora";
 
 const { Text } = Typography;
 
-export default function Participants({ roomId }) {
+export default function Participants({ roomId, userName, userId }) {
   const [participants, setParticipants] = useState([]);
   const [loading, setLoading] = useState(false);
   
-  const { remoteUsers, isJoined } = useAgora();
+  const { remoteUsers, isJoined, isCameraOn, isMicOn, isScreenSharing } = useAgora();
+
+  // Debug logging
+  useEffect(() => {
+    console.log('👥 Participants debug:', {
+      isJoined,
+      userName,
+      userId,
+      isCameraOn,
+      isMicOn,
+      participantCount: participants.length,
+      remoteUserCount: remoteUsers.length
+    });
+  }, [isJoined, userName, userId, isCameraOn, isMicOn, participants.length, remoteUsers.length]);
+
+  // Ensure participants list shows current user when joined
+  useEffect(() => {
+    if (isJoined) {
+      console.log('👥 User joined - updating participants');
+      // Force re-render by triggering state update
+      setParticipants(prev => [...prev]);
+    }
+  }, [isJoined]);
 
   // Combine socket participants with Agora remote users
   useEffect(() => {
     if (!roomId) return;
 
     console.log('👥 Setting up participants listeners for room:', roomId);
+
+    // Ensure socket is connected
+    const socket = socketService.connect('http://localhost:3000');
 
     // Listen for participant updates from socket
     const handleRoomParticipants = (participantList) => {
@@ -105,7 +130,40 @@ export default function Participants({ roomId }) {
     return remoteUsers.some(user => user.uid.toString() === participant.userId?.toString());
   };
 
-  const totalParticipants = participants.length + (isJoined ? 1 : 0);
+  // Calculate total participants including self and remote users
+  const allParticipants = [
+    // Add self as first participant if joined
+    ...(isJoined ? [{
+      id: 'self',
+      userName: userName || 'Bạn',
+      userId: userId || 'self',
+      socketId: 'self',
+      isCameraOn: isCameraOn,
+      isMicOn: isMicOn,
+      isScreenSharing: isScreenSharing,
+      joinedAt: new Date(),
+      isSelf: true
+    }] : []),
+    // Add socket participants (other users who joined via socket)
+    ...participants,
+    // Add any remote Agora users not in socket participants
+    ...remoteUsers.map(user => ({
+      id: `agora_${user.uid}`,
+      userName: `User ${user.uid}`,
+      userId: user.uid.toString(),
+      socketId: `agora_${user.uid}`,
+      isCameraOn: !!user.videoTrack,
+      isMicOn: !!user.audioTrack,
+      isScreenSharing: false,
+      joinedAt: new Date(),
+      isAgoraOnly: true
+    })).filter(agoraUser => 
+      // Don't duplicate if already in socket participants
+      !participants.find(p => p.userId === agoraUser.userId)
+    )
+  ];
+
+  const totalParticipants = allParticipants.length;
 
   return (
     <div className="h-full flex flex-col">
@@ -129,21 +187,7 @@ export default function Participants({ roomId }) {
       <div className="flex-1 overflow-y-auto">
         <List
           size="small"
-          dataSource={[
-            // Add self as first participant if joined
-            ...(isJoined ? [{
-              id: 'self',
-              userName: 'Bạn',
-              userId: 'self',
-              socketId: 'self',
-              isCameraOn: true, // This should come from useAgora
-              isMicOn: true,    // This should come from useAgora
-              isScreenSharing: false,
-              joinedAt: new Date(),
-              isSelf: true
-            }] : []),
-            ...participants
-          ]}
+          dataSource={allParticipants}
           renderItem={(participant) => (
             <List.Item className="px-3 py-2">
               <div className="flex items-center justify-between w-full">
@@ -232,7 +276,7 @@ export default function Participants({ roomId }) {
       {/* Footer Info */}
       <div className="p-3 border-t bg-gray-50">
         <Text type="secondary" className="text-xs">
-          {participants.filter(p => isUserInAgoraCall(p)).length + (isJoined ? 1 : 0)} trong cuộc gọi video
+          {allParticipants.filter(p => p.isSelf || isUserInAgoraCall(p)).length} trong cuộc gọi video
         </Text>
       </div>
     </div>

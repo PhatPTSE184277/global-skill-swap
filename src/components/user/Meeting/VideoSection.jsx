@@ -1,218 +1,137 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useCallback } from "react";
 import { message, Spin } from "antd";
-import { Video, VideoOff, Users } from "lucide-react";
+import { Video, VideoOff, Users, Monitor } from "lucide-react";
 import useAgora from "../../../hooks/useAgora";
+import MeetingControls from "./MeetingControls";
 
-export default function VideoSection({ roomId, userName, uid }) {
+export default function VideoSection({ roomId, userName, uid, onLeave }) {
   const {
     localVideoTrack,
+    localAudioTrack,
     localScreenTrack,
-    isScreenSharing,
     remoteUsers,
+    remoteScreenUser, // NEW: Get remote screen user
     isJoined,
+    isCameraOn,
+    isMicOn,
+    isScreenSharing,
     joinChannel,
-    leaveChannel,
     connectionState,
+    toggleCamera,
+    toggleMicrophone,
+    toggleScreenShare,
   } = useAgora();
 
   const [loading, setLoading] = useState(false);
-  const [hasInitialized, setHasInitialized] = useState(false);
-  const [hasMounted, setHasMounted] = useState(false); // Track mounting
+  const [hasJoined, setHasJoined] = useState(false);
 
   const localVideoRef = useRef(null);
   const localScreenRef = useRef(null);
+  const remoteScreenRef = useRef(null); // NEW: Ref for remote screen
 
-  // Debug logging for screen sharing state changes
-  useEffect(() => {
-    console.log('🖥️ Screen sharing state changed:', {
-      isScreenSharing,
-      hasLocalScreenTrack: !!localScreenTrack,
-      totalRemoteUsers: remoteUsers.length
-    });
-  }, [isScreenSharing, localScreenTrack, remoteUsers.length]);
-
-  // Mark as mounted
-  useEffect(() => {
-    setHasMounted(true);
-    return () => setHasMounted(false);
-  }, []);
-
-  // Auto-join channel when component mounts (only once)
-  useEffect(() => {
-    if (
-      hasMounted &&
-      !hasInitialized &&
-      roomId &&
-      userName &&
-      uid &&
-      !isJoined &&
-      !loading
-    ) {
-      console.log("🚀 Auto-joining channel for the first time...");
-      handleJoinChannel();
-      setHasInitialized(true);
+  // Callback ref to ensure ref is set properly
+  const setLocalVideoRef = useCallback((element) => {
+    console.log('🎯 Setting local video ref:', !!element);
+    localVideoRef.current = element;
+    
+    // If we have both ref and track, play immediately
+    if (element && localVideoTrack) {
+      console.log('📹 Ref set, playing video immediately...');
+      localVideoTrack.play(element);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [roomId, userName, uid, hasInitialized, isJoined, loading, hasMounted]);
+  }, [localVideoTrack]);
 
-  // Cleanup when component unmounts
+  // Auto-join when component mounts
   useEffect(() => {
-    return () => {
-      if (isJoined) {
-        console.log("🧹 VideoSection unmounting, leaving channel...");
-        leaveChannel().catch((error) => {
-          console.error("❌ Error leaving on unmount:", error);
-        });
-      }
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isJoined]);
+    if (roomId && userName && uid && !hasJoined) {
+      console.log('🚀 Auto-joining channel...');
+      setHasJoined(true);
+      handleJoinChannel();
+    }
+  }, [roomId, userName, uid, hasJoined]);
+
+  // Play local video track
+  useEffect(() => {
+    console.log('🔍 VideoSection debug:', {
+      localVideoTrack: !!localVideoTrack,
+      localVideoRef: !!localVideoRef.current,
+      isJoined,
+      connectionState
+    });
+    
+    if (localVideoTrack && localVideoRef.current) {
+      console.log('📹 Playing local video track');
+      localVideoTrack.play(localVideoRef.current);
+    } else if (localVideoTrack && !localVideoRef.current) {
+      console.log('⏰ Waiting for DOM ref, retrying in 100ms...');
+      // Retry after DOM is ready
+      setTimeout(() => {
+        if (localVideoRef.current) {
+          console.log('📹 Playing local video track (delayed)');
+          localVideoTrack.play(localVideoRef.current);
+        } else {
+          console.log('❌ Still no DOM ref after delay');
+        }
+      }, 100);
+    } else {
+      console.log('❌ Cannot play video track:', {
+        hasTrack: !!localVideoTrack,
+        hasRef: !!localVideoRef.current
+      });
+    }
+  }, [localVideoTrack, isJoined, connectionState]);
+
+  // Force video track play when ref becomes available
+  useEffect(() => {
+    if (localVideoRef.current && localVideoTrack) {
+      console.log('🎯 Ref is now available, force playing video...');
+      localVideoTrack.play(localVideoRef.current);
+    }
+  }, [localVideoRef.current, localVideoTrack]);
+
+  // Play local screen track
+  useEffect(() => {
+    if (localScreenTrack && localScreenRef.current) {
+      console.log('🖥️ Playing local screen track');
+      localScreenTrack.play(localScreenRef.current);
+    }
+  }, [localScreenTrack]);
+
+  // Play remote screen track (NEW: Like NEW project)
+  useEffect(() => {
+    if (remoteScreenUser && remoteScreenUser.videoTrack && remoteScreenRef.current) {
+      console.log('🖥️ Playing remote screen track from user:', remoteScreenUser.uid);
+      remoteScreenUser.videoTrack.play(remoteScreenRef.current);
+    }
+  }, [remoteScreenUser]);
 
   const handleJoinChannel = async () => {
-    if (loading) {
-      console.log("⚠️ Already loading, skipping...");
-      return;
-    }
-
-    if (isJoined) {
-      console.log("⚠️ Already joined, skipping...");
-      return;
-    }
-
-    if (connectionState === "CONNECTED" || connectionState === "CONNECTING") {
-      console.log("⚠️ Already connected/connecting, skipping...");
-      return;
-    }
-
-    if (!roomId || !userName || !uid) {
-      console.error("❌ Missing required parameters:", {
-        roomId,
-        userName,
-        uid,
-      });
-      message.error("Thiếu thông tin cần thiết để tham gia cuộc gọi");
-      return;
-    }
-
     setLoading(true);
     try {
-      console.log("🎯 Joining video channel...", {
-        roomId,
-        userName,
-        uid: parseInt(uid),
-        currentState: connectionState,
-        isJoined,
-      });
-
+      console.log('🎯 Joining channel...', { roomId, userName, uid });
       await joinChannel(roomId, userName, parseInt(uid));
-      message.success("Đã tham gia video call thành công!");
+      console.log('✅ Successfully joined channel');
     } catch (error) {
-      console.error("❌ Error joining channel:", error);
-      if (error.code === "INVALID_OPERATION") {
-        message.error("Đang thử kết nối lại...");
-        // Try again after a short delay
-        setTimeout(() => {
-          handleJoinChannel();
-        }, 2000);
-      } else {
-        message.error("Lỗi khi tham gia video call: " + error.message);
-      }
+      console.error('❌ Error joining channel:', error);
+      message.error("Lỗi khi tham gia video call: " + error.message);
     } finally {
       setLoading(false);
     }
   };
 
-  // Play local video track
-  useEffect(() => {
-    const videoElement = localVideoRef.current;
-    if (localVideoTrack && videoElement) {
-      try {
-        localVideoTrack.play(videoElement);
-        console.log("📹 Local video track playing");
-      } catch (error) {
-        console.error("❌ Error playing local video:", error);
-      }
-    }
-
-    return () => {
-      if (localVideoTrack && videoElement) {
-        try {
-          localVideoTrack.stop();
-        } catch (error) {
-          console.error("❌ Error stopping local video:", error);
-        }
-      }
-    };
-  }, [localVideoTrack]);
-
-  // Play local screen track (similar to NEW project)
-  useEffect(() => {
-    const screenElement = localScreenRef.current;
-    if (localScreenTrack && screenElement) {
-      try {
-        console.log("🖥️ Playing local screen track");
-        localScreenTrack.play(screenElement);
-      } catch (error) {
-        console.error("❌ Error playing local screen:", error);
-      }
-    }
-
-    return () => {
-      // Cleanup when screen track changes
-      if (screenElement) {
-        try {
-          // Clear the video element
-          const videoElement = screenElement.querySelector('video');
-          if (videoElement) {
-            videoElement.srcObject = null;
-            videoElement.remove();
-          }
-        } catch (error) {
-          console.log('Screen cleanup error:', error);
-        }
-      }
-    };
-  }, [localScreenTrack]);
-
-  // Remote video component (improved similar to NEW project)
+  // Remote Video Card
   const RemoteVideoCard = ({ user }) => {
     const videoRef = useRef(null);
     const audioRef = useRef(null);
 
     useEffect(() => {
       if (user.videoTrack && videoRef.current) {
-        try {
-          console.log(`📹 Playing remote video for user ${user.uid}`);
-          user.videoTrack.play(videoRef.current);
-        } catch (error) {
-          console.error("❌ Error playing remote video:", error);
-        }
+        user.videoTrack.play(videoRef.current);
       }
-
-      return () => {
-        // Cleanup video element
-        if (videoRef.current) {
-          try {
-            const videoElement = videoRef.current.querySelector('video');
-            if (videoElement) {
-              videoElement.srcObject = null;
-            }
-          } catch (error) {
-            console.log('Remote video cleanup error:', error);
-          }
-        }
-      };
-    }, [user.videoTrack]);
-
-    useEffect(() => {
       if (user.audioTrack && audioRef.current) {
-        try {
-          user.audioTrack.play(audioRef.current);
-        } catch (error) {
-          console.error("❌ Error playing remote audio:", error);
-        }
+        user.audioTrack.play(audioRef.current);
       }
-    }, [user.audioTrack]);
+    }, [user.videoTrack, user.audioTrack]);
 
     return (
       <div className="relative bg-gray-900 rounded-lg overflow-hidden aspect-video">
@@ -226,21 +145,10 @@ export default function VideoSection({ roomId, userName, uid }) {
             </div>
           </div>
         )}
-
-        {/* Audio element (hidden) */}
         <div ref={audioRef} className="hidden" />
-
-        {/* User info overlay */}
         <div className="absolute bottom-2 left-2 bg-black bg-opacity-50 text-white px-2 py-1 rounded text-xs">
-          UID: {user.uid}
+          {user.uid}
         </div>
-
-        {/* Audio indicator */}
-        {user.audioTrack && (
-          <div className="absolute top-2 left-2">
-            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-          </div>
-        )}
       </div>
     );
   };
@@ -254,6 +162,9 @@ export default function VideoSection({ roomId, userName, uid }) {
     );
   }
 
+  // Determine if any screen sharing is active (local or remote)
+  const hasScreenShare = isScreenSharing || remoteScreenUser;
+
   return (
     <div className="h-full flex flex-col">
       {/* Connection Status */}
@@ -261,22 +172,15 @@ export default function VideoSection({ roomId, userName, uid }) {
         <div className="flex items-center space-x-2">
           <div
             className={`w-3 h-3 rounded-full ${
-              connectionState === "CONNECTED"
-                ? "bg-green-500"
-                : connectionState === "CONNECTING"
-                ? "bg-yellow-500"
-                : "bg-red-500"
+              connectionState === "CONNECTED" ? "bg-green-500" : 
+              connectionState === "CONNECTING" ? "bg-yellow-500" : "bg-red-500"
             }`}
-          ></div>
+          />
           <span className="text-sm text-gray-600">
-            {connectionState === "CONNECTED"
-              ? "Đã kết nối"
-              : connectionState === "CONNECTING"
-              ? "Đang kết nối"
-              : "Mất kết nối"}
+            {connectionState === "CONNECTED" ? "Đã kết nối" : 
+             connectionState === "CONNECTING" ? "Đang kết nối" : "Mất kết nối"}
           </span>
         </div>
-
         <div className="flex items-center space-x-2 text-sm text-gray-600">
           <Users size={16} />
           <span>{remoteUsers.length + (isJoined ? 1 : 0)} người tham gia</span>
@@ -284,92 +188,108 @@ export default function VideoSection({ roomId, userName, uid }) {
       </div>
 
       {/* Main Video Area */}
-      <div className="flex-1 grid gap-4">
-        {/* Screen Sharing View - only show when local user is sharing */}
-        {isScreenSharing && localScreenTrack && (
-          <div className="grid grid-cols-1 gap-4">
+      <div className="flex-1">
+        {/* Screen Sharing View (NEW: Support both local and remote) */}
+        {hasScreenShare ? (
+          <div className="h-full flex flex-col">
             {/* Main screen share display */}
-            <div className="aspect-video bg-gray-900 rounded-lg overflow-hidden relative">
-              <div ref={localScreenRef} className="w-full h-full" />
-              <div className="absolute top-2 left-2 bg-black bg-opacity-50 text-white px-2 py-1 rounded text-xs">
-                🖥️ Bạn đang chia sẻ màn hình
-              </div>
+            <div className="flex-1 bg-gray-900 rounded-lg overflow-hidden relative mb-4">
+              {/* Local screen share */}
+              {isScreenSharing && localScreenTrack && (
+                <>
+                  <div ref={localScreenRef} className="w-full h-full" />
+                  <div className="absolute top-2 left-2 bg-black bg-opacity-50 text-white px-2 py-1 rounded text-xs flex items-center">
+                    <Monitor size={16} className="mr-1" />
+                    Bạn đang chia sẻ màn hình
+                  </div>
+                </>
+              )}
+              
+              {/* Remote screen share (NEW: Like NEW project) */}
+              {!isScreenSharing && remoteScreenUser && (
+                <>
+                  <div ref={remoteScreenRef} className="w-full h-full" />
+                  <div className="absolute top-2 left-2 bg-black bg-opacity-50 text-white px-2 py-1 rounded text-xs flex items-center">
+                    <Monitor size={16} className="mr-1" />
+                    User {remoteScreenUser.uid} đang chia sẻ màn hình
+                  </div>
+                </>
+              )}
             </div>
-
+            
             {/* Participant thumbnails during screen share */}
-            <div className="grid grid-cols-4 gap-2">
-              {/* Local video thumbnail (only show camera if not screen sharing) */}
-              {isJoined && localVideoTrack && (
-                <div className="aspect-video bg-gray-800 rounded overflow-hidden relative">
-                  <div ref={localVideoRef} className="w-full h-full" />
+            <div className="flex gap-2 overflow-x-auto">
+              {/* Local video thumbnail (show if not sharing screen) */}
+              {!isScreenSharing && (
+                <div className="flex-shrink-0 w-32 h-24 bg-gray-800 rounded overflow-hidden relative">
+                  {localVideoTrack ? (
+                    <div ref={localVideoRef} className="w-full h-full" />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <VideoOff size={20} className="text-white opacity-50" />
+                    </div>
+                  )}
                   <div className="absolute bottom-1 left-1 bg-black bg-opacity-50 text-white px-1 py-0.5 rounded text-xs">
-                    Bạn
+                    Bạn ({userName})
                   </div>
                 </div>
               )}
-
+              
               {/* Remote participants thumbnails */}
               {remoteUsers.map((user) => (
-                <div key={user.uid} className="aspect-video">
+                <div key={user.uid} className="flex-shrink-0 w-32 h-24">
                   <RemoteVideoCard user={user} />
                 </div>
               ))}
             </div>
           </div>
-        )}
-
-        {/* Normal Video Grid (no local screen sharing) */}
-        {!isScreenSharing && (
-          <div
-            className={`grid gap-4 ${
-              remoteUsers.length === 0
-                ? "grid-cols-1"
-                : remoteUsers.length === 1
-                ? "grid-cols-2"
-                : remoteUsers.length <= 4
-                ? "grid-cols-2"
-                : "grid-cols-3"
-            }`}
-          >
-            {/* Local video */}
-            {isJoined && (
-              <div className="aspect-video bg-gray-900 rounded-lg overflow-hidden relative">
-                {localVideoTrack ? (
-                  <div ref={localVideoRef} className="w-full h-full" />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center">
-                    <div className="text-center text-white">
-                      <VideoOff size={48} className="mx-auto mb-2 opacity-50" />
-                      <p className="text-sm opacity-75">Camera tắt</p>
-                    </div>
+        ) : (
+          /* Normal Video Grid (when no screen sharing) */
+          <div className={`h-full grid gap-4 ${
+            remoteUsers.length === 0 ? 'grid-cols-1' :
+            remoteUsers.length === 1 ? 'grid-cols-2' :
+            remoteUsers.length <= 4 ? 'grid-cols-2' : 'grid-cols-3'
+          }`}>
+            {/* Local Video */}
+            <div className="bg-gray-800 rounded-lg overflow-hidden relative">
+              {/* Always render video element for ref */}
+              <div ref={setLocalVideoRef} className={`w-full h-full ${localVideoTrack ? 'block' : 'hidden'}`} />
+              
+              {/* Show placeholder when no video */}
+              {!localVideoTrack && (
+                <div className="w-full h-full flex items-center justify-center">
+                  <div className="text-center text-white">
+                    <VideoOff size={48} className="mx-auto mb-2 opacity-50" />
+                    <p className="text-sm opacity-75">Camera tắt</p>
                   </div>
-                )}
-
-                <div className="absolute bottom-2 left-2 bg-black bg-opacity-50 text-white px-2 py-1 rounded text-xs">
-                  Bạn ({userName})
                 </div>
+              )}
+              
+              <div className="absolute bottom-2 left-2 bg-black bg-opacity-50 text-white px-2 py-1 rounded text-xs">
+                Bạn ({userName})
               </div>
-            )}
+            </div>
 
-            {/* Remote participants - includes screen sharing from other users */}
+            {/* Remote participants */}
             {remoteUsers.map((user) => (
-              <div key={user.uid} className="aspect-video">
-                <RemoteVideoCard user={user} />
-              </div>
+              <RemoteVideoCard key={user.uid} user={user} />
             ))}
-
-            {/* Empty state */}
-            {remoteUsers.length === 0 && !isJoined && (
-              <div className="aspect-video bg-gray-100 rounded-lg flex items-center justify-center">
-                <div className="text-center text-gray-500">
-                  <Video size={48} className="mx-auto mb-2 opacity-50" />
-                  <p>Đang chờ kết nối...</p>
-                </div>
-              </div>
-            )}
           </div>
         )}
       </div>
+
+      {/* Meeting Controls */}
+      <MeetingControls 
+        onLeave={onLeave}
+        isLeaving={loading}
+        isCameraOn={isCameraOn}
+        isMicOn={isMicOn}
+        isScreenSharing={isScreenSharing}
+        remoteScreenUser={remoteScreenUser}
+        toggleCamera={toggleCamera}
+        toggleMicrophone={toggleMicrophone}
+        toggleScreenShare={toggleScreenShare}
+      />
     </div>
   );
 }
