@@ -4,6 +4,7 @@ import AuthPageRoutes from './AuthPageRoutes';
 import BlogPageRoutes from './BlogPageRoutes';
 import UserPageRoutes from './UserPageRoutes';
 import MeetingPageRoutes from './MeetingPageRoutes';
+import MentorPageRoutes from './MentorPageRoutes';
 
 import AdminPageRoutes from './admin/AdminPageRoutes';
 
@@ -16,6 +17,7 @@ const routes = [
     ...BlogPageRoutes,
     ...UserPageRoutes,
     ...MeetingPageRoutes,
+    ...MentorPageRoutes,
 
     ...AdminPageRoutes,
 

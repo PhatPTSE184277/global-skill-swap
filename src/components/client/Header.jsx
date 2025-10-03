@@ -3,7 +3,6 @@ import { authSelector, removeAuth } from "../../reduxs/reducers/AuthReducer";
 import { useState, useRef, useEffect } from "react";
 import { LogOut, User, ChevronDown } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
-import axiosClient from "../../apis/axiosClient";
 
 const handleLogoClick = (navigate) => {
   if (window.location.pathname === "/") {
@@ -18,12 +17,20 @@ const Header = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const [showDropdown, setShowDropdown] = useState(false);
+  const [showServicesDropdown, setShowServicesDropdown] = useState(false);
   const dropdownRef = useRef(null);
+  const servicesDropdownRef = useRef(null);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
         setShowDropdown(false);
+      }
+      if (
+        servicesDropdownRef.current &&
+        !servicesDropdownRef.current.contains(event.target)
+      ) {
+        setShowServicesDropdown(false);
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
@@ -36,6 +43,11 @@ const Header = () => {
     navigate("/");
   };
 
+  const handleServicesClick = (path) => {
+    setShowServicesDropdown(false);
+    navigate(path);
+  };
+
   return (
     <nav className="w-full font-['Noto Sans'] bg-[#fdf8ee] shadow sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-6 flex items-center justify-between h-16">
@@ -46,16 +58,53 @@ const Header = () => {
           <span className="text-lg font-bold text-purple-950">GlobalSkill</span>
         </div>
         <ul className="flex items-center gap-8 text-gray-700 text-sm font-medium">
-          <li className="hover:text-purple-700 cursor-pointer">Trang chủ</li>
-          <li className="hover:text-purple-700 cursor-pointer">Giới Thiệu</li>
+          <li className="hover:text-purple-700 cursor-pointer">
+            <Link to="/">Trang chủ</Link>
+          </li>
           <li className="hover:text-purple-700 cursor-pointer">
             <Link to="/blog">Bài Viết</Link>
           </li>
           <li className="hover:text-purple-700 cursor-pointer">
             <Link to="/room">Phòng học</Link>
           </li>
-          <li className="hover:text-purple-700 cursor-pointer">Mentor</li>
-          <li className="hover:text-purple-700 cursor-pointer">Dịch Vụ</li>
+          <li className="hover:text-purple-700 cursor-pointer">
+            <Link to="/mentor/register">Mentor</Link>
+          </li>
+          <li className="relative" ref={servicesDropdownRef}>
+            <div
+              className="hover:text-purple-700 cursor-pointer flex items-center gap-1"
+              onClick={() => setShowServicesDropdown(!showServicesDropdown)}
+            >
+              Dịch Vụ
+              <ChevronDown
+                className={`w-4 h-4 transition-transform ${
+                  showServicesDropdown ? "rotate-180" : ""
+                }`}
+              />
+            </div>
+            {showServicesDropdown && (
+              <div className="absolute top-full left-0 mt-2 w-48 bg-white border border-purple-100 rounded-lg shadow-lg z-50 animate-fade-in">
+                <button
+                  className="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-purple-50 hover:text-purple-700 transition rounded-t-lg"
+                  onClick={() => handleServicesClick("/mentor/register")}
+                >
+                  Đăng ký Mentor
+                </button>
+                <button
+                  className="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-purple-50 hover:text-purple-700 transition"
+                  onClick={() => handleServicesClick("/faq")}
+                >
+                  FAQ
+                </button>
+                <button
+                  className="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-purple-50 hover:text-purple-700 transition rounded-b-lg"
+                  onClick={() => handleServicesClick("/contact")}
+                >
+                  Contact
+                </button>
+              </div>
+            )}
+          </li>
         </ul>
         {user && user.token ? (
           <div className="relative" ref={dropdownRef}>
