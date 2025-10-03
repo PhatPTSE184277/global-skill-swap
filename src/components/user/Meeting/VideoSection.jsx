@@ -1,7 +1,9 @@
 import React, { useEffect, useState, useRef } from "react";
-import { message, Spin } from "antd";
-import { Video, VideoOff, Users } from "lucide-react";
+import { message, Spin, Button, Modal } from "antd";
+import { Video, VideoOff, Users, TestTube } from "lucide-react";
+import AgoraRTC from 'agora-rtc-sdk-ng';
 import useAgora from "../../../hooks/useAgora";
+import MeetingControls from "./MeetingControls";
 
 export default function VideoSection({ roomId, userName, uid, onLeave }) {
   const {
@@ -17,14 +19,19 @@ export default function VideoSection({ roomId, userName, uid, onLeave }) {
     joinChannel,
     leaveChannel,
     connectionState,
+    toggleCamera,
+    toggleMicrophone,
+    toggleScreenShare,
   } = useAgora();
 
   const [loading, setLoading] = useState(false);
   const [hasInitialized, setHasInitialized] = useState(false);
   const [hasMounted, setHasMounted] = useState(false); // Track mounting
+  const [testCameraVisible, setTestCameraVisible] = useState(false); // For camera test
 
   const localVideoRef = useRef(null);
   const localScreenRef = useRef(null);
+  const testVideoRef = useRef(null); // For camera test
 
   // Debug logging for screen sharing state changes
   useEffect(() => {
@@ -126,13 +133,73 @@ export default function VideoSection({ roomId, userName, uid, onLeave }) {
     }
   };
 
+  // Test camera function
+  const testCamera = async () => {
+    try {
+      console.log('🧪 Testing camera...');
+      const videoTrack = await AgoraRTC.createCameraVideoTrack({
+        encoderConfig: '480p_1'
+      });
+      
+      if (testVideoRef.current) {
+        videoTrack.play(testVideoRef.current);
+        console.log('✅ Camera test successful');
+        message.success('Camera hoạt động bình thường!');
+      }
+      
+      // Stop test track after 3 seconds
+      setTimeout(() => {
+        videoTrack.stop();
+        videoTrack.close();
+        setTestCameraVisible(false);
+      }, 3000);
+      
+    } catch (error) {
+      console.error('❌ Camera test failed:', error);
+      if (error.code === 'PERMISSION_DENIED') {
+        message.error('Vui lòng cấp quyền truy cập camera');
+      } else if (error.code === 'DEVICE_NOT_FOUND') {
+        message.error('Không tìm thấy camera');
+      } else if (error.code === 'DEVICE_BUSY') {
+        message.error('Camera đang được sử dụng bởi ứng dụng khác');
+      } else {
+        message.error('Lỗi camera: ' + error.message);
+      }
+    }
+  };
+
   // Play local video track
   useEffect(() => {
     const videoElement = localVideoRef.current;
+    console.log('🎬 Local video effect triggered:', {
+      hasVideoTrack: !!localVideoTrack,
+      hasVideoElement: !!videoElement,
+      isCameraOn,
+      isJoined,
+      videoElementDetails: videoElement ? {
+        tagName: videoElement.tagName,
+        children: videoElement.children.length,
+        innerHTML: videoElement.innerHTML.substring(0, 100)
+      } : null
+    });
+    
     if (localVideoTrack && videoElement) {
       try {
+        console.log('📹 Playing local video track on element:', videoElement);
         localVideoTrack.play(videoElement);
-        console.log("📹 Local video track playing");
+        console.log("📹 Local video track playing successfully");
+        
+        // Check if video element got a video tag
+        setTimeout(() => {
+          const videoTag = videoElement.querySelector('video');
+          console.log('🎥 Video tag after play:', {
+            hasVideoTag: !!videoTag,
+            videoSrc: videoTag ? videoTag.src : null,
+            videoWidth: videoTag ? videoTag.videoWidth : null,
+            videoHeight: videoTag ? videoTag.videoHeight : null
+          });
+        }, 1000);
+        
       } catch (error) {
         console.error("❌ Error playing local video:", error);
       }
@@ -147,7 +214,7 @@ export default function VideoSection({ roomId, userName, uid, onLeave }) {
         }
       }
     };
-  }, [localVideoTrack]);
+  }, [localVideoTrack, isCameraOn]);
 
   // Play local screen track (similar to NEW project)
   useEffect(() => {
@@ -221,7 +288,7 @@ export default function VideoSection({ roomId, userName, uid, onLeave }) {
     return (
       <div className="relative bg-gray-900 rounded-lg overflow-hidden aspect-video">
         {user.videoTrack ? (
-          <div ref={videoRef} className="w-full h-full" />
+          <div ref={videoRef} className="agora-video-container" />
         ) : (
           <div className="w-full h-full flex items-center justify-center">
             <div className="text-center text-white">
@@ -284,9 +351,43 @@ export default function VideoSection({ roomId, userName, uid, onLeave }) {
           </span>
         </div>
 
-        <div className="flex items-center space-x-2 text-sm text-gray-600">
-          <Users size={16} />
-          <span>{remoteUsers.length + (isJoined ? 1 : 0)} người tham gia</span>
+        <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-2 text-sm text-gray-600">
+            <Users size={16} />
+            <span>{remoteUsers.length + (isJoined ? 1 : 0)} người tham gia</span>
+          </div>
+          
+          {/* Camera Test Button */}
+          <Button
+            size="small"
+            type="default"
+            icon={<TestTube size={16} />}
+            onClick={() => {
+              setTestCameraVisible(true);
+              testCamera();
+            }}
+            disabled={loading || isJoined}
+          >
+            Test Camera
+          </Button>
+          
+          {/* Manual Camera Toggle for Debug */}
+          {isJoined && (
+            <Button
+              size="small"
+              type={isCameraOn ? "primary" : "default"}
+              danger={!isCameraOn}
+              onClick={async () => {
+                try {
+                  await toggleCamera();
+                } catch (error) {
+                  console.error('Manual camera toggle error:', error);
+                }
+              }}
+            >
+              {isCameraOn ? "Turn OFF Camera" : "Turn ON Camera"}
+            </Button>
+          )}
         </div>
       </div>
 
@@ -342,14 +443,29 @@ export default function VideoSection({ roomId, userName, uid, onLeave }) {
             {isJoined && (
               <div className="aspect-video bg-gray-900 rounded-lg overflow-hidden relative">
                 {localVideoTrack ? (
-                  <div ref={localVideoRef} className="w-full h-full" />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center">
-                    <div className="text-center text-white">
-                      <VideoOff size={48} className="mx-auto mb-2 opacity-50" />
-                      <p className="text-sm opacity-75">Camera tắt</p>
+                  <>
+                    <div 
+                      ref={localVideoRef} 
+                      className="agora-video-container"
+                    />
+                    {/* Debug info overlay */}
+                    <div className="absolute top-2 right-2 bg-green-500 text-white px-2 py-1 rounded text-xs">
+                      📹 Camera ON
                     </div>
-                  </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="w-full h-full flex items-center justify-center">
+                      <div className="text-center text-white">
+                        <VideoOff size={48} className="mx-auto mb-2 opacity-50" />
+                        <p className="text-sm opacity-75">Camera tắt</p>
+                      </div>
+                    </div>
+                    {/* Debug info overlay */}
+                    <div className="absolute top-2 right-2 bg-red-500 text-white px-2 py-1 rounded text-xs">
+                      📹 Camera OFF
+                    </div>
+                  </>
                 )}
 
                 <div className="absolute bottom-2 left-2 bg-black bg-opacity-50 text-white px-2 py-1 rounded text-xs">
@@ -377,6 +493,36 @@ export default function VideoSection({ roomId, userName, uid, onLeave }) {
           </div>
         )}
       </div>
+
+      {/* Meeting Controls */}
+      <MeetingControls 
+        onLeave={onLeave}
+        isLeaving={loading}
+        isCameraOn={isCameraOn}
+        isMicOn={isMicOn}
+        isScreenSharing={isScreenSharing}
+        remoteScreenUser={remoteScreenUser}
+        toggleCamera={toggleCamera}
+        toggleMicrophone={toggleMicrophone}
+        toggleScreenShare={toggleScreenShare}
+      />
+
+      {/* Camera Test Modal */}
+      <Modal
+        title="Test Camera"
+        open={testCameraVisible}
+        onCancel={() => setTestCameraVisible(false)}
+        footer={null}
+        width={480}
+        centered
+      >
+        <div className="text-center">
+          <div className="aspect-video bg-gray-900 rounded-lg overflow-hidden mb-4">
+            <div ref={testVideoRef} className="w-full h-full" />
+          </div>
+          <p className="text-gray-600">Kiểm tra camera... (sẽ tự đóng sau 3 giây)</p>
+        </div>
+      </Modal>
     </div>
   );
 }

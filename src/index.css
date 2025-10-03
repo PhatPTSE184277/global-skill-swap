@@ -34,4 +34,20 @@ input:-webkit-autofill:active {
     transition: background-color 5000s ease-in-out 0s;
 }
 
+/* Agora Video Styles */
+.agora-video-container video {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover !important;
+    background-color: #000;
+}
+
+.agora-video-container {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background-color: #000;
+}
+
 @import 'tailwindcss';

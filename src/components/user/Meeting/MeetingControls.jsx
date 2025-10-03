@@ -1,19 +1,20 @@
 import React from "react";
-import { Camera, CameraOff, Monitor, MonitorOff, Mic, MicOff, PhoneOff } from "lucide-react";
+import { Camera, CameraOff, Monitor, MonitorOff, Mic, MicOff, PhoneOff, MessageSquare, MoreHorizontal } from "lucide-react";
 import { Button, Tooltip } from "antd";
-import useAgora from "../../../hooks/useAgora";
 
-export default function MeetingControls({ onLeave, isLeaving }) {
-  const {
-    isCameraOn,
-    isMicOn,
-    isScreenSharing,
-    toggleCamera,
-    toggleMicrophone,
-    toggleScreenShare,
-  } = useAgora();
+export default function MeetingControls({ 
+  onLeave, 
+  isLeaving,
+  isCameraOn,
+  isMicOn,
+  isScreenSharing,
+  remoteScreenUser,
+  toggleCamera,
+  toggleMicrophone,
+  toggleScreenShare
+}) {
 
-  const handleToggleCamera = async () => {
+  const handleCameraToggle = async () => {
     try {
       await toggleCamera();
     } catch (error) {
@@ -21,21 +22,11 @@ export default function MeetingControls({ onLeave, isLeaving }) {
     }
   };
 
-  const handleToggleMic = async () => {
+  const handleMicToggle = async () => {
     try {
       await toggleMicrophone();
     } catch (error) {
       console.error("Error toggling microphone:", error);
-    }
-  };
-
-  // Handle mic toggle with debug
-  const handleMicToggle = () => {
-    console.log('🎤 Mic button clicked, current state:', isMicOn);
-    if (toggleMicrophone) {
-      toggleMicrophone();
-    } else {
-      console.error('❌ toggleMicrophone function not available');
     }
   };
 

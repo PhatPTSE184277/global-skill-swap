@@ -22,6 +22,9 @@ export default function MeetingPage() {
 
   const [isLeaving, setIsLeaving] = useState(false);
 
+  // Get Agora hook values
+  const { leaveChannel, remoteUsers, isJoined } = useAgora();
+
   // Join socket room when component mounts
   useEffect(() => {
     if (roomId && userName && uid) {
@@ -72,6 +75,12 @@ export default function MeetingPage() {
       }
     }
   }, [roomId, userName, uid, navigate]);
+
+  const handleBackToLobby = () => {
+    if (window.confirm("Bạn có chắc muốn rời khỏi cuộc họp?")) {
+      navigate("/meeting-lobby");
+    }
+  };
 
   const handleLeaveMeeting = async () => {
     console.log("🚪 Starting leave process...", { roomId, uid });
@@ -127,6 +136,8 @@ export default function MeetingPage() {
               roomId={roomId} 
               userName={userName}
               userId={uid}
+              remoteUsers={remoteUsers}
+              isJoined={isJoined}
             />
           </div>
           <div className="flex-1 border-t overflow-hidden">
