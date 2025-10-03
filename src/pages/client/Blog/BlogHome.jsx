@@ -1,5 +1,6 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
 import RightSidebar from "../../../components/client/Blog/RightSidebar";
 import blogApi from "../../../apis/blogApi";
 
@@ -142,36 +143,66 @@ const BlogHome = () => {
   ];
 
   return (
-    <div>
-      <main className="w-full font-['Noto Sans'] bg-[#fdf8ee] h-auto p-6">
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.6 }}
+    >
+      <motion.main
+        className="w-full font-['Noto Sans'] bg-[#fdf8ee] h-auto p-6"
+        initial={{ y: 20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.8, delay: 0.2 }}
+      >
         <section className="grid grid-cols-1 lg:grid-cols-3 gap-6 max-w-7xl mx-auto">
           {/* Bên trái: Bài viết nổi bật */}
           <div className="lg:col-span-2  p-6">
-            <h2 className="text-xl font-bold mb-4">
+            <motion.h2
+              className="text-xl font-bold mb-4"
+              initial={{ x: -50, opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+              transition={{ duration: 0.6, delay: 0.4 }}
+            >
               Những Bài Viết Nổi Bật Của{" "}
               <span className="text-orange-500">Tháng Này</span>
-            </h2>
+            </motion.h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {featuredPosts.map((post) => (
-                <article
+              {featuredPosts.map((post, index) => (
+                <motion.article
                   key={post.id}
+                  initial={{ y: 50, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ duration: 0.6, delay: 0.6 + index * 0.2 }}
+                  whileHover={{
+                    y: -5,
+                    scale: 1.02,
+                    transition: { duration: 0.3 },
+                  }}
                   onClick={() => handlePostClick(post.id)}
                   className="rounded-xl overflow-hidden shadow hover:shadow-lg transition-shadow duration-300 cursor-pointer"
                 >
-                  <img
+                  <motion.img
                     src={post.image}
                     alt={post.alt}
                     className="w-full h-50 object-cover"
+                    whileHover={{ scale: 1.05 }}
+                    transition={{ duration: 0.3 }}
                   />
                   <div className="p-4">
                     <div className="flex flex-wrap gap-2 mb-3">
-                      {post.tags.map((tag, index) => (
-                        <span
-                          key={index}
+                      {post.tags.map((tag, tagIndex) => (
+                        <motion.span
+                          key={tagIndex}
+                          initial={{ scale: 0 }}
+                          animate={{ scale: 1 }}
+                          transition={{
+                            duration: 0.3,
+                            delay: 0.8 + tagIndex * 0.1,
+                          }}
                           className="px-2 py-1 text-xs font-medium bg-purple-100 text-purple-600 rounded"
                         >
                           {tag}
-                        </span>
+                        </motion.span>
                       ))}
                     </div>
 
@@ -191,26 +222,47 @@ const BlogHome = () => {
                       <span>{post.readTime} Min. To Read</span>
                     </div>
                   </div>
-                </article>
+                </motion.article>
               ))}
             </div>
           </div>
 
           {/* Bên phải: Hôm Nay Có Gì */}
-          <aside className=" p-6 rounded-2xl ">
-            <h2 className="text-xl font-bold mb-4 text-orange-500">
+          <motion.aside
+            className=" p-6 rounded-2xl "
+            initial={{ x: 50, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            transition={{ duration: 0.8, delay: 0.5 }}
+          >
+            <motion.h2
+              className="text-xl font-bold mb-4 text-orange-500"
+              initial={{ y: -20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ duration: 0.6, delay: 0.7 }}
+            >
               Hôm Nay Có Gì?
-            </h2>
+            </motion.h2>
             <div className="max-h-96 overflow-y-auto space-y-4 pr-2 custom-scrollbar">
-              {todayPosts.map((post) => (
-                <article
+              {todayPosts.map((post, index) => (
+                <motion.article
                   key={post.id}
+                  initial={{ x: 30, opacity: 0 }}
+                  animate={{ x: 0, opacity: 1 }}
+                  transition={{ duration: 0.5, delay: 0.9 + index * 0.1 }}
+                  whileHover={{
+                    x: 5,
+                    transition: { duration: 0.2 },
+                  }}
                   onClick={() => handlePostClick(post.id)}
                   className="cursor-pointer hover:text-purple-600 transition-colors duration-200 pb-4 border-b border-gray-100 last:border-b-0"
                 >
-                  <span className="inline-block px-2 py-1 text-xs font-medium bg-orange-100 text-orange-600 rounded mb-2">
+                  <motion.span
+                    className="inline-block px-2 py-1 text-xs font-medium bg-orange-100 text-orange-600 rounded mb-2"
+                    whileHover={{ scale: 1.05 }}
+                    transition={{ duration: 0.2 }}
+                  >
                     {post.tag}
-                  </span>
+                  </motion.span>
 
                   <h3 className="font-medium line-clamp-2 mb-2">
                     {post.title}
@@ -229,45 +281,59 @@ const BlogHome = () => {
                     Did you come here for something in particular or just
                     general Riker-bashing? And blowing into maximum warp
                   </p>
-                </article>
+                </motion.article>
               ))}
             </div>
-          </aside>
+          </motion.aside>
         </section>
-      </main>
-      <section className="grid grid-cols-1 lg:grid-cols-[2fr_2fr_1.5fr] gap-6 max-w-7xl mx-auto">
+      </motion.main>
+
+      <motion.section
+        className="grid grid-cols-1 lg:grid-cols-[2fr_2fr_1.5fr] gap-6 max-w-7xl mx-auto"
+        initial={{ y: 30, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.8, delay: 1.2 }}
+      >
         <div className="col-span-2">
           {/* Main Content */}
           <div className="space-y-6">
             {/* Tab Navigation - sticky */}
             <div className="bg-white  pt-6 sticky top-16 z-20 ">
               <div className="flex border-b border-gray-200 mb-0">
-                <button
+                <motion.button
                   onClick={() => setActiveTab("following")}
                   className={`pb-3 px-4 font-semibold border-b-2 transition-colors ${
                     activeTab === "following"
                       ? "border-orange-500 text-orange-500"
                       : "border-transparent text-gray-500 hover:text-gray-700"
                   }`}
+                  whileHover={{ y: -2 }}
+                  whileTap={{ scale: 0.95 }}
                 >
                   <span>Đang Theo Dõi</span>
-                </button>
-                <button
+                </motion.button>
+                <motion.button
                   onClick={() => setActiveTab("suggestions")}
                   className={`pb-3 px-4 font-semibold border-b-2 transition-colors ${
                     activeTab === "suggestions"
                       ? "border-orange-500 text-orange-500"
                       : "border-transparent text-gray-500 hover:text-gray-700"
                   }`}
+                  whileHover={{ y: -2 }}
+                  whileTap={{ scale: 0.95 }}
                 >
                   <span> Đề Xuất Cho Bạn</span>
-                </button>
+                </motion.button>
               </div>
             </div>
             {/* Tab Content - scroll bình thường */}
             <div>
               {activeTab === "following" && (
-                <div>
+                <motion.div
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.5 }}
+                >
                   {loading ? (
                     <div className="text-center py-8">
                       <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500"></div>
@@ -275,30 +341,44 @@ const BlogHome = () => {
                     </div>
                   ) : followingPosts.length > 0 ? (
                     <div className="space-y-4">
-                      {followingPosts.map((post) => (
-                        <article key={post.id}>
+                      {followingPosts.map((post, index) => (
+                        <motion.article
+                          key={post.id}
+                          initial={{ y: 20, opacity: 0 }}
+                          animate={{ y: 0, opacity: 1 }}
+                          transition={{ duration: 0.5, delay: index * 0.1 }}
+                          whileHover={{ scale: 1.02 }}
+                        >
                           <div
                             onClick={() => handlePostClick(post.id)}
                             className="flex cursor-pointerpointer  items-center "
                           >
-                            <img
+                            <motion.img
                               src={post.image}
                               alt={post.alt}
                               className="w-60 h-35 object-cover rounded-xl  "
+                              whileHover={{ scale: 1.05 }}
+                              transition={{ duration: 0.3 }}
                             />
                             <div className="flex-1 p-4">
                               <div className="flex gap-2 mb-2">
-                                {post.tags.map((tag, index) => (
-                                  <span
-                                    key={index}
+                                {post.tags.map((tag, tagIndex) => (
+                                  <motion.span
+                                    key={tagIndex}
                                     className={`px-2 py-1 text-xs font-medium rounded ${
-                                      index % 2 === 0
+                                      tagIndex % 2 === 0
                                         ? "bg-blue-100 text-blue-600"
                                         : "bg-purple-100 text-purple-600"
                                     }`}
+                                    initial={{ scale: 0 }}
+                                    animate={{ scale: 1 }}
+                                    transition={{
+                                      duration: 0.3,
+                                      delay: tagIndex * 0.1,
+                                    }}
                                   >
                                     {tag}
-                                  </span>
+                                  </motion.span>
                                 ))}
                               </div>
 
@@ -320,7 +400,7 @@ const BlogHome = () => {
                               </p>
                             </div>
                           </div>
-                        </article>
+                        </motion.article>
                       ))}
                       *bạn đã xem hết
                     </div>
@@ -329,11 +409,15 @@ const BlogHome = () => {
                       Không có bài viết nào để hiển thị
                     </div>
                   )}
-                </div>
+                </motion.div>
               )}
 
               {activeTab === "suggestions" && (
-                <div>
+                <motion.div
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.5 }}
+                >
                   {loading ? (
                     <div className="text-center py-8">
                       <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500"></div>
@@ -341,30 +425,44 @@ const BlogHome = () => {
                     </div>
                   ) : suggestedPosts.length > 0 ? (
                     <div className="space-y-4">
-                      {suggestedPosts.map((post) => (
-                        <article key={post.id}>
+                      {suggestedPosts.map((post, index) => (
+                        <motion.article
+                          key={post.id}
+                          initial={{ y: 20, opacity: 0 }}
+                          animate={{ y: 0, opacity: 1 }}
+                          transition={{ duration: 0.5, delay: index * 0.1 }}
+                          whileHover={{ scale: 1.02 }}
+                        >
                           <div
                             onClick={() => handlePostClick(post.id)}
                             className="flex cursor-pointer hover:bg-gray-50 rounded-lg transition-colors duration-200"
                           >
-                            <img
+                            <motion.img
                               src={post.image}
                               alt={post.alt}
                               className="w-60 h-35 object-cover rounded-xl"
+                              whileHover={{ scale: 1.05 }}
+                              transition={{ duration: 0.3 }}
                             />
                             <div className="flex-1 p-4">
                               <div className="flex gap-2 mb-2">
-                                {post.tags.map((tag, index) => (
-                                  <span
-                                    key={index}
+                                {post.tags.map((tag, tagIndex) => (
+                                  <motion.span
+                                    key={tagIndex}
                                     className={`px-2 py-1 text-xs font-medium rounded ${
-                                      index % 2 === 0
+                                      tagIndex % 2 === 0
                                         ? "bg-blue-100 text-blue-600"
                                         : "bg-purple-100 text-purple-600"
                                     }`}
+                                    initial={{ scale: 0 }}
+                                    animate={{ scale: 1 }}
+                                    transition={{
+                                      duration: 0.3,
+                                      delay: tagIndex * 0.1,
+                                    }}
                                   >
                                     {tag}
-                                  </span>
+                                  </motion.span>
                                 ))}
                               </div>
 
@@ -386,7 +484,7 @@ const BlogHome = () => {
                               </p>
                             </div>
                           </div>
-                        </article>
+                        </motion.article>
                       ))}
                     </div>
                   ) : (
@@ -394,13 +492,18 @@ const BlogHome = () => {
                       Không có bài viết đề xuất nào
                     </div>
                   )}
-                </div>
+                </motion.div>
               )}
             </div>
           </div>
         </div>
         {/* Right Sidebar */}
-        <div className="mt-6 relative group">
+        <motion.div
+          className="mt-6 relative group"
+          initial={{ x: 50, opacity: 0 }}
+          animate={{ x: 0, opacity: 1 }}
+          transition={{ duration: 0.8, delay: 1.4 }}
+        >
           <div
             className="
       sticky top-18 
@@ -413,9 +516,9 @@ const BlogHome = () => {
           >
             <RightSidebar />
           </div>
-        </div>
-      </section>
-    </div>
+        </motion.div>
+      </motion.section>
+    </motion.div>
   );
 };
 
