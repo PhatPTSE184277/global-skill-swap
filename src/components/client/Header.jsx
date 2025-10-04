@@ -68,7 +68,7 @@ const Header = () => {
             <Link to="/room">Phòng học</Link>
           </li>
           <li className="hover:text-purple-700 cursor-pointer">
-            <Link to="/mentor/register">Mentor</Link>
+            <Link to="/mentor/finding">Mentor</Link>
           </li>
           <li className="relative" ref={servicesDropdownRef}>
             <div

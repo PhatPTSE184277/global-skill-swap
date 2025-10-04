@@ -72,7 +72,7 @@ export default function PublicRoom() {
           ))}
         </div>
         <div className="flex justify-between gap-6">
-          <h1 className="text-xl font-semibold mt-2">
+          <h1 className="text-xl font-bold mt-3">
             Phòng Học <span className="text-orange-500">Miễn Phí</span>
           </h1>
 
