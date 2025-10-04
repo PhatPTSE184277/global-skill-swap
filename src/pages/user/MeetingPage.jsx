@@ -8,6 +8,7 @@ import VideoSection from "../../components/user/Meeting/VideoSection";
 import Participants from "../../components/user/Meeting/Participants";
 import useAgora from "../../hooks/useAgora";
 import socketService from "../../services/socketService";
+import userService from "../../services/userService"; // Import userService
 
 export default function MeetingPage() {
   const { roomId } = useParams();
@@ -15,32 +16,48 @@ export default function MeetingPage() {
   const navigate = useNavigate();
 
   const userName = searchParams.get("userName") || "Anonymous";
-  const uid = useMemo(() => {
-    const uidFromParams = searchParams.get("uid");
-    return uidFromParams || Math.floor(Math.random() * 100000);
-  }, [searchParams]);
+  
+  // State để lưu thông tin user thực
+  const [currentUser, setCurrentUser] = useState(null);
+  const [uid, setUid] = useState(null);
 
   const [isLeaving, setIsLeaving] = useState(false);
 
   // Get Agora hook values
   const { leaveChannel, remoteUsers, isJoined } = useAgora();
 
-  // Join socket room when component mounts
+  // Lấy thông tin user thực khi component mount
   useEffect(() => {
-    if (roomId && userName && uid) {
-      console.log("🔌 Joining socket room...", { roomId, userName, uid });
-      console.log("🔍 Debug: MeetingPage roomId =", roomId, "type:", typeof roomId);
-      
-      // Connect first
+    const fetchUserInfo = async () => {
+      try {
+        const user = await userService.getUserInfo();
+        if (user) {
+          setCurrentUser(user);
+          setUid(user.id);
+        } else {
+          const fallbackUid = Math.floor(Math.random() * 100000);
+          setUid(fallbackUid);
+        }
+      } catch (error) {
+        const fallbackUid = Math.floor(Math.random() * 100000);
+        setUid(fallbackUid);
+      }
+    };
+
+    fetchUserInfo();
+  }, []);
+
+  // Join socket room when component mounts and user info is available
+  useEffect(() => {
+    if (roomId && userName && uid && currentUser) {
       const socket = socketService.connect();
       
-      // Wait for connection then join
       const joinWhenReady = () => {
         if (socket.connected) {
           socketService.joinRoom({
-            roomId: String(roomId), // Ensure string
-            userName,
-            userId: String(uid), // Ensure string
+            roomId: String(roomId),
+            userName: currentUser.username || userName,
+            userId: String(currentUser.id),
           });
         } else {
           setTimeout(joinWhenReady, 100);
@@ -52,11 +69,10 @@ export default function MeetingPage() {
 
     return () => {
       if (roomId) {
-        console.log("🔌 Leaving socket room...", { roomId });
         socketService.leaveRoom({ roomId: String(roomId) });
       }
     };
-  }, [roomId, userName, uid]);
+  }, [roomId, userName, uid, currentUser]);
 
   useEffect(() => {
     if (!roomId) {
@@ -83,20 +99,13 @@ export default function MeetingPage() {
   };
 
   const handleLeaveMeeting = async () => {
-    console.log("🚪 Starting leave process...", { roomId, uid });
     setIsLeaving(true);
     try {
-      // Leave Agora channel via hook
-      console.log("🎥 Leaving Agora channel...");
       await leaveChannel();
-      console.log("✅ Left Agora channel successfully");
-
       message.success("Đã rời khỏi cuộc họp");
       navigate("/room");
     } catch (error) {
-      console.error("❌ Error leaving meeting:", error);
       message.error("Lỗi khi rời khỏi cuộc họp");
-      // Still navigate back even if there's an error
       navigate("/room");
     }
   };
@@ -121,27 +130,53 @@ export default function MeetingPage() {
       <div className="flex flex-1 overflow-hidden">
         {/* Video Section */}
         <div className="flex flex-col flex-1 p-4">
-          <VideoSection
-            roomId={roomId}
-            userName={userName}
-            uid={parseInt(uid)}
-            onLeave={() => navigate("/room")}
-          />
+          {uid && currentUser ? (
+            <VideoSection
+              roomId={roomId}
+              userName={currentUser.username || userName}
+              uid={uid}
+              currentUser={currentUser}
+              onLeave={() => navigate("/room")}
+            />
+          ) : (
+            <div className="flex items-center justify-center h-full">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-2"></div>
+                <p>Đang tải thông tin user...</p>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Sidebar */}
         <div className="w-80 border-l flex flex-col h-full">
           <div className="h-1/3 overflow-hidden">
-            <Participants 
-              roomId={roomId} 
-              userName={userName}
-              userId={uid}
-              remoteUsers={remoteUsers}
-              isJoined={isJoined}
-            />
+            {uid && currentUser ? (
+              <Participants 
+                roomId={roomId} 
+                userName={currentUser.username || userName}
+                userId={uid}
+                remoteUsers={remoteUsers}
+                isJoined={isJoined}
+              />
+            ) : (
+              <div className="flex items-center justify-center h-full">
+                <p>Đang tải...</p>
+              </div>
+            )}
           </div>
           <div className="flex-1 border-t overflow-hidden">
-            <ChatBox roomId={roomId} userName={userName} userId={uid} />
+            {uid && currentUser ? (
+              <ChatBox 
+                roomId={roomId} 
+                userName={currentUser.username || userName} 
+                userId={uid}
+              />
+            ) : (
+              <div className="flex items-center justify-center h-full">
+                <p>Đang tải...</p>
+              </div>
+            )}
           </div>
         </div>
       </div>

@@ -1,5 +1,6 @@
 import axios from 'axios';
-const baseUrl = import.meta.env.VITE_API_BASE_URL;
+// Sử dụng relative path để tận dụng Vite proxy
+const baseUrl = import.meta.env.DEV ? '/api' : (import.meta.env.VITE_ROOM_API_URL || 'https://gss-room-service.onrender.com/api');
 
 const config = {
      baseURL: baseUrl

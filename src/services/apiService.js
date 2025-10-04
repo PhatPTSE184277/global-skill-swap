@@ -1,5 +1,5 @@
-// API Configuration
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+// API Configuration - Room Service specific
+const API_BASE_URL = import.meta.env.DEV ? '/api' : (import.meta.env.VITE_ROOM_API_URL || 'https://gss-room-service.onrender.com/api');
 
 class ApiService {
   constructor() {

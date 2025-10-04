@@ -12,6 +12,7 @@ import {
 import { User, Users, Calendar, Link, Clock, FileText } from "lucide-react";
 import { useSelector } from "react-redux";
 import apiService from "../../../services/apiService";
+import userService from "../../../services/userService"; // Import userService
 import { authSelector } from "../../../reduxs/reducers/AuthReducer";
 
 const CreateRoomModal = ({ visible, onCancel, onRoomCreated }) => {
@@ -22,134 +23,39 @@ const CreateRoomModal = ({ visible, onCancel, onRoomCreated }) => {
   // Lấy auth data từ Redux store
   const authData = useSelector(authSelector);
 
-  // Lấy thông tin user từ localStorage hoặc Redux store
-  const getCurrentUser = useCallback(() => {
-    try {
-      console.log("🔍 getCurrentUser called");
-
-      // Kiểm tra tất cả keys có thể có trong localStorage
-      const possibleKeys = [
-        "authData",
-        "auth",
-        "user",
-        "userData",
-        "loginData",
-      ];
-
-      for (const key of possibleKeys) {
-        const data = localStorage.getItem(key);
-        if (data) {
-          console.log(`📦 Found data in localStorage key "${key}":`, data);
-          try {
-            const parsed = JSON.parse(data);
-            console.log(`📦 Parsed data from "${key}":`, parsed);
-
-            // Thử lấy user ID từ nhiều trường có thể
-            const userId =
-              parsed._id ||
-              parsed.id ||
-              parsed.user_id ||
-              parsed.user?.id ||
-              parsed.user?._id ||
-              parsed.user?.user_id ||
-              parsed.data?._id ||
-              parsed.data?.id ||
-              parsed.data?.user_id;
-
-            if (userId) {
-              console.log(`✅ Found userId "${userId}" in key "${key}"`);
-
-              const userInfo = {
-                id: userId,
-                username:
-                  parsed.username ||
-                  parsed.user?.username ||
-                  parsed.data?.username,
-                fullName:
-                  parsed.fullName ||
-                  parsed.full_name ||
-                  parsed.user?.fullName ||
-                  parsed.user?.full_name ||
-                  parsed.data?.fullName ||
-                  parsed.data?.full_name,
-                email: parsed.email || parsed.user?.email || parsed.data?.email,
-                token:
-                  parsed.token ||
-                  parsed.access_token ||
-                  parsed.accessToken ||
-                  parsed.user?.token ||
-                  parsed.data?.token,
-              };
-
-              console.log(
-                `✅ Final userInfo from localStorage "${key}":`,
-                userInfo
-              );
-              return userInfo;
-            }
-          } catch (parseError) {
-            console.warn(`⚠️ Failed to parse data from "${key}":`, parseError);
-          }
-        }
-      }
-
-      // Fallback: lấy từ Redux store
-      console.log("🔄 Checking Redux authData:", authData);
-      if (authData && (authData._id || authData.id)) {
-        const userInfo = {
-          id: authData._id || authData.id,
-          username: authData.username,
-          fullName:
-            authData.fullName || authData.full_name || authData.username,
-          email: authData.email,
-          token: authData.token,
-        };
-
-        console.log("✅ Final userInfo from Redux:", userInfo);
-        return userInfo;
-      }
-
-      console.log("❌ No valid user data found anywhere");
-      return null;
-    } catch (error) {
-      console.error("❌ Error in getCurrentUser:", error);
-      return null;
-    }
-  }, [authData]);
-
   // Auto-fill form khi modal mở
   React.useEffect(() => {
     if (visible) {
-      // Debug: Kiểm tra tất cả auth states
-      console.log("=== AUTH DEBUG ===");
-      console.log("Redux authData:", authData);
-      console.log("localStorage authData:", localStorage.getItem("authData"));
-      console.log("localStorage keys:", Object.keys(localStorage));
+      // Load user info from Gateway Service
+      const loadUserInfo = async () => {
+        try {
+          const currentUser = await userService.getUserInfo();
 
-      const currentUser = getCurrentUser();
-      console.log("getCurrentUser result:", currentUser);
+          if (currentUser) {
+            // Chỉ set giá trị mặc định cho form, không hiển thị các field ẩn
+            form.setFieldsValue({
+              roomName: "",
+              startTime: null,
+              meetingPassword: "",
+              notes: "",
+            });
+          } else {
+            message.warning("Vui lòng đăng nhập để tạo phòng!");
+          }
+        } catch (error) {
+          message.warning("Có lỗi khi tải thông tin user. Vui lòng thử lại!");
+        }
+      };
 
-      if (currentUser) {
-        console.log("✅ User found, setting form defaults");
-        // Chỉ set giá trị mặc định cho form, không hiển thị các field ẩn
-        form.setFieldsValue({
-          roomName: "",
-          startTime: null,
-          meetingPassword: "",
-          notes: "",
-        });
-      } else {
-        console.log("❌ No user found");
-        message.warning("Vui lòng đăng nhập để tạo phòng!");
-      }
+      loadUserInfo();
     }
-  }, [visible, form, getCurrentUser, authData]);
+  }, [visible, form]);
 
   const handleSubmit = async (values) => {
     setLoading(true);
     try {
-      const currentUser = getCurrentUser();
-      console.log("Current user for room creation:", currentUser);
+      // Lấy thông tin user thực từ Gateway Service API
+      const currentUser = await userService.getUserInfo();
 
       if (!currentUser) {
         message.error("Vui lòng đăng nhập để tạo phòng!");
@@ -160,7 +66,6 @@ const CreateRoomModal = ({ visible, onCancel, onRoomCreated }) => {
         message.error(
           "Không thể lấy thông tin user ID. Vui lòng đăng nhập lại!"
         );
-        console.error("User ID is missing:", currentUser);
         return;
       }
 
@@ -180,7 +85,7 @@ const CreateRoomModal = ({ visible, onCancel, onRoomCreated }) => {
         status = "ongoing";
       }
 
-      // Tạo room data với thông tin user từ localStorage
+      // Tạo room data với thông tin user thực từ Gateway Service
       const roomData = {
         room_name: values.roomName || "Phòng học mới",
         mentor_id: parseInt(currentUser.id), // Đảm bảo là số
@@ -198,10 +103,7 @@ const CreateRoomModal = ({ visible, onCancel, onRoomCreated }) => {
         creator_name: currentUser.fullName || currentUser.username,
       };
 
-      console.log("Creating room with data:", roomData);
-
       const response = await apiService.createMeetingRoom(roomData);
-      console.log("Room created response:", response);
 
       // Extract room data from response
       const roomResult = response.data?.room || response.data || response;
@@ -242,7 +144,6 @@ const CreateRoomModal = ({ visible, onCancel, onRoomCreated }) => {
 
       form.resetFields();
     } catch (error) {
-      console.error("Error creating room:", error);
       message.error(`Lỗi tạo phòng: ${error.message}`);
     } finally {
       setLoading(false);

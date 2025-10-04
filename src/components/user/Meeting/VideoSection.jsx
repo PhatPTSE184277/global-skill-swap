@@ -4,8 +4,9 @@ import { Video, VideoOff, Users, TestTube } from "lucide-react";
 import AgoraRTC from 'agora-rtc-sdk-ng';
 import useAgora from "../../../hooks/useAgora";
 import MeetingControls from "./MeetingControls";
+import apiService from "../../../services/apiService"; // Import apiService
 
-export default function VideoSection({ roomId, userName, uid, onLeave }) {
+export default function VideoSection({ roomId, userName, uid, currentUser, onLeave }) {
   const {
     localVideoTrack,
     localAudioTrack,
@@ -35,11 +36,7 @@ export default function VideoSection({ roomId, userName, uid, onLeave }) {
 
   // Debug logging for screen sharing state changes
   useEffect(() => {
-    console.log('🖥️ Screen sharing state changed:', {
-      isScreenSharing,
-      hasLocalScreenTrack: !!localScreenTrack,
-      totalRemoteUsers: remoteUsers.length
-    });
+    // Screen sharing state tracking
   }, [isScreenSharing, localScreenTrack, remoteUsers.length]);
 
   // Mark as mounted
@@ -59,7 +56,6 @@ export default function VideoSection({ roomId, userName, uid, onLeave }) {
       !isJoined &&
       !loading
     ) {
-      console.log("🚀 Auto-joining channel for the first time...");
       handleJoinChannel();
       setHasInitialized(true);
     }
@@ -70,9 +66,8 @@ export default function VideoSection({ roomId, userName, uid, onLeave }) {
   useEffect(() => {
     return () => {
       if (isJoined) {
-        console.log("🧹 VideoSection unmounting, leaving channel...");
-        leaveChannel().catch((error) => {
-          console.error("❌ Error leaving on unmount:", error);
+        leaveChannel().catch(() => {
+          // Error handled silently
         });
       }
     };
@@ -81,47 +76,29 @@ export default function VideoSection({ roomId, userName, uid, onLeave }) {
 
   const handleJoinChannel = async () => {
     if (loading) {
-      console.log("⚠️ Already loading, skipping...");
       return;
     }
 
     if (isJoined) {
-      console.log("⚠️ Already joined, skipping...");
       return;
     }
 
     if (connectionState === "CONNECTED" || connectionState === "CONNECTING") {
-      console.log("⚠️ Already connected/connecting, skipping...");
       return;
     }
 
     if (!roomId || !userName || !uid) {
-      console.error("❌ Missing required parameters:", {
-        roomId,
-        userName,
-        uid,
-      });
       message.error("Thiếu thông tin cần thiết để tham gia cuộc gọi");
       return;
     }
 
     setLoading(true);
     try {
-      console.log("🎯 Joining video channel...", {
-        roomId,
-        userName,
-        uid: parseInt(uid),
-        currentState: connectionState,
-        isJoined,
-      });
-
       await joinChannel(roomId, userName, parseInt(uid));
       message.success("Đã tham gia video call thành công!");
     } catch (error) {
-      console.error("❌ Error joining channel:", error);
       if (error.code === "INVALID_OPERATION") {
         message.error("Đang thử kết nối lại...");
-        // Try again after a short delay
         setTimeout(() => {
           handleJoinChannel();
         }, 2000);
@@ -136,14 +113,12 @@ export default function VideoSection({ roomId, userName, uid, onLeave }) {
   // Test camera function
   const testCamera = async () => {
     try {
-      console.log('🧪 Testing camera...');
       const videoTrack = await AgoraRTC.createCameraVideoTrack({
         encoderConfig: '480p_1'
       });
       
       if (testVideoRef.current) {
         videoTrack.play(testVideoRef.current);
-        console.log('✅ Camera test successful');
         message.success('Camera hoạt động bình thường!');
       }
       
@@ -155,7 +130,6 @@ export default function VideoSection({ roomId, userName, uid, onLeave }) {
       }, 3000);
       
     } catch (error) {
-      console.error('❌ Camera test failed:', error);
       if (error.code === 'PERMISSION_DENIED') {
         message.error('Vui lòng cấp quyền truy cập camera');
       } else if (error.code === 'DEVICE_NOT_FOUND') {
@@ -171,37 +145,19 @@ export default function VideoSection({ roomId, userName, uid, onLeave }) {
   // Play local video track
   useEffect(() => {
     const videoElement = localVideoRef.current;
-    console.log('🎬 Local video effect triggered:', {
-      hasVideoTrack: !!localVideoTrack,
-      hasVideoElement: !!videoElement,
-      isCameraOn,
-      isJoined,
-      videoElementDetails: videoElement ? {
-        tagName: videoElement.tagName,
-        children: videoElement.children.length,
-        innerHTML: videoElement.innerHTML.substring(0, 100)
-      } : null
-    });
     
     if (localVideoTrack && videoElement) {
       try {
-        console.log('📹 Playing local video track on element:', videoElement);
         localVideoTrack.play(videoElement);
-        console.log("📹 Local video track playing successfully");
         
         // Check if video element got a video tag
         setTimeout(() => {
           const videoTag = videoElement.querySelector('video');
-          console.log('🎥 Video tag after play:', {
-            hasVideoTag: !!videoTag,
-            videoSrc: videoTag ? videoTag.src : null,
-            videoWidth: videoTag ? videoTag.videoWidth : null,
-            videoHeight: videoTag ? videoTag.videoHeight : null
-          });
+          // Video tag available for display
         }, 1000);
         
       } catch (error) {
-        console.error("❌ Error playing local video:", error);
+        // Error handled silently
       }
     }
 
@@ -210,7 +166,7 @@ export default function VideoSection({ roomId, userName, uid, onLeave }) {
         try {
           localVideoTrack.stop();
         } catch (error) {
-          console.error("❌ Error stopping local video:", error);
+          // Error handled silently
         }
       }
     };
@@ -221,10 +177,9 @@ export default function VideoSection({ roomId, userName, uid, onLeave }) {
     const screenElement = localScreenRef.current;
     if (localScreenTrack && screenElement) {
       try {
-        console.log("🖥️ Playing local screen track");
         localScreenTrack.play(screenElement);
       } catch (error) {
-        console.error("❌ Error playing local screen:", error);
+        // Error handled silently
       }
     }
 
@@ -239,7 +194,7 @@ export default function VideoSection({ roomId, userName, uid, onLeave }) {
             videoElement.remove();
           }
         } catch (error) {
-          console.log('Screen cleanup error:', error);
+          // Cleanup error handled silently
         }
       }
     };
@@ -253,10 +208,9 @@ export default function VideoSection({ roomId, userName, uid, onLeave }) {
     useEffect(() => {
       if (user.videoTrack && videoRef.current) {
         try {
-          console.log(`📹 Playing remote video for user ${user.uid}`);
           user.videoTrack.play(videoRef.current);
         } catch (error) {
-          console.error("❌ Error playing remote video:", error);
+          // Error handled silently
         }
       }
 
@@ -269,7 +223,7 @@ export default function VideoSection({ roomId, userName, uid, onLeave }) {
               videoElement.srcObject = null;
             }
           } catch (error) {
-            console.log('Remote video cleanup error:', error);
+            // Cleanup error handled silently
           }
         }
       };
@@ -280,7 +234,7 @@ export default function VideoSection({ roomId, userName, uid, onLeave }) {
         try {
           user.audioTrack.play(audioRef.current);
         } catch (error) {
-          console.error("❌ Error playing remote audio:", error);
+          // Error handled silently
         }
       }
     }, [user.audioTrack]);
@@ -381,7 +335,7 @@ export default function VideoSection({ roomId, userName, uid, onLeave }) {
                 try {
                   await toggleCamera();
                 } catch (error) {
-                  console.error('Manual camera toggle error:', error);
+                  // Error handled silently
                 }
               }}
             >

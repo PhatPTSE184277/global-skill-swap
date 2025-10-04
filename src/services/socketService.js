@@ -12,8 +12,6 @@ class SocketService {
       return this.socket;
     }
 
-    console.log('🔌 Connecting to Socket.IO server:', serverUrl);
-    
     this.socket = io(serverUrl, {
       transports: ['websocket', 'polling'],
       autoConnect: true,
@@ -31,23 +29,19 @@ class SocketService {
     if (!this.socket) return;
 
     this.socket.on('connect', () => {
-      console.log('🔌 Connected to Socket.IO server');
       this.isConnected = true;
     });
 
     this.socket.on('disconnect', (reason) => {
-      console.log('🔌 Disconnected from Socket.IO server:', reason);
       this.isConnected = false;
     });
 
     this.socket.on('connect_error', (error) => {
-      console.error('🔌 Socket.IO connection error:', error);
       this.isConnected = false;
     });
 
     // Re-register all custom listeners
     this.eventListeners.forEach((listeners, event) => {
-      console.log(`🔄 Re-registering ${listeners.size} listener(s) for event: ${event}`);
       listeners.forEach(listener => {
         this.socket.on(event, listener);
       });
@@ -66,15 +60,9 @@ class SocketService {
   // Room management
   joinRoom(roomData) {
     if (this.socket && this.isConnected) {
-      console.log('🏠 Joining room:', roomData);
-      console.log('🔍 Debug: roomData.roomId =', roomData.roomId, 'type:', typeof roomData.roomId);
       this.socket.emit('join-room', roomData);
       return true;
     } else {
-      console.log('❌ Cannot join room - socket not connected:', {
-        hasSocket: !!this.socket,
-        isConnected: this.isConnected
-      });
       return false;
     }
   }
@@ -88,14 +76,9 @@ class SocketService {
   // Chat functionality - use NEW project pattern only
   sendMessage(messageData) {
     if (this.socket && this.isConnected) {
-      console.log('📡 Emitting send-message:', messageData);
       this.socket.emit('send-message', messageData);
       return true;
     } else {
-      console.log('❌ Cannot send message - socket not connected:', {
-        hasSocket: !!this.socket,
-        isConnected: this.isConnected
-      });
       return false;
     }
   }
@@ -107,12 +90,10 @@ class SocketService {
 
   // Legacy methods (kept for backward compatibility but not used)
   sendChatMessage(messageData) {
-    console.warn('⚠️ sendChatMessage is deprecated, use sendMessage instead');
     return this.sendMessage(messageData);
   }
 
   onChatMessage(callback) {
-    console.warn('⚠️ onChatMessage is deprecated, use onReceiveMessage instead');
     return this.on('new-chat-message', callback);
   }
 
@@ -170,10 +151,7 @@ class SocketService {
     this.eventListeners.get(event).add(callback);
 
     if (this.socket) {
-      console.log(`🎧 Registering listener for event: ${event}`);
       this.socket.on(event, callback);
-    } else {
-      console.log(`⚠️ Socket not available, queuing listener for event: ${event}`);
     }
 
     // Return cleanup function
