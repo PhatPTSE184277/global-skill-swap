@@ -7,7 +7,7 @@ const TopAuthor = ({ avatar, name, title, description, id }) => {
   return (
     <div
       className="flex items-start space-x-3 p-3 hover:bg-gray-50 rounded-lg transition-colors cursor-pointer"
-      onClick={() => navigate(`/user/${id}`)}
+      onClick={() => navigate(`/profile/${id}`)}
     >
       <img
         src={avatar}

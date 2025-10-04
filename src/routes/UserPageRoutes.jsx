@@ -3,7 +3,7 @@ import UserDetail from "../pages/user/UserDetail";
 
 const UserPageRoutes = [
   {
-    path: "/user",
+    path: "/profile",
     element: <UserPageLayout />,
     children: [
       {
