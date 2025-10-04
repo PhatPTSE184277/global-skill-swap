@@ -328,20 +328,6 @@ const MentorRegister = () => {
                     placeholder="Hãy chia sẻ về kinh nghiệm, kỹ năng và những gì bạn có thể mang lại cho học viên..."
                   />
                 </div>
-
-                <div className="mt-6">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Giá 1 giờ mentoring (VNĐ) *
-                  </label>
-                  <input
-                    type="number"
-                    name="hourlyRate"
-                    value={formData.hourlyRate}
-                    onChange={handleInputChange}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
-                    placeholder="500000"
-                  />
-                </div>
               </motion.div>
             )}
 
@@ -599,7 +585,7 @@ const MentorRegister = () => {
                           • Quét mã QR hoặc mở ứng dụng ZaloPay
                         </p>
                         <p className="text-sm text-gray-700 mb-2">
-                          • Nhập số tiền: <strong>299,000 VNĐ</strong>
+                          • Nhập số tiền: <strong>100,000 VNĐ</strong>
                         </p>
                         <p className="text-sm text-gray-700">
                           • Xác nhận thanh toán
@@ -635,7 +621,7 @@ const MentorRegister = () => {
                           • Hỗ trợ thẻ ATM, Internet Banking
                         </p>
                         <p className="text-sm text-gray-700 mb-2">
-                          • Số tiền: <strong>299,000 VNĐ</strong>
+                          • Số tiền: <strong>100,000 VNĐ</strong>
                         </p>
                         <p className="text-sm text-gray-700">
                           • Bảo mật cao với công nghệ 3D Secure
@@ -717,7 +703,7 @@ const MentorRegister = () => {
                     <hr className="my-3" />
                     <div className="flex justify-between font-semibold">
                       <span>Phí đăng ký:</span>
-                      <span className="text-green-600">299,000 VNĐ</span>
+                      <span className="text-green-600">100,000 VNĐ</span>
                     </div>
                   </div>
                 </div>

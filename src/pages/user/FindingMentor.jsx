@@ -504,7 +504,7 @@ const FindingMentor = () => {
                   showFilters ||
                   selectedSpecialty !== "all" ||
                   selectedAvailability !== "all"
-                    ? "bg-orange-500 text-white shadow-sm"
+                    ? "bg-purple-900 text-white shadow-sm"
                     : "border border-gray-200 text-gray-600 hover:border-gray-300 hover:text-gray-700"
                 }`}
               >

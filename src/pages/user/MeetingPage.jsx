@@ -61,7 +61,7 @@ export default function MeetingPage() {
   useEffect(() => {
     if (!roomId) {
       message.error("Room ID không hợp lệ");
-      navigate("/meeting-lobby");
+      navigate("/room");
       return;
     }
 
@@ -71,14 +71,14 @@ export default function MeetingPage() {
         const newUrl = `/meeting/${roomId}?userName=${encodeURIComponent(newUserName)}&uid=${uid}`;
         navigate(newUrl, { replace: true });
       } else {
-        navigate("/meeting-lobby");
+        navigate("/room");
       }
     }
   }, [roomId, userName, uid, navigate]);
 
   const handleBackToLobby = () => {
     if (window.confirm("Bạn có chắc muốn rời khỏi cuộc họp?")) {
-      navigate("/meeting-lobby");
+      navigate("/room");
     }
   };
 
@@ -92,12 +92,12 @@ export default function MeetingPage() {
       console.log("✅ Left Agora channel successfully");
 
       message.success("Đã rời khỏi cuộc họp");
-      navigate("/meeting-lobby");
+      navigate("/room");
     } catch (error) {
       console.error("❌ Error leaving meeting:", error);
       message.error("Lỗi khi rời khỏi cuộc họp");
       // Still navigate back even if there's an error
-      navigate("/meeting-lobby");
+      navigate("/room");
     }
   };
 
@@ -110,7 +110,7 @@ export default function MeetingPage() {
           icon={<ArrowLeft size={16} />}
           onClick={handleBackToLobby}
         >
-          Quay lại Lobby
+          Quay lại Phòng Học
         </Button>
         <div className="flex-1">
           <MeetingHeader roomId={roomId} userName={userName} />
@@ -125,7 +125,7 @@ export default function MeetingPage() {
             roomId={roomId}
             userName={userName}
             uid={parseInt(uid)}
-            onLeave={() => navigate("/meeting-lobby")}
+            onLeave={() => navigate("/room")}
           />
         </div>
 
