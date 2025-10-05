@@ -1,109 +1,68 @@
-// API Configuration - Room Service specific
-const API_BASE_URL = import.meta.env.DEV ? '/api' : (import.meta.env.VITE_ROOM_API_URL || 'https://gss-room-service.onrender.com/api');
+import axiosRoom from '../apis/axiosRoom.js';
 
 class ApiService {
   constructor() {
-    this.baseURL = API_BASE_URL;
-  }
-
-  async request(endpoint, options = {}) {
-    const url = `${this.baseURL}${endpoint}`;
-    const config = {
-      headers: {
-        'Content-Type': 'application/json',
-        ...options.headers,
-      },
-      ...options,
-    };
-
-    try {
-      const response = await fetch(url, config);
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || `HTTP error! status: ${response.status}`);
-      }
-
-      return data;
-    } catch (error) {
-      console.error('API request failed:', error);
-      throw error;
-    }
+    this.api = axiosRoom;
   }
 
   // Meeting Room API methods
   async createMeetingRoom(roomData) {
-    return this.request('/meeting-rooms', {
-      method: 'POST',
-      body: JSON.stringify(roomData),
-    });
+    const response = await this.api.post('/meeting-rooms', roomData);
+    return response.data;
   }
 
   async getMeetingRooms() {
-    const response = await this.request('/meeting-rooms');
-    return response.data?.rooms || response.data || [];
+    const response = await this.api.get('/meeting-rooms');
+    return response.data?.data?.rooms|| [];
   }
 
   async getMeetingRoom(roomId) {
-    const response = await this.request(`/meeting-rooms/${roomId}`);
-    return response.data?.room || response.data;
+    const response = await this.api.get(`/meeting-rooms/${roomId}`);
+    return response.data?.data?.rooms || response.data;
   }
 
   async updateMeetingRoom(roomId, roomData) {
-    return this.request(`/meeting-rooms/${roomId}`, {
-      method: 'PUT',
-      body: JSON.stringify(roomData),
-    });
+    const response = await this.api.put(`/meeting-rooms/${roomId}`, roomData);
+    return response.data;
   }
 
   async updateMeetingRoomStatus(roomId, status) {
-    return this.request(`/meeting-rooms/${roomId}/status`, {
-      method: 'PATCH',
-      body: JSON.stringify({ status }),
-    });
+    const response = await this.api.patch(`/meeting-rooms/${roomId}/status`, { status });
+    return response.data;
   }
 
   async deleteMeetingRoom(roomId) {
-    return this.request(`/meeting-rooms/${roomId}`, {
-      method: 'DELETE',
-    });
+    const response = await this.api.delete(`/meeting-rooms/${roomId}`);
+    return response.data;
   }
 
   // Agora Integration API methods
   async generateAgoraTokens(roomId, userData) {
-    return this.request('/agora/tokens', {
-      method: 'POST',
-      body: JSON.stringify({
-        roomId,
-        ...userData
-      }),
+    const response = await this.api.post('/agora/tokens', {
+      roomId,
+      ...userData
     });
+    return response.data;
   }
 
   async joinRoom(roomId, userData) {
-    return this.request(`/agora/rooms/${roomId}/join`, {
-      method: 'POST',
-      body: JSON.stringify(userData),
-    });
+    const response = await this.api.post(`/agora/rooms/${roomId}/join`, userData);
+    return response.data;
   }
 
   async leaveRoom(roomId, userData) {
-    return this.request(`/agora/rooms/${roomId}/leave`, {
-      method: 'POST',
-      body: JSON.stringify(userData),
-    });
+    const response = await this.api.post(`/agora/rooms/${roomId}/leave`, userData);
+    return response.data;
   }
 
   async getRoomParticipants(roomId) {
-    const response = await this.request(`/agora/rooms/${roomId}/participants`);
+    const response = await this.api.get(`/agora/rooms/${roomId}/participants`);
     return response.data?.participants || [];
   }
 
   async refreshAgoraTokens(roomId, uid) {
-    return this.request('/agora/tokens/refresh', {
-      method: 'POST',
-      body: JSON.stringify({ roomId, uid }),
-    });
+    const response = await this.api.post('/agora/tokens/refresh', { roomId, uid });
+    return response.data;
   }
 }
 

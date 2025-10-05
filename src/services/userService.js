@@ -1,27 +1,23 @@
-import gatewayApi from '../apis/gatewayClient.js';
+import api from '../apis/axiosClient.js';
 
 class UserService {
     async getCurrentUser() {
-        try {
-            const response = await gatewayApi.get('/user/me');
-            return response.data.data;
-        } catch (error) {
-            throw error;
-        }
+        const response = await api.get('/user/me');
+        return response?.data?.data;
     }
 
-    getCurrentUserFromStorage() {
-        try {
-            const authData = localStorage.getItem('authData');
-            if (authData) {
-                const parsed = JSON.parse(authData);
-                return parsed.user || null;
-            }
-        } catch (error) {
-            // Silent fail
-        }
-        return null;
-    }
+    getCurrentUserFromStorage() { 
+        try { 
+            const authData = localStorage.getItem('authData'); 
+            if (authData) { 
+                const parsed = JSON.parse(authData); 
+                return parsed.user || null; 
+            } 
+        } catch (error) { 
+            // Silent fail 
+        } 
+        return null; 
+    } 
 
     async getUserInfo() {
         try {
