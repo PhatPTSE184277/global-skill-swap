@@ -1,11 +1,11 @@
 import axios from 'axios';
-const baseUrl = import.meta.env.VITE_API_BASE_URL;
+const baseUrl = import.meta.env.VITE_ROOM_API_URL;
 
 const config = {
      baseURL: baseUrl
 };
 
-const api = axios.create(config);
+const apiRoom = axios.create(config);
 
 const handleBefore = (config) => {
     const authData = localStorage.getItem('authData');
@@ -28,6 +28,6 @@ const handleBefore = (config) => {
 
 const handleRequestError = (error) => Promise.reject(error);
 
-api.interceptors.request.use(handleBefore, handleRequestError);
+apiRoom.interceptors.request.use(handleBefore, handleRequestError);
 
-export default api;
+export default apiRoom;

@@ -41,10 +41,15 @@ export default function PublicRoom() {
     setLoading(true);
     try {
       const response = await apiService.getMeetingRooms();
-      setMeetingRooms(response || []);
+      console.log("API Response:", response); // Debug log
+
+      // Đảm bảo response là array
+      const rooms = Array.isArray(response) ? response : [];
+      setMeetingRooms(rooms);
     } catch (error) {
       console.error("Error loading rooms:", error);
       message.error("Lỗi khi tải danh sách phòng học");
+      setMeetingRooms([]); // Set empty array on error
     } finally {
       setLoading(false);
     }
@@ -127,14 +132,14 @@ export default function PublicRoom() {
     }`; // Random joined count
 
   const getCreatorName = (room) => {
-    // Chỉ hiển thị tên từ API hoặc fallback về mặc định
-    // Không tự động thay thế bằng tên user hiện tại
     return room.creator_name || room.mentor_name || "Mentor GSS";
   };
 
-  const filteredMeetingRooms = meetingRooms.filter((room) =>
-    room.room_name.toLowerCase().includes(searchText.toLowerCase())
-  );
+  const filteredMeetingRooms = Array.isArray(meetingRooms)
+    ? meetingRooms.filter((room) =>
+        room?.room_name?.toLowerCase().includes(searchText.toLowerCase())
+      )
+    : [];
 
   return (
     <div className="p-8 max-w-5xl mx-auto">

@@ -16,7 +16,7 @@ export default function MeetingPage() {
   const navigate = useNavigate();
 
   const userName = searchParams.get("userName") || "Anonymous";
-  
+
   // State để lưu thông tin user thực
   const [currentUser, setCurrentUser] = useState(null);
   const [uid, setUid] = useState(null);
@@ -51,7 +51,7 @@ export default function MeetingPage() {
   useEffect(() => {
     if (roomId && userName && uid && currentUser) {
       const socket = socketService.connect();
-      
+
       const joinWhenReady = () => {
         if (socket.connected) {
           socketService.joinRoom({
@@ -63,7 +63,7 @@ export default function MeetingPage() {
           setTimeout(joinWhenReady, 100);
         }
       };
-      
+
       joinWhenReady();
     }
 
@@ -84,7 +84,9 @@ export default function MeetingPage() {
     if (!userName || userName === "Anonymous") {
       const newUserName = prompt("Nhập tên của bạn:");
       if (newUserName) {
-        const newUrl = `/meeting/${roomId}?userName=${encodeURIComponent(newUserName)}&uid=${uid}`;
+        const newUrl = `/meeting/${roomId}?userName=${encodeURIComponent(
+          newUserName
+        )}&uid=${uid}`;
         navigate(newUrl, { replace: true });
       } else {
         navigate("/room");
@@ -117,7 +119,7 @@ export default function MeetingPage() {
         <Button
           type="text"
           icon={<ArrowLeft size={16} />}
-          onClick={handleBackToLobby}
+          onClick={handleLeaveMeeting}
         >
           Quay lại Phòng Học
         </Button>
@@ -152,8 +154,8 @@ export default function MeetingPage() {
         <div className="w-80 border-l flex flex-col h-full">
           <div className="h-1/3 overflow-hidden">
             {uid && currentUser ? (
-              <Participants 
-                roomId={roomId} 
+              <Participants
+                roomId={roomId}
                 userName={currentUser.username || userName}
                 userId={uid}
                 remoteUsers={remoteUsers}
@@ -167,9 +169,9 @@ export default function MeetingPage() {
           </div>
           <div className="flex-1 border-t overflow-hidden">
             {uid && currentUser ? (
-              <ChatBox 
-                roomId={roomId} 
-                userName={currentUser.username || userName} 
+              <ChatBox
+                roomId={roomId}
+                userName={currentUser.username || userName}
                 userId={uid}
               />
             ) : (
