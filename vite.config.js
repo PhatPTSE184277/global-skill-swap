@@ -7,14 +7,6 @@ export default defineConfig({
     plugins: [react(), tailwindcss()],
     server: {
         proxy: {
-<<<<<<< Updated upstream
-            '/api': {
-                target: 'https://gateway-service-w2gi.onrender.com',
-                changeOrigin: true,
-                secure: false,
-                rewrite: (path) => path.replace(/^\/api/, '/api'),
-            },
-=======
              // Proxy cho Room Service (meeting rooms, agora APIs)
             '/api/room': {
                 target: 'https://gss-room-service.onrender.com',
@@ -29,7 +21,6 @@ export default defineConfig({
                 rewrite: (path) => path.replace(/^\/api/, '/api'),
             },
            
->>>>>>> Stashed changes
         },
     },
 });
