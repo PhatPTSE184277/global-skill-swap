@@ -1,22 +1,3 @@
-<<<<<<< Updated upstream
-import BlogPageLayout from "../layouts/client/BlogPageLayout";
-import PublicRoom from "../pages/user/PublicRoom";
-
-const RoomPageRoutes = [
-  {
-    path: "/room",
-    element: <BlogPageLayout />,
-    children: [
-      {
-        path: "",
-        element: <PublicRoom />,
-      },
-    ],
-  },
-];
-
-export default RoomPageRoutes;
-=======
 // import BlogPageLayout from "../layouts/client/BlogPageLayout";
 // import MeetingPage from "../pages/user/MeetingPage";
 // import MeetingLobby from "../pages/user/MeetingLobby";
@@ -55,4 +36,3 @@ export default RoomPageRoutes;
 // ];
 
 // export default RoomPageRoutes;
->>>>>>> Stashed changes

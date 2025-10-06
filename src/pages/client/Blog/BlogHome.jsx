@@ -1,9 +1,6 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-<<<<<<< Updated upstream
-=======
 import { motion, AnimatePresence } from "framer-motion";
->>>>>>> Stashed changes
 import RightSidebar from "../../../components/client/Blog/RightSidebar";
 import blogApi from "../../../apis/blogApi";
 
@@ -146,38 +143,6 @@ const BlogHome = () => {
   ];
 
   return (
-<<<<<<< Updated upstream
-    <div>
-      <main className="w-full font-['Noto Sans'] bg-[#fdf8ee] h-auto p-6">
-        <section className="grid grid-cols-1 lg:grid-cols-3 gap-6 max-w-7xl mx-auto">
-          {/* Bên trái: Bài viết nổi bật */}
-          <div className="lg:col-span-2  p-6">
-            <h2 className="text-xl font-bold mb-4">
-              Những Bài Viết Nổi Bật Của{" "}
-              <span className="text-orange-500">Tháng Này</span>
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {featuredPosts.map((post) => (
-                <article
-                  key={post.id}
-                  onClick={() => handlePostClick(post.id)}
-                  className="rounded-xl overflow-hidden shadow hover:shadow-lg transition-shadow duration-300 cursor-pointer"
-                >
-                  <img
-                    src={post.image}
-                    alt={post.alt}
-                    className="w-full h-50 object-cover"
-                  />
-                  <div className="p-4">
-                    <div className="flex flex-wrap gap-2 mb-3">
-                      {post.tags.map((tag, index) => (
-                        <span
-                          key={index}
-                          className="px-2 py-1 text-xs font-medium bg-purple-100 text-purple-600 rounded"
-                        >
-                          {tag}
-                        </span>
-=======
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
@@ -238,7 +203,6 @@ const BlogHome = () => {
                         >
                           {tag}
                         </motion.span>
->>>>>>> Stashed changes
                       ))}
                     </div>
 
@@ -258,32 +222,12 @@ const BlogHome = () => {
                       <span>{post.readTime} Min. To Read</span>
                     </div>
                   </div>
-<<<<<<< Updated upstream
-                </article>
-=======
                 </motion.article>
->>>>>>> Stashed changes
               ))}
             </div>
           </div>
 
           {/* Bên phải: Hôm Nay Có Gì */}
-<<<<<<< Updated upstream
-          <aside className=" p-6 rounded-2xl ">
-            <h2 className="text-xl font-bold mb-4 text-orange-500">
-              Hôm Nay Có Gì?
-            </h2>
-            <div className="max-h-96 overflow-y-auto space-y-4 pr-2 custom-scrollbar">
-              {todayPosts.map((post) => (
-                <article
-                  key={post.id}
-                  onClick={() => handlePostClick(post.id)}
-                  className="cursor-pointer hover:text-purple-600 transition-colors duration-200 pb-4 border-b border-gray-100 last:border-b-0"
-                >
-                  <span className="inline-block px-2 py-1 text-xs font-medium bg-orange-100 text-orange-600 rounded mb-2">
-                    {post.tag}
-                  </span>
-=======
           <motion.aside
             className=" p-6 rounded-2xl "
             initial={{ x: 50, opacity: 0 }}
@@ -319,7 +263,6 @@ const BlogHome = () => {
                   >
                     {post.tag}
                   </motion.span>
->>>>>>> Stashed changes
 
                   <h3 className="font-medium line-clamp-2 mb-2">
                     {post.title}
@@ -338,15 +281,6 @@ const BlogHome = () => {
                     Did you come here for something in particular or just
                     general Riker-bashing? And blowing into maximum warp
                   </p>
-<<<<<<< Updated upstream
-                </article>
-              ))}
-            </div>
-          </aside>
-        </section>
-      </main>
-      <section className="grid grid-cols-1 lg:grid-cols-[2fr_2fr_1.5fr] gap-6 max-w-7xl mx-auto">
-=======
                 </motion.article>
               ))}
             </div>
@@ -360,68 +294,46 @@ const BlogHome = () => {
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.8, delay: 1.2 }}
       >
->>>>>>> Stashed changes
         <div className="col-span-2">
           {/* Main Content */}
           <div className="space-y-6">
             {/* Tab Navigation - sticky */}
             <div className="bg-white  pt-6 sticky top-16 z-20 ">
               <div className="flex border-b border-gray-200 mb-0">
-<<<<<<< Updated upstream
-                <button
-=======
                 <motion.button
->>>>>>> Stashed changes
                   onClick={() => setActiveTab("following")}
                   className={`pb-3 px-4 font-semibold border-b-2 transition-colors ${
                     activeTab === "following"
                       ? "border-orange-500 text-orange-500"
                       : "border-transparent text-gray-500 hover:text-gray-700"
                   }`}
-<<<<<<< Updated upstream
-                >
-                  <span>Đang Theo Dõi</span>
-                </button>
-                <button
-=======
                   whileHover={{ y: -2 }}
                   whileTap={{ scale: 0.95 }}
                 >
                   <span>Đang Theo Dõi</span>
                 </motion.button>
                 <motion.button
->>>>>>> Stashed changes
                   onClick={() => setActiveTab("suggestions")}
                   className={`pb-3 px-4 font-semibold border-b-2 transition-colors ${
                     activeTab === "suggestions"
                       ? "border-orange-500 text-orange-500"
                       : "border-transparent text-gray-500 hover:text-gray-700"
                   }`}
-<<<<<<< Updated upstream
-                >
-                  <span> Đề Xuất Cho Bạn</span>
-                </button>
-=======
                   whileHover={{ y: -2 }}
                   whileTap={{ scale: 0.95 }}
                 >
                   <span> Đề Xuất Cho Bạn</span>
                 </motion.button>
->>>>>>> Stashed changes
               </div>
             </div>
             {/* Tab Content - scroll bình thường */}
             <div>
               {activeTab === "following" && (
-<<<<<<< Updated upstream
-                <div>
-=======
                 <motion.div
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ duration: 0.5 }}
                 >
->>>>>>> Stashed changes
                   {loading ? (
                     <div className="text-center py-8">
                       <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500"></div>
@@ -429,10 +341,6 @@ const BlogHome = () => {
                     </div>
                   ) : followingPosts.length > 0 ? (
                     <div className="space-y-4">
-<<<<<<< Updated upstream
-                      {followingPosts.map((post) => (
-                        <article key={post.id}>
-=======
                       {followingPosts.map((post, index) => (
                         <motion.article
                           key={post.id}
@@ -441,31 +349,10 @@ const BlogHome = () => {
                           transition={{ duration: 0.5, delay: index * 0.1 }}
                           whileHover={{ scale: 1.02 }}
                         >
->>>>>>> Stashed changes
                           <div
                             onClick={() => handlePostClick(post.id)}
                             className="flex cursor-pointerpointer  items-center "
                           >
-<<<<<<< Updated upstream
-                            <img
-                              src={post.image}
-                              alt={post.alt}
-                              className="w-60 h-35 object-cover rounded-xl  "
-                            />
-                            <div className="flex-1 p-4">
-                              <div className="flex gap-2 mb-2">
-                                {post.tags.map((tag, index) => (
-                                  <span
-                                    key={index}
-                                    className={`px-2 py-1 text-xs font-medium rounded ${
-                                      index % 2 === 0
-                                        ? "bg-blue-100 text-blue-600"
-                                        : "bg-purple-100 text-purple-600"
-                                    }`}
-                                  >
-                                    {tag}
-                                  </span>
-=======
                             <motion.img
                               src={post.image}
                               alt={post.alt}
@@ -492,7 +379,6 @@ const BlogHome = () => {
                                   >
                                     {tag}
                                   </motion.span>
->>>>>>> Stashed changes
                                 ))}
                               </div>
 
@@ -514,11 +400,7 @@ const BlogHome = () => {
                               </p>
                             </div>
                           </div>
-<<<<<<< Updated upstream
-                        </article>
-=======
                         </motion.article>
->>>>>>> Stashed changes
                       ))}
                       *bạn đã xem hết
                     </div>
@@ -527,13 +409,6 @@ const BlogHome = () => {
                       Không có bài viết nào để hiển thị
                     </div>
                   )}
-<<<<<<< Updated upstream
-                </div>
-              )}
-
-              {activeTab === "suggestions" && (
-                <div>
-=======
                 </motion.div>
               )}
 
@@ -543,7 +418,6 @@ const BlogHome = () => {
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ duration: 0.5 }}
                 >
->>>>>>> Stashed changes
                   {loading ? (
                     <div className="text-center py-8">
                       <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500"></div>
@@ -551,10 +425,6 @@ const BlogHome = () => {
                     </div>
                   ) : suggestedPosts.length > 0 ? (
                     <div className="space-y-4">
-<<<<<<< Updated upstream
-                      {suggestedPosts.map((post) => (
-                        <article key={post.id}>
-=======
                       {suggestedPosts.map((post, index) => (
                         <motion.article
                           key={post.id}
@@ -563,31 +433,10 @@ const BlogHome = () => {
                           transition={{ duration: 0.5, delay: index * 0.1 }}
                           whileHover={{ scale: 1.02 }}
                         >
->>>>>>> Stashed changes
                           <div
                             onClick={() => handlePostClick(post.id)}
                             className="flex cursor-pointer hover:bg-gray-50 rounded-lg transition-colors duration-200"
                           >
-<<<<<<< Updated upstream
-                            <img
-                              src={post.image}
-                              alt={post.alt}
-                              className="w-60 h-35 object-cover rounded-xl"
-                            />
-                            <div className="flex-1 p-4">
-                              <div className="flex gap-2 mb-2">
-                                {post.tags.map((tag, index) => (
-                                  <span
-                                    key={index}
-                                    className={`px-2 py-1 text-xs font-medium rounded ${
-                                      index % 2 === 0
-                                        ? "bg-blue-100 text-blue-600"
-                                        : "bg-purple-100 text-purple-600"
-                                    }`}
-                                  >
-                                    {tag}
-                                  </span>
-=======
                             <motion.img
                               src={post.image}
                               alt={post.alt}
@@ -614,7 +463,6 @@ const BlogHome = () => {
                                   >
                                     {tag}
                                   </motion.span>
->>>>>>> Stashed changes
                                 ))}
                               </div>
 
@@ -636,11 +484,7 @@ const BlogHome = () => {
                               </p>
                             </div>
                           </div>
-<<<<<<< Updated upstream
-                        </article>
-=======
                         </motion.article>
->>>>>>> Stashed changes
                       ))}
                     </div>
                   ) : (
@@ -648,26 +492,18 @@ const BlogHome = () => {
                       Không có bài viết đề xuất nào
                     </div>
                   )}
-<<<<<<< Updated upstream
-                </div>
-=======
                 </motion.div>
->>>>>>> Stashed changes
               )}
             </div>
           </div>
         </div>
         {/* Right Sidebar */}
-<<<<<<< Updated upstream
-        <div className="mt-6 relative group">
-=======
         <motion.div
           className="mt-6 relative group"
           initial={{ x: 50, opacity: 0 }}
           animate={{ x: 0, opacity: 1 }}
           transition={{ duration: 0.8, delay: 1.4 }}
         >
->>>>>>> Stashed changes
           <div
             className="
       sticky top-18 
@@ -680,15 +516,9 @@ const BlogHome = () => {
           >
             <RightSidebar />
           </div>
-<<<<<<< Updated upstream
-        </div>
-      </section>
-    </div>
-=======
         </motion.div>
       </motion.section>
     </motion.div>
->>>>>>> Stashed changes
   );
 };
 

@@ -34,9 +34,6 @@ input:-webkit-autofill:active {
     transition: background-color 5000s ease-in-out 0s;
 }
 
-<<<<<<< Updated upstream
-@import 'tailwindcss';
-=======
 /* Agora Video Styles */
 .agora-video-container video {
     width: 100% !important;
@@ -88,4 +85,3 @@ input:-webkit-autofill:active {
 }
 
 @import 'tailwindcss';
->>>>>>> Stashed changes
