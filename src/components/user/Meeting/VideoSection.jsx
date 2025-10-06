@@ -1,12 +1,18 @@
 import React, { useEffect, useState, useRef } from "react";
 import { message, Spin, Button, Modal } from "antd";
 import { Video, VideoOff, Users, TestTube } from "lucide-react";
-import AgoraRTC from 'agora-rtc-sdk-ng';
+import AgoraRTC from "agora-rtc-sdk-ng";
 import useAgora from "../../../hooks/useAgora";
 import MeetingControls from "./MeetingControls";
 import apiService from "../../../services/apiService"; // Import apiService
 
-export default function VideoSection({ roomId, userName, uid, currentUser, onLeave }) {
+export default function VideoSection({
+  roomId,
+  userName,
+  uid,
+  currentUser,
+  onLeave,
+}) {
   const {
     localVideoTrack,
     localAudioTrack,
@@ -47,6 +53,17 @@ export default function VideoSection({ roomId, userName, uid, currentUser, onLea
 
   // Auto-join channel when component mounts (only once)
   useEffect(() => {
+    console.log("🎯 VideoSection useEffect check:", {
+      hasMounted,
+      hasInitialized,
+      roomId,
+      userName,
+      uid,
+      isJoined,
+      loading,
+      connectionState,
+    });
+
     if (
       hasMounted &&
       !hasInitialized &&
@@ -56,6 +73,7 @@ export default function VideoSection({ roomId, userName, uid, currentUser, onLea
       !isJoined &&
       !loading
     ) {
+      console.log("🚀 All conditions met, starting join process...");
       handleJoinChannel();
       setHasInitialized(true);
     }
@@ -114,30 +132,29 @@ export default function VideoSection({ roomId, userName, uid, currentUser, onLea
   const testCamera = async () => {
     try {
       const videoTrack = await AgoraRTC.createCameraVideoTrack({
-        encoderConfig: '480p_1'
+        encoderConfig: "480p_1",
       });
-      
+
       if (testVideoRef.current) {
         videoTrack.play(testVideoRef.current);
-        message.success('Camera hoạt động bình thường!');
+        message.success("Camera hoạt động bình thường!");
       }
-      
+
       // Stop test track after 3 seconds
       setTimeout(() => {
         videoTrack.stop();
         videoTrack.close();
         setTestCameraVisible(false);
       }, 3000);
-      
     } catch (error) {
-      if (error.code === 'PERMISSION_DENIED') {
-        message.error('Vui lòng cấp quyền truy cập camera');
-      } else if (error.code === 'DEVICE_NOT_FOUND') {
-        message.error('Không tìm thấy camera');
-      } else if (error.code === 'DEVICE_BUSY') {
-        message.error('Camera đang được sử dụng bởi ứng dụng khác');
+      if (error.code === "PERMISSION_DENIED") {
+        message.error("Vui lòng cấp quyền truy cập camera");
+      } else if (error.code === "DEVICE_NOT_FOUND") {
+        message.error("Không tìm thấy camera");
+      } else if (error.code === "DEVICE_BUSY") {
+        message.error("Camera đang được sử dụng bởi ứng dụng khác");
       } else {
-        message.error('Lỗi camera: ' + error.message);
+        message.error("Lỗi camera: " + error.message);
       }
     }
   };
@@ -145,17 +162,16 @@ export default function VideoSection({ roomId, userName, uid, currentUser, onLea
   // Play local video track
   useEffect(() => {
     const videoElement = localVideoRef.current;
-    
+
     if (localVideoTrack && videoElement) {
       try {
         localVideoTrack.play(videoElement);
-        
+
         // Check if video element got a video tag
         setTimeout(() => {
-          const videoTag = videoElement.querySelector('video');
+          const videoTag = videoElement.querySelector("video");
           // Video tag available for display
         }, 1000);
-        
       } catch (error) {
         // Error handled silently
       }
@@ -188,7 +204,7 @@ export default function VideoSection({ roomId, userName, uid, currentUser, onLea
       if (screenElement) {
         try {
           // Clear the video element
-          const videoElement = screenElement.querySelector('video');
+          const videoElement = screenElement.querySelector("video");
           if (videoElement) {
             videoElement.srcObject = null;
             videoElement.remove();
@@ -218,7 +234,7 @@ export default function VideoSection({ roomId, userName, uid, currentUser, onLea
         // Cleanup video element
         if (videoRef.current) {
           try {
-            const videoElement = videoRef.current.querySelector('video');
+            const videoElement = videoRef.current.querySelector("video");
             if (videoElement) {
               videoElement.srcObject = null;
             }
@@ -283,7 +299,7 @@ export default function VideoSection({ roomId, userName, uid, currentUser, onLea
   const hasScreenShare = isScreenSharing || remoteScreenUser;
 
   return (
-    <div className="h-full flex flex-col">
+    <div className="h-full flex flex-col min-h-0">
       {/* Connection Status */}
       <div className="mb-4 flex items-center justify-between">
         <div className="flex items-center space-x-2">
@@ -308,9 +324,11 @@ export default function VideoSection({ roomId, userName, uid, currentUser, onLea
         <div className="flex items-center space-x-4">
           <div className="flex items-center space-x-2 text-sm text-gray-600">
             <Users size={16} />
-            <span>{remoteUsers.length + (isJoined ? 1 : 0)} người tham gia</span>
+            <span>
+              {remoteUsers.length + (isJoined ? 1 : 0)} người tham gia
+            </span>
           </div>
-          
+
           {/* Camera Test Button */}
           <Button
             size="small"
@@ -324,7 +342,7 @@ export default function VideoSection({ roomId, userName, uid, currentUser, onLea
           >
             Test Camera
           </Button>
-          
+
           {/* Manual Camera Toggle for Debug */}
           {isJoined && (
             <Button
@@ -346,7 +364,7 @@ export default function VideoSection({ roomId, userName, uid, currentUser, onLea
       </div>
 
       {/* Main Video Area */}
-      <div className="flex-1 grid gap-4">
+      <div className="flex-1 grid gap-4 overflow-auto max-h-[65vh]">
         {/* Screen Sharing View - only show when local user is sharing */}
         {isScreenSharing && localScreenTrack && (
           <div className="grid grid-cols-1 gap-4">
@@ -398,8 +416,8 @@ export default function VideoSection({ roomId, userName, uid, currentUser, onLea
               <div className="aspect-video bg-gray-900 rounded-lg overflow-hidden relative">
                 {localVideoTrack ? (
                   <>
-                    <div 
-                      ref={localVideoRef} 
+                    <div
+                      ref={localVideoRef}
                       className="agora-video-container"
                     />
                     {/* Debug info overlay */}
@@ -411,7 +429,10 @@ export default function VideoSection({ roomId, userName, uid, currentUser, onLea
                   <>
                     <div className="w-full h-full flex items-center justify-center">
                       <div className="text-center text-white">
-                        <VideoOff size={48} className="mx-auto mb-2 opacity-50" />
+                        <VideoOff
+                          size={48}
+                          className="mx-auto mb-2 opacity-50"
+                        />
                         <p className="text-sm opacity-75">Camera tắt</p>
                       </div>
                     </div>
@@ -429,11 +450,28 @@ export default function VideoSection({ roomId, userName, uid, currentUser, onLea
             )}
 
             {/* Remote participants - includes screen sharing from other users */}
-            {remoteUsers.map((user) => (
-              <div key={user.uid} className="aspect-video">
-                <RemoteVideoCard user={user} />
+            {remoteUsers.map((user) => {
+              console.log("🎭 Rendering remote user:", {
+                uid: user.uid,
+                hasVideo: !!user.videoTrack,
+                hasAudio: !!user.audioTrack,
+              });
+              return (
+                <div key={user.uid} className="aspect-video">
+                  <RemoteVideoCard user={user} />
+                </div>
+              );
+            })}
+
+            {/* Debug info for remote users */}
+            {remoteUsers.length > 0 && (
+              <div className="col-span-full">
+                <div className="bg-blue-50 border border-blue-200 rounded p-2 text-xs text-blue-800">
+                  🔍 Debug: {remoteUsers.length} remote user(s) detected - UIDs:{" "}
+                  {remoteUsers.map((u) => u.uid).join(", ")}
+                </div>
               </div>
-            ))}
+            )}
 
             {/* Empty state */}
             {remoteUsers.length === 0 && !isJoined && (
@@ -444,22 +482,37 @@ export default function VideoSection({ roomId, userName, uid, currentUser, onLea
                 </div>
               </div>
             )}
+
+            {/* Debug state when joined but no remote users */}
+            {remoteUsers.length === 0 && isJoined && (
+              <div className="aspect-video bg-yellow-50 border border-yellow-200 rounded-lg flex items-center justify-center">
+                <div className="text-center text-yellow-700">
+                  <Users size={48} className="mx-auto mb-2 opacity-50" />
+                  <p>Đã kết nối - chờ người khác tham gia</p>
+                  <p className="text-xs mt-1">
+                    Hoặc có thể người khác đã có sẵn nhưng chưa được sync
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>
 
-      {/* Meeting Controls */}
-      <MeetingControls 
-        onLeave={onLeave}
-        isLeaving={loading}
-        isCameraOn={isCameraOn}
-        isMicOn={isMicOn}
-        isScreenSharing={isScreenSharing}
-        remoteScreenUser={remoteScreenUser}
-        toggleCamera={toggleCamera}
-        toggleMicrophone={toggleMicrophone}
-        toggleScreenShare={toggleScreenShare}
-      />
+      {/* Meeting Controls (fixed footer area so buttons don't get pushed out) */}
+      <div className="flex-none mt-3">
+        <MeetingControls
+          onLeave={onLeave}
+          isLeaving={loading}
+          isCameraOn={isCameraOn}
+          isMicOn={isMicOn}
+          isScreenSharing={isScreenSharing}
+          remoteScreenUser={remoteScreenUser}
+          toggleCamera={toggleCamera}
+          toggleMicrophone={toggleMicrophone}
+          toggleScreenShare={toggleScreenShare}
+        />
+      </div>
 
       {/* Camera Test Modal */}
       <Modal
@@ -474,7 +527,9 @@ export default function VideoSection({ roomId, userName, uid, currentUser, onLea
           <div className="aspect-video bg-gray-900 rounded-lg overflow-hidden mb-4">
             <div ref={testVideoRef} className="w-full h-full" />
           </div>
-          <p className="text-gray-600">Kiểm tra camera... (sẽ tự đóng sau 3 giây)</p>
+          <p className="text-gray-600">
+            Kiểm tra camera... (sẽ tự đóng sau 3 giây)
+          </p>
         </div>
       </Modal>
     </div>
