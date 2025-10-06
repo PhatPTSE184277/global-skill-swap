@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useMemo } from "react";
-import { useParams, useSearchParams, useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 import { message, Button } from "antd";
 import { ArrowLeft } from "lucide-react";
 import ChatBox from "../../components/user/Meeting/ChatBox";
@@ -9,14 +9,28 @@ import Participants from "../../components/user/Meeting/Participants";
 import useAgora from "../../hooks/useAgora";
 import socketService from "../../services/socketService";
 import userService from "../../services/userService"; // Import userService
+import apiService from "../../services/apiService";
 
 export default function MeetingPage() {
-  const { roomId } = useParams();
-  const [searchParams] = useSearchParams();
+  const { roomLink } = useParams();
   const navigate = useNavigate();
 
-  const userName = searchParams.get("userName") || "Anonymous";
+  // getIdbyLink is async and returns a Promise. Store resolved id in state
+  const [roomId, setRoomId] = useState(null);
 
+  useEffect(() => {
+    if (!roomLink) return;
+    (async () => {
+      try {
+        const resp = await apiService.getIdbyLink(roomLink);
+        const id =
+          resp?.data?.meeting_id ?? resp?.meeting_id ?? resp?.id ?? null;
+        setRoomId(id);
+      } catch {
+        setRoomId(null);
+      }
+    })();
+  }, [roomLink]);
   // State để lưu thông tin user thực
   const [currentUser, setCurrentUser] = useState(null);
   const [uid, setUid] = useState(null);
@@ -49,14 +63,14 @@ export default function MeetingPage() {
 
   // Join socket room when component mounts and user info is available
   useEffect(() => {
-    if (roomId && userName && uid && currentUser) {
+    if (roomId && currentUser) {
       const socket = socketService.connect();
 
       const joinWhenReady = () => {
         if (socket.connected) {
           socketService.joinRoom({
             roomId: String(roomId),
-            userName: currentUser.username || userName,
+            userName: currentUser?.username,
             userId: String(currentUser.id),
           });
         } else {
@@ -72,43 +86,25 @@ export default function MeetingPage() {
         socketService.leaveRoom({ roomId: String(roomId) });
       }
     };
-  }, [roomId, userName, uid, currentUser]);
+  }, [roomId, currentUser?.username, uid, currentUser]);
 
   useEffect(() => {
-    if (!roomId) {
-      message.error("Room ID không hợp lệ");
-      navigate("/room");
+    if (!roomLink) {
+      message.error("Link không hợp lệ");
+      navigate("/meeting");
       return;
     }
-
-    if (!userName || userName === "Anonymous") {
-      const newUserName = prompt("Nhập tên của bạn:");
-      if (newUserName) {
-        const newUrl = `/meeting/${roomId}?userName=${encodeURIComponent(
-          newUserName
-        )}&uid=${uid}`;
-        navigate(newUrl, { replace: true });
-      } else {
-        navigate("/room");
-      }
-    }
-  }, [roomId, userName, uid, navigate]);
-
-  const handleBackToLobby = () => {
-    if (window.confirm("Bạn có chắc muốn rời khỏi cuộc họp?")) {
-      navigate("/room");
-    }
-  };
+  }, []);
 
   const handleLeaveMeeting = async () => {
     setIsLeaving(true);
     try {
       await leaveChannel();
       message.success("Đã rời khỏi cuộc họp");
-      navigate("/room");
+      navigate("/meeting");
     } catch (error) {
       message.error("Lỗi khi rời khỏi cuộc họp");
-      navigate("/room");
+      navigate("/meeting");
     }
   };
 
@@ -124,7 +120,7 @@ export default function MeetingPage() {
           Quay lại Phòng Học
         </Button>
         <div className="flex-1">
-          <MeetingHeader roomId={roomId} userName={userName} />
+          <MeetingHeader roomId={roomId} userName={currentUser?.username} />
         </div>
       </div>
 
@@ -132,13 +128,13 @@ export default function MeetingPage() {
       <div className="flex flex-1 overflow-hidden">
         {/* Video Section */}
         <div className="flex flex-col flex-1 p-4">
-          {uid && currentUser ? (
+          {uid && currentUser && roomId ? (
             <VideoSection
               roomId={roomId}
-              userName={currentUser.username || userName}
+              userName={currentUser?.username}
               uid={uid}
               currentUser={currentUser}
-              onLeave={() => navigate("/room")}
+              onLeave={() => navigate("/meeting")}
             />
           ) : (
             <div className="flex items-center justify-center h-full">
@@ -153,10 +149,10 @@ export default function MeetingPage() {
         {/* Sidebar */}
         <div className="w-80 border-l flex flex-col h-full">
           <div className="h-1/3 overflow-hidden">
-            {uid && currentUser ? (
+            {uid && currentUser && roomId ? (
               <Participants
                 roomId={roomId}
-                userName={currentUser.username || userName}
+                userName={currentUser?.username}
                 userId={uid}
                 remoteUsers={remoteUsers}
                 isJoined={isJoined}
@@ -168,10 +164,10 @@ export default function MeetingPage() {
             )}
           </div>
           <div className="flex-1 border-t overflow-hidden">
-            {uid && currentUser ? (
+            {uid && currentUser && roomId ? (
               <ChatBox
                 roomId={roomId}
-                userName={currentUser.username || userName}
+                userName={currentUser?.username}
                 userId={uid}
               />
             ) : (

@@ -44,7 +44,7 @@ const Navbar = () => {
             <Link to="/blog">Bài Viết</Link>
           </li>
           <li className="hover:text-purple-700 cursor-pointer">
-            <Link to="/room">Phòng học</Link>
+            <Link to="/meeting">Phòng học</Link>
           </li>
           <li className="hover:text-purple-700 cursor-pointer">Mentor</li>
           <li className="hover:text-purple-700 cursor-pointer">Dịch Vụ</li>

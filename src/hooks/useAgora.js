@@ -68,17 +68,23 @@ const useAgora = () => {
 
     client.on('user-published', async (user, mediaType) => {
       try {
+        console.log('👤 User published:', user.uid, 'mediaType:', mediaType);
         await client.subscribe(user, mediaType);
         console.log('👤 Subscribe to user:', user.uid, 'mediaType:', mediaType);
         
-        // Simple approach like NEW project - just add/update the user
+        // Enhanced user management - avoid duplicates and handle updates properly
         setRemoteUsers(prevUsers => {
           const existingUserIndex = prevUsers.findIndex(u => u.uid === user.uid);
+          
           if (existingUserIndex >= 0) {
+            // Update existing user
             const updatedUsers = [...prevUsers];
             updatedUsers[existingUserIndex] = user;
+            console.log('📝 Updated existing user:', user.uid);
             return updatedUsers;
           } else {
+            // Add new user
+            console.log('➕ Added new user:', user.uid);
             return [...prevUsers, user];
           }
         });
@@ -86,9 +92,10 @@ const useAgora = () => {
         // Play audio track immediately like NEW project
         if (mediaType === 'audio' && user.audioTrack) {
           user.audioTrack.play();
+          console.log('🎵 Playing audio for user:', user.uid);
         }
       } catch (error) {
-        console.error('❌ Error subscribing to user:', error);
+        console.error('❌ Error subscribing to user:', user.uid, error);
       }
     });
 
@@ -150,7 +157,7 @@ const useAgora = () => {
     return () => {
       cleanupFunctions.forEach(cleanup => cleanup());
     };
-  }, []);
+  }, [remoteScreenUser, isJoined, isCameraOn, isMicOn, isScreenSharing, remoteUsers.length]);
 
   // Token refresh mechanism
   const setupTokenRefresh = useCallback((tokens) => {
@@ -321,7 +328,7 @@ const useAgora = () => {
       currentRoomId.current = roomId;
       currentUserInfo.current = { roomId, userName, uid };
 
-      // Join socket room first
+      // Join socket room first and wait for confirmation
       await socketService.connect();
       console.log('🔌 Socket connected, joining room...');
       
@@ -331,8 +338,9 @@ const useAgora = () => {
         userId: uid 
       });
 
-      // Wait a moment for socket to join room
-      await new Promise(resolve => setTimeout(resolve, 500));
+      // Wait longer for socket to properly join room and for existing participants info
+      console.log('⏳ Waiting for socket room sync...');
+      await new Promise(resolve => setTimeout(resolve, 1000));
 
       // Get Agora tokens from backend
       const tokenResponse = await apiService.joinRoom(roomId, {
@@ -363,6 +371,35 @@ const useAgora = () => {
       setIsJoined(true);
       setConnectionState('CONNECTED');
       console.log('✅ Successfully joined channel');
+
+      // CRITICAL FIX: Subscribe to existing remote users in the channel
+      console.log('🔍 Checking for existing remote users...');
+      const existingUsers = client.remoteUsers;
+      console.log('👥 Found existing remote users:', existingUsers.length);
+      
+      for (const user of existingUsers) {
+        console.log('🔄 Subscribing to existing user:', user.uid);
+        try {
+          // Subscribe to both video and audio if available
+          if (user.hasVideo && user.videoTrack) {
+            await client.subscribe(user, 'video');
+            console.log('📹 Subscribed to existing user video:', user.uid);
+          }
+          if (user.hasAudio && user.audioTrack) {
+            await client.subscribe(user, 'audio');
+            user.audioTrack.play();
+            console.log('🎵 Subscribed to existing user audio:', user.uid);
+          }
+        } catch (error) {
+          console.error('❌ Error subscribing to existing user:', user.uid, error);
+        }
+      }
+
+      // Update remote users state with existing users
+      if (existingUsers.length > 0) {
+        console.log('📥 Adding existing users to state:', existingUsers.length);
+        setRemoteUsers(existingUsers);
+      }
 
       // Auto-enable camera and microphone after joining
       try {

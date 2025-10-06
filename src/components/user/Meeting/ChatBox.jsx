@@ -54,9 +54,9 @@ export default function ChatBox({ roomId, userName, userId }) {
       const formattedMessage = {
         id: Date.now().toString(),
         message: message.message,
-        userName: message.displayName,
+        userName: message.displayName || message.userName,
         userId: message.userId,
-        timestamp: message.timestamp
+        timestamp: message.timestamp || new Date().toISOString(),
       };
       setMessages((prev) => [...prev, formattedMessage]);
 
@@ -67,7 +67,8 @@ export default function ChatBox({ roomId, userName, userId }) {
     };
 
     // Listen for receive-message only (NEW project pattern)
-    const unsubscribeReceiveMessage = socketService.onReceiveMessage(handleReceiveMessage);
+    const unsubscribeReceiveMessage =
+      socketService.onReceiveMessage(handleReceiveMessage);
 
     // Add welcome message
     setMessages([
@@ -75,7 +76,7 @@ export default function ChatBox({ roomId, userName, userId }) {
         id: "welcome",
         message: `Chào mừng ${userName} đến với cuộc họp! (Room: ${roomId})`,
         userName: "Hệ thống",
-        timestamp: new Date(),
+        timestamp: new Date().toISOString(),
         isSystem: true,
       },
     ]);
@@ -132,24 +133,17 @@ export default function ChatBox({ roomId, userName, userId }) {
         displayName: userName,
         userId: String(userId), // Use consistent userId
       };
-      
+
       console.log("📤 Sending message:", messageData);
       const success = socketService.sendMessage(messageData);
 
       if (success) {
-        // Add message locally for sender (like in NEW project)
-        const localMessage = {
-          id: Date.now().toString(),
-          message: input.trim(),
-          userName: userName,
-          userId: String(userId), // Use consistent userId
-          timestamp: new Date().toISOString(),
-          isOwn: true // Mark as own message
-        };
-        setMessages((prev) => [...prev, localMessage]);
-        
+        // Clear input immediately for better UX
         setInput("");
         console.log("✅ Message sent successfully");
+
+        // Don't add message locally - wait for server response to avoid duplicates
+        // The message will appear when we receive it back via handleReceiveMessage
       } else {
         console.log("❌ Failed to send message");
       }
@@ -251,9 +245,11 @@ export default function ChatBox({ roomId, userName, userId }) {
                       </Text>
                     </div>
                   ) : (
-                    <div className={`flex space-x-2 max-w-xs ${
-                      msg.isOwn ? 'ml-auto' : ''
-                    }`}>
+                    <div
+                      className={`flex space-x-2 max-w-xs ${
+                        String(msg.userId) === String(userId) ? "ml-auto" : ""
+                      }`}
+                    >
                       <Avatar
                         size="small"
                         style={{
@@ -267,7 +263,7 @@ export default function ChatBox({ roomId, userName, userId }) {
                         <div className="flex items-center space-x-2 mb-1">
                           <Text strong className="text-sm">
                             {msg.userName}
-                            {msg.isOwn && (
+                            {String(msg.userId) === String(userId) && (
                               <Text type="secondary" className="text-xs ml-1">
                                 (Bạn)
                               </Text>
@@ -277,9 +273,13 @@ export default function ChatBox({ roomId, userName, userId }) {
                             {formatTime(msg.timestamp)}
                           </Text>
                         </div>
-                        <div className={`border rounded-lg px-3 py-2 shadow-sm ${
-                          msg.isOwn ? 'bg-blue-50 border-blue-200' : 'bg-white'
-                        }`}>
+                        <div
+                          className={`border rounded-lg px-3 py-2 shadow-sm ${
+                            String(msg.userId) === String(userId)
+                              ? "bg-blue-50 border-blue-200"
+                              : "bg-white"
+                          }`}
+                        >
                           <Text className="text-sm">{msg.message}</Text>
                         </div>
                       </div>

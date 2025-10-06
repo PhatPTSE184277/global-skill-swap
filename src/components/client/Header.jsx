@@ -65,7 +65,7 @@ const Header = () => {
             <Link to="/blog">Bài Viết</Link>
           </li>
           <li className="hover:text-purple-700 cursor-pointer">
-            <Link to="/room">Phòng học</Link>
+            <Link to="/meeting">Phòng học</Link>
           </li>
           <li className="hover:text-purple-700 cursor-pointer">
             <Link to="/mentor/finding">Mentor</Link>

@@ -1,27 +1,13 @@
-import React, { useState, useCallback } from "react";
-import {
-  Button,
-  Input,
-  Form,
-  Card,
-  message,
-  Modal,
-  DatePicker,
-  Select,
-} from "antd";
-import { User, Users, Calendar, Link, Clock, FileText } from "lucide-react";
-import { useSelector } from "react-redux";
-import apiService from "../../../services/apiService";
+import React, { useState } from "react";
+import { Button, Input, Form, Card, message, Modal, DatePicker } from "antd";
+import { Users } from "lucide-react";
 import userService from "../../../services/userService"; // Import userService
-import { authSelector } from "../../../reduxs/reducers/AuthReducer";
+import apiService from "../../../services/apiService";
 
-const CreateRoomModal = ({ visible, onCancel, onRoomCreated }) => {
+const CreateRoomModal = ({ visible, onCancel }) => {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const [createdRoom, setCreatedRoom] = useState(null);
-
-  // Lấy auth data từ Redux store
-  const authData = useSelector(authSelector);
 
   // Auto-fill form khi modal mở
   React.useEffect(() => {
@@ -71,17 +57,14 @@ const CreateRoomModal = ({ visible, onCancel, onRoomCreated }) => {
 
       // Xử lý logic thời gian
       const now = new Date();
-      let startTime, endTime, status;
+      let startTime, status;
 
       if (values.startTime) {
         // Nếu có thời gian bắt đầu -> lên lịch
         startTime = new Date(values.startTime);
-        endTime = new Date(startTime.getTime() + 60 * 60 * 1000); // +1 hour
         status = "scheduled";
       } else {
-        // Nếu không có thời gian -> bắt đầu ngay
         startTime = now;
-        endTime = new Date(now.getTime() + 60 * 60 * 1000); // +1 hour
         status = "ongoing";
       }
 
@@ -91,10 +74,9 @@ const CreateRoomModal = ({ visible, onCancel, onRoomCreated }) => {
         mentor_id: parseInt(currentUser.id), // Đảm bảo là số
         user_id: parseInt(currentUser.id), // Đảm bảo là số
         start_time: startTime.toISOString(),
-        end_time: endTime.toISOString(),
         status: status,
         details: {
-          meeting_link: null, // Sẽ được tạo sau
+          meeting_link: null,
           meeting_password: values.meetingPassword || null,
           notes: values.notes || null,
           recorded_url: null,
@@ -113,33 +95,14 @@ const CreateRoomModal = ({ visible, onCancel, onRoomCreated }) => {
       // Thông báo dựa trên trạng thái
       if (roomResult.status === "scheduled") {
         message.success(
-          `✅ Tạo phòng thành công! Phòng đã được lên lịch vào lúc ${new Date(
+          `Tạo phòng thành công! Phòng đã được lên lịch vào lúc ${new Date(
             roomResult.start_time
           ).toLocaleString("vi-VN")}`
         );
       } else {
         message.success(
-          "✅ Tạo phòng thành công! Phòng đang sẵn sàng cho cuộc học."
+          " Tạo phòng thành công! Phòng đang sẵn sàng cho lớp học."
         );
-      }
-
-      // Tạo meeting link để redirect
-      const userForRedirect = getCurrentUser();
-      const redirectLink = `${window.location.origin}/meeting/${
-        roomResult.id
-      }?userName=${encodeURIComponent(
-        userForRedirect?.fullName || userForRedirect?.username || "Anonymous"
-      )}`;
-
-      if (onRoomCreated) {
-        onRoomCreated({
-          ...roomResult,
-          meetingLink: redirectLink,
-          userName:
-            userForRedirect?.fullName ||
-            userForRedirect?.username ||
-            "Anonymous",
-        });
       }
 
       form.resetFields();
@@ -150,22 +113,9 @@ const CreateRoomModal = ({ visible, onCancel, onRoomCreated }) => {
     }
   };
 
-  const copyMeetingLink = () => {
-    if (createdRoom) {
-      const userForCopy = getCurrentUser();
-      const userName =
-        userForCopy?.fullName || userForCopy?.username || "Anonymous";
-      const copyLink = `${window.location.origin}/meeting/${
-        createdRoom.id
-      }?userName=${encodeURIComponent(userName)}`;
-      navigator.clipboard.writeText(copyLink);
-      message.success("Đã copy link phòng học!");
-    }
-  };
-
   return (
     <Modal
-      title="� Tạo Phòng Học Mới"
+      title="Tạo Phòng Học Mới"
       open={visible}
       onCancel={onCancel}
       footer={null}
@@ -218,7 +168,7 @@ const CreateRoomModal = ({ visible, onCancel, onRoomCreated }) => {
         {createdRoom && (
           <Card
             size="small"
-            title="✅ Phòng đã được tạo thành công!"
+            title="Phòng đã được tạo thành công!"
             style={{
               marginBottom: 16,
               backgroundColor: "#f6ffed",
@@ -243,12 +193,7 @@ const CreateRoomModal = ({ visible, onCancel, onRoomCreated }) => {
                   {new Date(createdRoom.start_time).toLocaleString("vi-VN")}
                 </p>
               )}
-              {createdRoom.end_time && (
-                <p>
-                  <strong>⏰ Kết thúc:</strong>{" "}
-                  {new Date(createdRoom.end_time).toLocaleString("vi-VN")}
-                </p>
-              )}
+
               {createdRoom.meetingroomdetails?.[0]?.meeting_password && (
                 <p>
                   <strong>🔒 Mật khẩu:</strong>{" "}
@@ -270,17 +215,6 @@ const CreateRoomModal = ({ visible, onCancel, onRoomCreated }) => {
                   </div>
                 </div>
               )}
-            </div>
-
-            <div style={{ marginTop: 16 }}>
-              <Button
-                type="primary"
-                icon={<Link size={16} />}
-                onClick={copyMeetingLink}
-                block
-              >
-                📋 Copy Link Meeting
-              </Button>
             </div>
           </Card>
         )}

@@ -1,25 +1,23 @@
-import { Navigate } from "react-router-dom";
-import UserPageLayout from "../layouts/user/UserPageLayout";
-import MeetingLobby from "../pages/user/MeetingLobby";
 import MeetingPage from "../pages/user/MeetingPage";
+import PublicRoom from "../pages/user/PublicRoom";
+import BlogPageLayout from "../layouts/client/BlogPageLayout";
 
 const MeetingPageRoutes = [
   {
-    path: "/",
-    element: <UserPageLayout />,
+    path: "/meeting",
+    element: <BlogPageLayout />,
     children: [
+      // {
+      //   path: "/meeting-lobby",
+      //   element: <MeetingLobby />,
+      // },
       {
-        path: "/meeting-lobby",
-        element: <MeetingLobby />,
-      },
-      {
-        path: "/meeting/:roomId",
+        path: ":roomLink",
         element: <MeetingPage />,
       },
-      // Redirect /meeting to /meeting-lobby
       {
-        path: "/meeting",
-        element: <Navigate to="/meeting-lobby" replace />,
+        path: "",
+        element: <PublicRoom />,
       },
     ],
   },
