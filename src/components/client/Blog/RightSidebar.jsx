@@ -7,7 +7,11 @@ const TopAuthor = ({ avatar, name, title, description, id }) => {
   return (
     <div
       className="flex items-start space-x-3 p-3 hover:bg-gray-50 rounded-lg transition-colors cursor-pointer"
+<<<<<<< Updated upstream
       onClick={() => navigate(`/user/${id}`)}
+=======
+      onClick={() => navigate(`/profile/${id}`)}
+>>>>>>> Stashed changes
     >
       <img
         src={avatar}

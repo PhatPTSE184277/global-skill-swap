@@ -15,6 +15,14 @@ dist-ssr
 # Environment variables
 .env
 
+# Config files
+config
+
+# Allow example files
+!**/config/*.example.*
+!**/*.example.*
+!**/.eslintrc.*
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

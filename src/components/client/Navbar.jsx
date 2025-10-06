@@ -40,9 +40,17 @@ const Navbar = () => {
         <ul className="flex items-center gap-8 text-gray-700 text-sm font-medium">
           <li className="hover:text-purple-700 cursor-pointer">Trang chủ</li>
           <li className="hover:text-purple-700 cursor-pointer">Giới Thiệu</li>
+<<<<<<< Updated upstream
           <li className="hover:text-purple-700 cursor-pointer">Bài Viết</li>
           <li className="hover:text-purple-700 cursor-pointer">
             <Link to="/room">Phòng học</Link>
+=======
+          <li className="hover:text-purple-700 cursor-pointer">
+            <Link to="/blog">Bài Viết</Link>
+          </li>
+          <li className="hover:text-purple-700 cursor-pointer">
+            <Link to="/meeting">Phòng học</Link>
+>>>>>>> Stashed changes
           </li>
           <li className="hover:text-purple-700 cursor-pointer">Mentor</li>
           <li className="hover:text-purple-700 cursor-pointer">Dịch Vụ</li>
