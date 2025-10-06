@@ -38,11 +38,22 @@ export default function ChatBox({ roomId, userName, userId }) {
     const socket = socketService.connect();
     console.log(
       "🔌 Socket instance:",
-      socket.id,
+      socket?.id || "no-id",
       "connected:",
-      socket.connected
+      socket?.connected || false
     );
-    setConnected(socket.connected);
+    
+    // Set connection status based on socket connection state
+    const connectionState = socketService.getConnectionState();
+    setConnected(connectionState.isConnected);
+    
+    // Set up reconnection handler
+    const handleConnect = () => {
+      console.log("🔌 Socket reconnected");
+      setConnected(true);
+    };
+    
+    socket?.on?.('connect', handleConnect);
 
     // DON'T join room here - let MeetingPage handle it
     // We'll just set up listeners
@@ -50,6 +61,18 @@ export default function ChatBox({ roomId, userName, userId }) {
     // Set up message listener - only use NEW project pattern
     const handleReceiveMessage = (message) => {
       console.log("💬 Received receive-message:", message);
+      
+      if (!message || !message.message) {
+        console.warn("⚠️ Received invalid message format:", message);
+        return;
+      }
+      
+      // Prevent duplication: don't add messages we sent ourselves (we already added those locally)
+      if (String(message.userId) === String(userId)) {
+        console.log("🔄 Ignoring own message echo from server");
+        return;
+      }
+      
       // Convert NEW project format to our format
       const formattedMessage = {
         id: Date.now().toString(),
@@ -58,6 +81,8 @@ export default function ChatBox({ roomId, userName, userId }) {
         userId: message.userId,
         timestamp: message.timestamp || new Date().toISOString(),
       };
+      
+      console.log("✅ Adding formatted message to UI:", formattedMessage);
       setMessages((prev) => [...prev, formattedMessage]);
 
       // Increment unread count if chat is not visible
@@ -82,7 +107,10 @@ export default function ChatBox({ roomId, userName, userId }) {
     ]);
 
     return () => {
+      // Clean up all event listeners
       unsubscribeReceiveMessage();
+      socket?.off?.('connect', handleConnect);
+      console.log("🧹 Cleaned up chat room listeners for:", roomId);
     };
   }, [roomId, userName, isVisible]);
 
@@ -141,9 +169,18 @@ export default function ChatBox({ roomId, userName, userId }) {
         // Clear input immediately for better UX
         setInput("");
         console.log("✅ Message sent successfully");
-
-        // Don't add message locally - wait for server response to avoid duplicates
-        // The message will appear when we receive it back via handleReceiveMessage
+        
+        // Add message locally immediately for better UX
+        // This ensures messages appear even if there are socket issues
+        const localMessage = {
+          id: Date.now().toString(),
+          message: input.trim(),
+          userName: userName,
+          userId: String(userId),
+          timestamp: new Date().toISOString(),
+        };
+        console.log("✅ Adding local message to UI:", localMessage);
+        setMessages(prev => [...prev, localMessage]);
       } else {
         console.log("❌ Failed to send message");
       }

@@ -65,15 +65,26 @@ export default function MeetingPage() {
   useEffect(() => {
     if (roomId && currentUser) {
       const socket = socketService.connect();
+      console.log("🔌 MeetingPage - Connecting to socket for room:", roomId);
 
       const joinWhenReady = () => {
-        if (socket.connected) {
-          socketService.joinRoom({
+        if (socket && socket.connected) {
+          console.log("🔌 MeetingPage - Socket ready, joining room:", roomId);
+          const joinData = {
             roomId: String(roomId),
-            userName: currentUser?.username,
-            userId: String(currentUser.id),
-          });
+            userName: currentUser?.username || "Anonymous User",
+            userId: String(currentUser?.id || uid || Date.now()),
+          };
+          console.log("🔌 MeetingPage - Join data:", joinData);
+          socketService.joinRoom(joinData);
+          
+          // Force a rejoin after 1 second to ensure connection
+          setTimeout(() => {
+            console.log("🔌 MeetingPage - Rejoining room to ensure connection:", roomId);
+            socketService.joinRoom(joinData);
+          }, 1000);
         } else {
+          console.log("🔌 MeetingPage - Socket not ready, retrying in 100ms");
           setTimeout(joinWhenReady, 100);
         }
       };
@@ -83,7 +94,12 @@ export default function MeetingPage() {
 
     return () => {
       if (roomId) {
-        socketService.leaveRoom({ roomId: String(roomId) });
+        console.log("🔌 MeetingPage - Leaving room:", roomId);
+        socketService.leaveRoom({ 
+          roomId: String(roomId),
+          userName: currentUser?.username || "Anonymous User",
+          userId: String(currentUser?.id || uid || Date.now()),
+        });
       }
     };
   }, [roomId, currentUser?.username, uid, currentUser]);
