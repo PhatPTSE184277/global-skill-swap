@@ -1,8 +1,8 @@
-import axiosRoom from '../apis/axiosRoom.js';
+import apiRoom from '../apis/axiosRoom.js';
 
 class ApiService {
   constructor() {
-    this.api = axiosRoom;
+    this.api = apiRoom;
   }
 
   // Meeting Room API methods
@@ -18,6 +18,11 @@ class ApiService {
 
   async getMeetingRoom(roomId) {
     const response = await this.api.get(`/meeting-rooms/${roomId}`);
+    return response.data?.data?.rooms || response.data;
+  }
+
+   async getIdbyLink(roomLink) {
+    const response = await this.api.get(`/meeting-rooms/by-link?meeting_link=${roomLink}`);
     return response.data?.data?.rooms || response.data;
   }
 

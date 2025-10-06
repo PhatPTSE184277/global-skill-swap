@@ -26,9 +26,7 @@ export default function MeetingHeader({ roomId, userName }) {
   }, [roomId, loadRoomInfo]);
 
   const copyMeetingLink = () => {
-    const meetingLink = `${
-      window.location.origin
-    }/meeting/${roomId}?userName=${encodeURIComponent(userName)}`;
+    const meetingLink = `${window.location.origin}`;
     navigator.clipboard.writeText(meetingLink);
     // You might want to show a success message here
   };

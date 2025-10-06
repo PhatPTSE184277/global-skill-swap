@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { message } from "antd";
+import { message, Modal } from "antd";
 import TQ from "../../img/svg/tq.svg";
 import CreateRoomModal from "../../components/user/Meeting/CreateRoomModal";
 import apiService from "../../services/apiService";
@@ -75,35 +75,43 @@ export default function PublicRoom() {
 
   const handleJoinMeetingRoom = (room) => {
     const currentUser = getCurrentUser();
-    let userName = currentUser?.username || currentUser?.fullName;
 
-    if (!userName) {
-      userName = prompt("Nhập tên của bạn:");
+    // Prefer backend-provided meeting link/code
+    const meetingLink =
+      room?.meetingroomdetails?.[0]?.meeting_link ||
+      room?.meetingroomdetails?.meeting_link;
+
+    // Not logged in -> inform user to login first, then refresh to load link
+    if (!currentUser) {
+      Modal.info({
+        title: "Vui lòng đăng nhập",
+        content:
+          "Bạn cần đăng nhập để vào lớp. Sau khi đăng nhập, hãy F5 (refresh) trang này để link được tải lại, rồi thử tham gia lại.",
+        onOk() {},
+      });
+      return;
     }
 
-    if (userName) {
-      navigate(`/meeting/${room.id}?userName=${encodeURIComponent(userName)}`);
+    // If backend didn't provide link yet
+    if (!meetingLink) {
+      message.error("Link phòng không tồn tại");
+      return;
     }
-  };
 
-  const handleRoomCreated = (roomData) => {
-    setMeetingRooms((prev) => [roomData, ...prev]);
-    setShowCreateModal(false);
-    message.success("Tạo phòng học thành công!");
-
-    const currentUser = getCurrentUser();
-    const userName =
-      currentUser?.username ||
-      currentUser?.fullName ||
-      roomData.userName ||
-      "User";
-
-    // Auto navigate to the created room
-    setTimeout(() => {
+    // If meetingLink is a full URL, redirect browser; otherwise navigate in-app using code
+    if (
+      typeof meetingLink === "string" &&
+      /^(https?:)?\/\//.test(meetingLink)
+    ) {
+      window.location.href = meetingLink;
+    } else {
       navigate(
-        `/meeting/${roomData.id}?userName=${encodeURIComponent(userName)}`
+        `/meeting/${
+          room?.meetingroomdetails?.meeting_link ||
+          room?.meetingroomdetails?.[0]?.meeting_link
+        }`
       );
-    }, 1000);
+    }
   };
 
   const getStatusColor = (status) => {
@@ -310,7 +318,6 @@ export default function PublicRoom() {
       <CreateRoomModal
         visible={showCreateModal}
         onCancel={() => setShowCreateModal(false)}
-        onRoomCreated={handleRoomCreated}
       />
     </div>
   );

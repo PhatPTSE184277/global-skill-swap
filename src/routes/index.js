@@ -8,9 +8,6 @@ import MentorPageRoutes from './MentorPageRoutes';
 
 import AdminPageRoutes from './admin/AdminPageRoutes';
 
-import RoomPageRoutes from './RoomPageRoutes';
-
-
 const routes = [
     ...HomePageRoutes,
     ...AuthPageRoutes,
@@ -20,8 +17,6 @@ const routes = [
     ...MentorPageRoutes,
 
     ...AdminPageRoutes,
-
-    ...RoomPageRoutes,
 
     // {
     //     path: '*',

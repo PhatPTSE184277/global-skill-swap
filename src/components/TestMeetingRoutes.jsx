@@ -20,7 +20,7 @@ const TestMeetingRoutes = () => {
           </Button>
 
           <Button type="default" size="large" icon={<Home size={16} />} block>
-            <Link to="/room" style={{ color: "inherit" }}>
+            <Link to="/meeting" style={{ color: "inherit" }}>
               Go to Public Room
             </Link>
           </Button>
