@@ -9,7 +9,7 @@ class SocketService {
 
   connect(serverUrl = import.meta.env.VITE_SOCKET_URL) {
     try {
-      if (this.socket && this.isConnected) {
+      if (this.socket && this.socket.connected) {
         console.log("🔌 Reusing existing socket connection:", this.socket.id);
         return this.socket;
       }
@@ -20,6 +20,14 @@ class SocketService {
       }
       
       console.log("🔌 Connecting to socket server:", serverUrl);
+      console.log("🔌 Socket.io config:", {
+        transports: ['websocket', 'polling'],
+        autoConnect: true,
+        reconnection: true,
+        reconnectionDelay: 1000,
+        reconnectionAttempts: 5,
+        timeout: 10000,
+      });
       
       this.socket = io(serverUrl, {
         transports: ['websocket', 'polling'],
@@ -27,7 +35,8 @@ class SocketService {
         reconnection: true,
         reconnectionDelay: 1000,
         reconnectionAttempts: 5,
-        timeout: 5000,
+        timeout: 10000, // Increase timeout
+        forceNew: false, // Don't force new connection if one exists
       });
 
       this.setupEventHandlers();
@@ -46,6 +55,7 @@ class SocketService {
 
     this.socket.on('connect', () => {
       console.log(`🔌 Socket connected with ID: ${this.socket.id}`);
+      console.log(`🔌 Socket object:`, this.socket);
       this.isConnected = true;
     });
 
@@ -57,6 +67,33 @@ class SocketService {
     this.socket.on('connect_error', (error) => {
       console.error(`🔌 Socket connection error: ${error.message}`);
       this.isConnected = false;
+    });
+
+    // Debug: Listen to all socket events
+    this.socket.onAny((eventName, ...args) => {
+      console.log(`🔌 Socket event received: ${eventName}`, args);
+    });
+
+    // Debug: Listen to all socket events being sent
+    this.socket.onAnyOutgoing((eventName, ...args) => {
+      console.log(`🔌 Socket event sent: ${eventName}`, args);
+    });
+
+    // Additional debugging for connection issues
+    this.socket.on('reconnect', (attemptNumber) => {
+      console.log(`🔌 Socket reconnected after ${attemptNumber} attempts`);
+    });
+
+    this.socket.on('reconnect_attempt', (attemptNumber) => {
+      console.log(`🔌 Socket reconnect attempt #${attemptNumber}`);
+    });
+
+    this.socket.on('reconnect_error', (error) => {
+      console.error(`🔌 Socket reconnect error:`, error);
+    });
+
+    this.socket.on('reconnect_failed', () => {
+      console.error(`🔌 Socket reconnect failed - giving up`);
     });
 
     // Re-register all custom listeners
@@ -79,12 +116,19 @@ class SocketService {
   // Room management
   joinRoom(roomData) {
     console.log("🔌 Joining room:", roomData);
+    console.log("🔌 Socket state:", {
+      hasSocket: !!this.socket,
+      socketId: this.socket?.id,
+      isConnected: this.isConnected,
+      socketConnected: this.socket?.connected
+    });
+    
     if (!this.socket) {
       console.error("❌ Cannot join room - socket is null");
       return false;
     }
     
-    if (!this.isConnected) {
+    if (!this.socket.connected) {
       console.error("❌ Cannot join room - socket not connected");
       return false;
     }
@@ -92,6 +136,7 @@ class SocketService {
     try {
       this.socket.emit('join-room', roomData);
       console.log(`✅ Join room request sent for room: ${roomData.roomId}`);
+      console.log("🔌 Emitted join-room event with data:", roomData);
       return true;
     } catch (error) {
       console.error("❌ Error joining room:", error);
@@ -118,17 +163,24 @@ class SocketService {
 
   // Chat functionality - use NEW project pattern only
   sendMessage(messageData) {
-    if (this.socket && this.isConnected) {
+    if (this.socket && this.socket.connected) {
       try {
         console.log("🔌 Socket sending message:", messageData);
+        console.log("🔌 Socket ID:", this.socket.id);
+        console.log("🔌 Socket connected:", this.socket.connected);
         this.socket.emit('send-message', messageData);
+        console.log("🔌 Message emitted successfully");
         return true;
       } catch (error) {
         console.error("🔌 Socket error sending message:", error);
         return false;
       }
     } else {
-      console.warn("🔌 Cannot send message - socket not connected");
+      console.warn("🔌 Cannot send message - socket not connected", {
+        hasSocket: !!this.socket,
+        isConnected: this.isConnected,
+        socketConnected: this.socket?.connected
+      });
       return false;
     }
   }
@@ -136,10 +188,25 @@ class SocketService {
   // Listen for receive-message (NEW project pattern)
   onReceiveMessage(callback) {
     console.log("🔌 Setting up receive-message listener");
-    return this.on('receive-message', (message) => {
-      console.log("🔌 Socket received message:", message);
-      callback(message);
+    console.log("🔌 Socket ID when setting up listener:", this.socket?.id);
+    
+    // Listen for multiple possible event names in case server uses different names
+    const eventNames = ['receive-message', 'message', 'new-message', 'chat-message'];
+    const unsubscribeFunctions = [];
+    
+    eventNames.forEach(eventName => {
+      const unsubscribe = this.on(eventName, (message) => {
+        console.log(`🔌 Socket received ${eventName} event:`, message);
+        console.log("🔌 Socket ID when receiving:", this.socket?.id);
+        callback(message);
+      });
+      unsubscribeFunctions.push(unsubscribe);
     });
+    
+    // Return combined cleanup function
+    return () => {
+      unsubscribeFunctions.forEach(unsub => unsub());
+    };
   }
 
   // Legacy methods (kept for backward compatibility but not used)
@@ -234,7 +301,7 @@ class SocketService {
   }
 
   emit(event, data) {
-    if (this.socket && this.isConnected) {
+    if (this.socket && this.socket.connected) {
       this.socket.emit(event, data);
     }
   }
@@ -242,7 +309,7 @@ class SocketService {
   // Utility methods
   getConnectionState() {
     return {
-      isConnected: this.isConnected,
+      isConnected: this.socket?.connected || false,
       socketId: this.socket?.id || null,
     };
   }

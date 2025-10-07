@@ -63,12 +63,20 @@ export default function MeetingPage() {
 
   // Join socket room when component mounts and user info is available
   useEffect(() => {
+    let hasJoined = false;
+    let retryTimeout = null;
+
     if (roomId && currentUser) {
-      const socket = socketService.connect();
+      socketService.connect();
       console.log("🔌 MeetingPage - Connecting to socket for room:", roomId);
 
       const joinWhenReady = () => {
-        if (socket && socket.connected) {
+        if (hasJoined) return; // Prevent multiple joins
+
+        const connectionState = socketService.getConnectionState();
+        console.log("🔌 MeetingPage - Checking socket state:", connectionState);
+
+        if (connectionState.isConnected && connectionState.socketId) {
           console.log("🔌 MeetingPage - Socket ready, joining room:", roomId);
           const joinData = {
             roomId: String(roomId),
@@ -77,26 +85,23 @@ export default function MeetingPage() {
           };
           console.log("🔌 MeetingPage - Join data:", joinData);
           socketService.joinRoom(joinData);
-
-          // Force a rejoin after 1 second to ensure connection
-          setTimeout(() => {
-            console.log(
-              "🔌 MeetingPage - Rejoining room to ensure connection:",
-              roomId
-            );
-            socketService.joinRoom(joinData);
-          }, 1000);
+          hasJoined = true;
         } else {
-          console.log("🔌 MeetingPage - Socket not ready, retrying in 100ms");
-          setTimeout(joinWhenReady, 100);
+          console.log("🔌 MeetingPage - Socket not ready, retrying in 1000ms");
+          retryTimeout = setTimeout(joinWhenReady, 1000);
         }
       };
 
-      joinWhenReady();
+      // Wait a bit for socket to connect before first attempt
+      retryTimeout = setTimeout(joinWhenReady, 500);
     }
 
     return () => {
-      if (roomId) {
+      if (retryTimeout) {
+        clearTimeout(retryTimeout);
+      }
+
+      if (roomId && hasJoined) {
         console.log("🔌 MeetingPage - Leaving room:", roomId);
         socketService.leaveRoom({
           roomId: String(roomId),

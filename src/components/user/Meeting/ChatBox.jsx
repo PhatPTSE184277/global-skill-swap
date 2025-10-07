@@ -59,6 +59,12 @@ export default function ChatBox({ roomId, userName, userId, onClose }) {
     // Set up message listener - only use NEW project pattern
     const handleReceiveMessage = (message) => {
       console.log("💬 Received receive-message:", message);
+      console.log("💬 Current user info:", { userId, userName });
+      console.log("💬 Message sender info:", {
+        messageUserId: message.userId,
+        messageDisplayName: message.displayName,
+        messageUserName: message.userName,
+      });
 
       if (!message || !message.message) {
         console.warn("⚠️ Received invalid message format:", message);
@@ -75,13 +81,38 @@ export default function ChatBox({ roomId, userName, userId, onClose }) {
       };
 
       console.log("✅ Adding formatted message to UI:", formattedMessage);
+      console.log(
+        "💬 Is this my own message?",
+        String(message.userId) === String(userId)
+      );
 
       setMessages((prev) => {
-        // Simple duplicate check - avoid adding same content from same user within 2 seconds
+        console.log("💬 Current messages count:", prev.length);
+
+        // If this is my own message, check if we already have a local version
+        const isMyMessage = String(message.userId) === String(userId);
+        if (isMyMessage) {
+          const hasLocalVersion = prev.find(
+            (msg) =>
+              msg.message === formattedMessage.message &&
+              msg.userId === formattedMessage.userId &&
+              msg.isLocal === true
+          );
+
+          if (hasLocalVersion) {
+            console.log(
+              "🔄 Server echoed my message, but local version exists, skipping"
+            );
+            return prev;
+          }
+        }
+
+        // General duplicate check - avoid adding same content from same user within 2 seconds
         const recentDuplicate = prev.find(
           (msg) =>
             msg.message === formattedMessage.message &&
             msg.userId === formattedMessage.userId &&
+            !msg.isLocal && // Don't compare with local messages
             Math.abs(
               new Date(msg.timestamp).getTime() -
                 new Date(formattedMessage.timestamp).getTime()
@@ -93,7 +124,9 @@ export default function ChatBox({ roomId, userName, userId, onClose }) {
           return prev;
         }
 
-        return [...prev, formattedMessage];
+        const newMessages = [...prev, formattedMessage];
+        console.log("💬 New messages count:", newMessages.length);
+        return newMessages;
       });
     };
 
@@ -111,6 +144,15 @@ export default function ChatBox({ roomId, userName, userId, onClose }) {
         isSystem: true,
       },
     ]);
+
+    console.log(
+      "💬 Chat initialized for room:",
+      roomId,
+      "user:",
+      userName,
+      "userId:",
+      userId
+    );
 
     return () => {
       // Clean up all event listeners
@@ -155,6 +197,8 @@ export default function ChatBox({ roomId, userName, userId, onClose }) {
         connected,
         roomId,
         userName,
+        socketConnected: socketService.getConnectionState().isConnected,
+        socketId: socketService.getConnectionState().socketId,
       });
       return;
     }
@@ -169,16 +213,24 @@ export default function ChatBox({ roomId, userName, userId, onClose }) {
       };
 
       console.log("📤 Sending message:", messageData);
+      console.log("📤 Socket state before send:", {
+        connected: socketService.getConnectionState().isConnected,
+        socketId: socketService.getConnectionState().socketId,
+      });
+
       const success = socketService.sendMessage(messageData);
 
       if (success) {
-        // Add message locally immediately for better UX
+        console.log("✅ Message sent to server successfully");
+
+        // Add message locally immediately for better UX (with special ID to avoid duplicates)
         const localMessage = {
-          id: `${userId}-${Date.now()}-local`,
+          id: `local-${userId}-${Date.now()}`,
           message: input.trim(),
           userName: userName,
           userId: String(userId),
           timestamp: new Date().toISOString(),
+          isLocal: true, // Mark as local message
         };
 
         console.log("✅ Adding local message to UI:", localMessage);
@@ -186,9 +238,8 @@ export default function ChatBox({ roomId, userName, userId, onClose }) {
 
         // Clear input immediately for better UX
         setInput("");
-        console.log("✅ Message sent successfully");
       } else {
-        console.log("❌ Failed to send message");
+        console.log("❌ Failed to send message to server");
       }
     } catch (error) {
       console.error("❌ Error sending message:", error);
