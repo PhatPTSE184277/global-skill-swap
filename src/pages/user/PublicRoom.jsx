@@ -33,6 +33,7 @@ export default function PublicRoom() {
   const [searchText, setSearchText] = useState("");
   const [creatorNames, setCreatorNames] = useState({});
   const [participantCounts, setParticipantCounts] = useState({});
+  const [activeTab, setActiveTab] = useState("all"); // "all" or "my-rooms"
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -180,9 +181,25 @@ export default function PublicRoom() {
   };
 
   const filteredMeetingRooms = Array.isArray(meetingRooms)
-    ? meetingRooms.filter((room) =>
-        room?.room_name?.toLowerCase().includes(searchText.toLowerCase())
-      )
+    ? meetingRooms.filter((room) => {
+        // Filter by sear ch text
+        console.log(room);
+
+        const matchesSearch = room?.room_name
+          ?.toLowerCase()
+          .includes(searchText.toLowerCase());
+
+        // Filter by tab
+        if (activeTab === "my-rooms") {
+          const currentUser = getCurrentUser();
+          console.log("Current User:", currentUser);
+          const creatorName = getCreatorName(room);
+          const isMyRoom = currentUser && creatorName === currentUser?.username;
+          return matchesSearch && isMyRoom;
+        }
+
+        return matchesSearch;
+      })
     : [];
 
   return (
@@ -201,9 +218,34 @@ export default function PublicRoom() {
         </div>
         {/* Header */}
         <div className="flex justify-between items-center gap-6">
-          <h1 className="text-xl font-bold mt-3">
-            Phòng Học <span className="text-orange-500">Miễn Phí</span>
-          </h1>
+          <div>
+            <h1 className="text-xl font-bold mt-3">
+              Phòng Học <span className="text-orange-500">Miễn Phí</span>
+            </h1>
+            {/* Tabs */}
+            <div className="flex gap-4 mt-4">
+              <button
+                onClick={() => setActiveTab("all")}
+                className={`px-4 py-2 rounded-full font-medium transition ${
+                  activeTab === "all"
+                    ? "bg-orange-500 text-white"
+                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                }`}
+              >
+                Tất cả
+              </button>
+              <button
+                onClick={() => setActiveTab("my-rooms")}
+                className={`px-4 py-2 rounded-full font-medium transition ${
+                  activeTab === "my-rooms"
+                    ? "bg-orange-500 text-white"
+                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                }`}
+              >
+                Phòng của tôi
+              </button>
+            </div>
+          </div>
 
           <div className="flex gap-4 items-center">
             <button
@@ -367,6 +409,10 @@ export default function PublicRoom() {
       <CreateRoomModal
         visible={showCreateModal}
         onCancel={() => setShowCreateModal(false)}
+        onSuccess={() => {
+          setShowCreateModal(false);
+          loadMeetingRooms(); // Reload rooms after successful creation
+        }}
       />
     </div>
   );

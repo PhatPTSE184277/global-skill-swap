@@ -4,7 +4,7 @@ import { Users } from "lucide-react";
 import userService from "../../../services/userService"; // Import userService
 import apiService from "../../../services/apiService";
 
-const CreateRoomModal = ({ visible, onCancel }) => {
+const CreateRoomModal = ({ visible, onCancel, onSuccess }) => {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const [createdRoom, setCreatedRoom] = useState(null);
@@ -107,6 +107,11 @@ const CreateRoomModal = ({ visible, onCancel }) => {
       }
 
       form.resetFields();
+
+      // Gọi callback để reload danh sách phòng
+      if (onSuccess) {
+        onSuccess();
+      }
     } catch (error) {
       message.error(`Lỗi tạo phòng: ${error.message}`);
     } finally {
