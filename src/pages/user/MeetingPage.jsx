@@ -1,13 +1,15 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { message } from "antd";
-import ChatBox from "../../components/user/Meeting/ChatBox";
+import { message, Input, Button, Avatar, Typography, Badge } from "antd";
+import { Send, User } from "lucide-react";
 import VideoSection from "../../components/user/Meeting/VideoSection";
 import Participants from "../../components/user/Meeting/Participants";
 import useAgora from "../../hooks/useAgora";
 import socketService from "../../services/socketService";
 import userService from "../../services/userService";
 import apiService from "../../services/apiService";
+
+const { Text } = Typography;
 
 export default function MeetingPage() {
   const { roomLink } = useParams();
@@ -36,6 +38,13 @@ export default function MeetingPage() {
   const [showChat, setShowChat] = useState(false);
   const [showParticipants, setShowParticipants] = useState(false);
   const [showRoomInfo, setShowRoomInfo] = useState(false);
+
+  // Chat state - persistent
+  const [messages, setMessages] = useState([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [input, setInput] = useState("");
+  const [connected, setConnected] = useState(false);
+  const messagesEndRef = useRef(null);
 
   // Get Agora hook values
   const { leaveChannel, remoteUsers, isJoined } = useAgora();
@@ -112,6 +121,94 @@ export default function MeetingPage() {
     };
   }, [roomId, currentUser?.username, uid, currentUser]);
 
+  // Chat setup - copy từ ChatBox
+  useEffect(() => {
+    if (!roomId || !currentUser?.username) return;
+
+    const socket = socketService.connect();
+    const connectionState = socketService.getConnectionState();
+    setConnected(connectionState.isConnected);
+
+    const handleReceiveMessage = (message) => {
+      const formattedMessage = {
+        id: `${message.userId}-${Date.now()}-${Math.random()}`,
+        message: message.message,
+        userName: message.displayName || message.userName,
+        userId: message.userId,
+        timestamp: message.timestamp || new Date().toISOString(),
+      };
+
+      // Increment unread if chat closed and not own message
+      if (!showChat && String(message.userId) !== String(uid)) {
+        setUnreadCount((prev) => prev + 1);
+      }
+
+      setMessages((prev) => {
+        const isMyMessage = String(message.userId) === String(uid);
+        if (isMyMessage) {
+          const hasLocalVersion = prev.find(
+            (msg) =>
+              msg.message === formattedMessage.message &&
+              msg.userId === formattedMessage.userId &&
+              msg.isLocal === true
+          );
+          if (hasLocalVersion) return prev;
+        }
+
+        const recentDuplicate = prev.find(
+          (msg) =>
+            msg.message === formattedMessage.message &&
+            msg.userId === formattedMessage.userId &&
+            Math.abs(
+              new Date(msg.timestamp) - new Date(formattedMessage.timestamp)
+            ) < 2000
+        );
+
+        if (recentDuplicate) return prev;
+        return [...prev, formattedMessage];
+      });
+    };
+
+    const unsubscribe = socketService.onReceiveMessage(handleReceiveMessage);
+    return () => unsubscribe();
+  }, [roomId, currentUser?.username, uid, showChat]);
+
+  // Scroll to bottom when messages change
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
+  // Reset unread count when chat opens
+  useEffect(() => {
+    if (showChat) {
+      setUnreadCount(0);
+    }
+  }, [showChat]);
+
+  const handleSend = () => {
+    if (!input.trim() || !connected) return;
+
+    const messageData = {
+      roomId: String(roomId),
+      message: input.trim(),
+      displayName: currentUser?.username,
+      userName: currentUser?.username,
+      userId: String(uid),
+      timestamp: new Date().toISOString(),
+    };
+
+    // Add local message immediately
+    const localMessage = {
+      ...messageData,
+      id: `local-${Date.now()}`,
+      isLocal: true,
+    };
+    setMessages((prev) => [...prev, localMessage]);
+
+    socketService.sendMessage(messageData);
+    setInput("");
+  };
+
   useEffect(() => {
     if (!roomLink) {
       message.error("Link không hợp lệ");
@@ -138,6 +235,7 @@ export default function MeetingPage() {
             showChat={showChat}
             showParticipants={showParticipants}
             showRoomInfo={showRoomInfo}
+            unreadCount={unreadCount}
             onToggleChat={() => {
               setShowChat(!showChat);
               setShowParticipants(false);
@@ -168,12 +266,90 @@ export default function MeetingPage() {
       {(showChat || showParticipants || showRoomInfo) && (
         <div className="absolute right-0 top-0 w-80 h-full bg-white shadow-2xl z-10 transform transition-transform duration-300">
           {showChat && uid && currentUser && roomId && (
-            <ChatBox
-              roomId={roomId}
-              userName={currentUser?.username}
-              userId={uid}
-              onClose={() => setShowChat(false)}
-            />
+            <div className="h-full flex flex-col bg-white">
+              {/* Chat Header */}
+              <div className="flex items-center justify-between p-4 border-b bg-blue-50">
+                <div className="flex items-center space-x-2">
+                  <div className="text-blue-600">💬</div>
+                  <h3 className="text-lg font-semibold text-gray-800">Chat</h3>
+                  <Badge
+                    count={connected ? 0 : 1}
+                    dot
+                    status={connected ? "success" : "error"}
+                  />
+                </div>
+                <button
+                  onClick={() => setShowChat(false)}
+                  className="p-1 hover:bg-gray-100 rounded"
+                >
+                  ✕
+                </button>
+              </div>
+
+              {/* Messages */}
+              <div
+                className="flex-1 overflow-y-auto p-4 space-y-3"
+                style={{ maxHeight: "calc(100vh - 140px)" }}
+              >
+                {messages.map((msg) => (
+                  <div
+                    key={msg.id}
+                    className={`flex ${
+                      String(msg.userId) === String(uid)
+                        ? "justify-end"
+                        : "justify-start"
+                    }`}
+                  >
+                    <div className="max-w-xs">
+                      <div className="flex items-center space-x-2 mb-1">
+                        <Avatar size="small" icon={<User size={12} />}>
+                          {msg.userName?.charAt(0)?.toUpperCase()}
+                        </Avatar>
+                        <Text strong className="text-sm">
+                          {msg.userName}
+                        </Text>
+                        <Text type="secondary" className="text-xs">
+                          {new Date(msg.timestamp).toLocaleTimeString("vi-VN", {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </Text>
+                      </div>
+                      <div
+                        className={`border rounded-lg px-3 py-2 ${
+                          String(msg.userId) === String(uid)
+                            ? "bg-blue-50 border-blue-200"
+                            : "bg-gray-50 border-gray-200"
+                        }`}
+                      >
+                        <Text>{msg.message}</Text>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                <div ref={messagesEndRef} />
+              </div>
+
+              {/* Input */}
+              <div className="border-t p-4">
+                <div className="flex space-x-2">
+                  <Input
+                    value={input}
+                    onChange={(e) => setInput(e.target.value)}
+                    onPressEnter={handleSend}
+                    placeholder="Nhập tin nhắn..."
+                    disabled={!connected}
+                    className="flex-1"
+                  />
+                  <Button
+                    type="primary"
+                    icon={<Send size={16} />}
+                    onClick={handleSend}
+                    disabled={!input.trim() || !connected}
+                  />
+                </div>
+              </div>
+            </div>
           )}
 
           {showParticipants && uid && currentUser && roomId && (
