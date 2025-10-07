@@ -17,16 +17,9 @@ import {
   Calendar,
 } from "lucide-react";
 
-const avatars = [
-  "https://i.pravatar.cc/100?img=5",
-  "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=facearea&w=100&h=100",
-  "https://images.unsplash.com/photo-1464306076886-debede1a7c94?auto=format&fit=facearea&w=100&h=100",
-  "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=facearea&w=100&h=100",
-  "https://images.unsplash.com/photo-1464306076886-debede1a7c94?auto=format&fit=facearea&w=100&h=100",
-];
 
 export default function PublicRoom() {
-  const [page, setPage] = useState(1);
+  // const [page, setPage] = useState(1);
   const [meetingRooms, setMeetingRooms] = useState([]);
   const [loading, setLoading] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -44,47 +37,55 @@ export default function PublicRoom() {
     setLoading(true);
     try {
       const rooms = await apiService.getMeetingRooms();
-      console.log("API Response:", rooms); // Debug log
 
       setMeetingRooms(rooms);
-      console.log("Meeting Rooms:", meetingRooms);
 
-      // Load creator names and participant counts for all rooms
-      const names = {};
-      const counts = {};
-      await Promise.all(
-        rooms.map(async (room) => {
-          if (room?.id) {
-            try {
-              const username = await apiService.getUsernameFromMeetingRoom(
-                room?.id
-              );
-              console.log(room?.id);
-              console.log("Meeting Room User:", username);
-              names[room.id] = username;
-
-              // Load participant count
-              const participantsResponse = await apiService.getRoomParticipants(
-                room.id
-              );
-              counts[room.id] = participantsResponse?.data?.count || 0;
-            } catch (error) {
-              console.error(`Error loading data for room ${room.id}:`, error);
-              names[room.id] = "Mentor GSS";
-              counts[room.id] = 0;
-            }
-          }
-        })
-      );
-      setCreatorNames(names);
-      setParticipantCounts(counts);
+      // Load creator names và participant counts sau, không block UI
+      loadAdditionalData(rooms);
     } catch (error) {
       console.error("Error loading rooms:", error);
       message.error("Lỗi khi tải danh sách phòng học");
-      setMeetingRooms([]); // Set empty array on error
+      setMeetingRooms([]);
     } finally {
       setLoading(false);
     }
+  };
+
+  const loadAdditionalData = async (rooms) => {
+    // Load creator names và participant counts trong background
+    const names = {};
+    const counts = {};
+
+    // Chỉ load cho 5 phòng đầu tiên để tăng tốc
+    const roomsToLoad = rooms.slice(0, 5);
+
+    await Promise.all(
+      roomsToLoad.map(async (room) => {
+        if (room?.id) {
+          try {
+            // Load song song cả 2 API
+            const [username, participantsResponse] = await Promise.all([
+              apiService
+                .getUsernameFromMeetingRoom(room.id)
+                .catch(() => "Mentor GSS"),
+              apiService
+                .getRoomParticipants(room.id)
+                .catch(() => ({ data: { count: 0 } })),
+            ]);
+
+            names[room.id] = username;
+            counts[room.id] = participantsResponse?.data?.count || 0;
+          } catch (error) {
+            console.log(error);
+            names[room.id] = "Mentor GSS";
+            counts[room.id] = 0;
+          }
+        }
+      })
+    );
+
+    setCreatorNames(names);
+    setParticipantCounts(counts);
   };
 
   const getCurrentUser = () => {
@@ -183,8 +184,6 @@ export default function PublicRoom() {
   const filteredMeetingRooms = Array.isArray(meetingRooms)
     ? meetingRooms.filter((room) => {
         // Filter by sear ch text
-        console.log(room);
-
         const matchesSearch = room?.room_name
           ?.toLowerCase()
           .includes(searchText.toLowerCase());
@@ -192,7 +191,6 @@ export default function PublicRoom() {
         // Filter by tab
         if (activeTab === "my-rooms") {
           const currentUser = getCurrentUser();
-          console.log("Current User:", currentUser);
           const creatorName = getCreatorName(room);
           const isMyRoom = currentUser && creatorName === currentUser?.username;
           return matchesSearch && isMyRoom;
@@ -204,8 +202,8 @@ export default function PublicRoom() {
 
   return (
     <div className="p-8 max-w-5xl mx-auto">
-      <div className="flex flex-col  gap-6">
-        <div className="flex justify-start gap-8 ml-20">
+      <div className="flex flex-col  gap-3">
+        {/* <div className="flex justify-start gap-8 ml-20">
           {avatars.map((src, i) => (
             <img
               key={i}
@@ -215,12 +213,12 @@ export default function PublicRoom() {
               style={{ background: "#fff" }}
             />
           ))}
-        </div>
+        </div> */}
         {/* Header */}
         <div className="flex justify-between items-center gap-6">
           <div>
-            <h1 className="text-xl font-bold mt-3">
-              Phòng Học <span className="text-orange-500">Miễn Phí</span>
+            <h1 className="text-3xl font-bold mt-3 mb-8">
+              Cùng nhau <span className="text-orange-500">học tập</span>
             </h1>
             {/* Tabs */}
             <div className="flex gap-4 mt-4">
@@ -228,7 +226,7 @@ export default function PublicRoom() {
                 onClick={() => setActiveTab("all")}
                 className={`px-4 py-2 rounded-full font-medium transition ${
                   activeTab === "all"
-                    ? "bg-orange-500 text-white"
+                    ? "bg-purple-900 text-white"
                     : "bg-gray-100 text-gray-600 hover:bg-gray-200"
                 }`}
               >
@@ -238,7 +236,7 @@ export default function PublicRoom() {
                 onClick={() => setActiveTab("my-rooms")}
                 className={`px-4 py-2 rounded-full font-medium transition ${
                   activeTab === "my-rooms"
-                    ? "bg-orange-500 text-white"
+                    ? "bg-purple-900 text-white"
                     : "bg-gray-100 text-gray-600 hover:bg-gray-200"
                 }`}
               >
@@ -389,7 +387,7 @@ export default function PublicRoom() {
         )}
       </div>
 
-      <div className="flex justify-end items-center gap-15 mt-10">
+      {/* <div className="flex justify-end items-center gap-15 mt-10">
         <button
           className="flex items-center gap-2 bg-purple-800 hover:bg-purple-900 text-white px-4 py-3 rounded-full shadow transition"
           onClick={() => setPage(page > 1 ? page - 1 : 1)}
@@ -403,7 +401,7 @@ export default function PublicRoom() {
         >
           <ChevronRight size={16} />
         </button>
-      </div>
+      </div> */}
 
       {/* Create Room Modal */}
       <CreateRoomModal

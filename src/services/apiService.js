@@ -83,7 +83,6 @@ class ApiService {
       }
       // Lấy thông tin user từ user_id
       const userResponse = await userService.getUserById(roomData?.user_id);
-      console.log("User Response:", userResponse);
       
       return userResponse?.username;
     } catch (error) {
