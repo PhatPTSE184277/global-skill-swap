@@ -31,6 +31,8 @@ export default function PublicRoom() {
   const [loading, setLoading] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [searchText, setSearchText] = useState("");
+  const [creatorNames, setCreatorNames] = useState({});
+  const [participantCounts, setParticipantCounts] = useState({});
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -40,12 +42,41 @@ export default function PublicRoom() {
   const loadMeetingRooms = async () => {
     setLoading(true);
     try {
-      const response = await apiService.getMeetingRooms();
-      console.log("API Response:", response); // Debug log
+      const rooms = await apiService.getMeetingRooms();
+      console.log("API Response:", rooms); // Debug log
 
-      // Đảm bảo response là array
-      const rooms = Array.isArray(response) ? response : [];
       setMeetingRooms(rooms);
+      console.log("Meeting Rooms:", meetingRooms);
+
+      // Load creator names and participant counts for all rooms
+      const names = {};
+      const counts = {};
+      await Promise.all(
+        rooms.map(async (room) => {
+          if (room?.id) {
+            try {
+              const username = await apiService.getUsernameFromMeetingRoom(
+                room?.id
+              );
+              console.log(room?.id);
+              console.log("Meeting Room User:", username);
+              names[room.id] = username;
+
+              // Load participant count
+              const participantsResponse = await apiService.getRoomParticipants(
+                room.id
+              );
+              counts[room.id] = participantsResponse?.data?.count || 0;
+            } catch (error) {
+              console.error(`Error loading data for room ${room.id}:`, error);
+              names[room.id] = "Mentor GSS";
+              counts[room.id] = 0;
+            }
+          }
+        })
+      );
+      setCreatorNames(names);
+      setParticipantCounts(counts);
     } catch (error) {
       console.error("Error loading rooms:", error);
       message.error("Lỗi khi tải danh sách phòng học");
@@ -134,13 +165,18 @@ export default function PublicRoom() {
     return texts[status] || status;
   };
 
-  const getJoinedCount = () =>
-    `${Math.floor(Math.random() * 8) + 3}/${
-      Math.floor(Math.random() * 5) + 10
-    }`; // Random joined count
+  const getJoinedCount = (room) => {
+    const count = participantCounts[room.id] || 0;
+    return `${count}/5`;
+  };
+
+  const isRoomFull = (room) => {
+    const count = participantCounts[room.id] || 0;
+    return count >= 5;
+  };
 
   const getCreatorName = (room) => {
-    return room.creator_name || room.mentor_name || "Mentor GSS";
+    return creatorNames[room.id] || "Mentor GSS";
   };
 
   const filteredMeetingRooms = Array.isArray(meetingRooms)
@@ -172,7 +208,7 @@ export default function PublicRoom() {
           <div className="flex gap-4 items-center">
             <button
               onClick={() => setShowCreateModal(true)}
-              className="flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-full font-semibold transition"
+              className="flex justify-center items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white w-50 py-2 rounded-full font-semibold transition"
             >
               <Plus size={16} />
               Tạo Phòng
@@ -235,8 +271,9 @@ export default function PublicRoom() {
           </div>
         ) : (
           filteredMeetingRooms.map((room) => {
-            const joinedCount = getJoinedCount();
+            const joinedCount = getJoinedCount(room);
             const creatorName = getCreatorName(room);
+            const roomFull = isRoomFull(room);
 
             return (
               <div
@@ -249,7 +286,7 @@ export default function PublicRoom() {
                   className="w-full h-35 rounded-2xl"
                 />
                 <div className="p-4 flex flex-col flex-1">
-                  <div className="flex justify-between items-center mb-2">
+                  <div className="flex justify-between items-center">
                     <p className="text-sm text-gray-500">{creatorName}</p>
                     <span
                       className="px-2 py-1 rounded-full text-xs font-semibold text-white"
@@ -258,37 +295,49 @@ export default function PublicRoom() {
                       {getStatusText(room.status)}
                     </span>
                   </div>
-                  <h2 className="text-base font-semibold mb-2">
+                  <h2 className="text-base font-semibold mb-1 ">
                     {room.room_name}
                   </h2>
                   <div className="flex justify-between items-center text-sm text-gray-600 mb-4">
                     <div className="flex items-center gap-1">
                       <Clock size={16} />
                       <span>
-                        Tạo:{" "}
+                        {" "}
                         {new Date(room.start_time).toLocaleDateString("vi-VN")}
                       </span>
                     </div>
                     <div className="flex items-center gap-1">
                       <Users size={16} />
-                      <span className="font-semibold">{joinedCount}</span>
+                      <span
+                        className={`font-semibold ${
+                          roomFull ? "text-red-500" : ""
+                        }`}
+                      >
+                        {joinedCount}
+                      </span>
                     </div>
                   </div>
                   <button
                     className={`self-center px-8 py-1.5 rounded-full font-semibold transition ${
-                      room.status === "completed" || room.status === "canceled"
+                      room.status === "completed" ||
+                      room.status === "canceled" ||
+                      roomFull
                         ? "bg-gray-300 text-gray-500 cursor-not-allowed"
                         : "bg-orange-500 hover:bg-orange-600 text-white"
                     }`}
                     onClick={() => handleJoinMeetingRoom(room)}
                     disabled={
-                      room.status === "completed" || room.status === "canceled"
+                      room.status === "completed" ||
+                      room.status === "canceled" ||
+                      roomFull
                     }
                   >
                     {room.status === "completed"
                       ? "Đã kết thúc"
                       : room.status === "canceled"
                       ? "Đã hủy"
+                      : roomFull
+                      ? "Phòng đầy"
                       : "Tham gia"}
                   </button>
                 </div>

@@ -42,6 +42,7 @@ const CreateRoomModal = ({ visible, onCancel }) => {
     try {
       // Lấy thông tin user thực từ Gateway Service API
       const currentUser = await userService.getUserInfo();
+      console.log("Current User from Gateway:", currentUser);
 
       if (!currentUser) {
         message.error("Vui lòng đăng nhập để tạo phòng!");
@@ -71,8 +72,8 @@ const CreateRoomModal = ({ visible, onCancel }) => {
       // Tạo room data với thông tin user thực từ Gateway Service
       const roomData = {
         room_name: values.roomName || "Phòng học mới",
-        mentor_id: parseInt(currentUser.id), // Đảm bảo là số
-        user_id: parseInt(currentUser.id), // Đảm bảo là số
+        mentor_id: currentUser?.id, // Đảm bảo là số
+        user_id: currentUser?.id, // Đảm bảo là số
         start_time: startTime.toISOString(),
         status: status,
         details: {
