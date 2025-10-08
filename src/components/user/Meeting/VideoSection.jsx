@@ -317,31 +317,12 @@ export default function VideoSection({
                 🖥️ Bạn đang chia sẻ màn hình
               </div>
             </div>
-
-            {/* Participant thumbnails during screen share */}
-            <div className="flex gap-3 h-24">
-              {/* Local video thumbnail */}
-              {isJoined && localVideoTrack && (
-                <div className="w-32 h-24 bg-gray-800 rounded-xl overflow-hidden relative flex-shrink-0">
-                  <div ref={localVideoRef} className="w-full h-full" />
-                  <div className="absolute bottom-1 left-1 bg-black bg-opacity-70 text-white px-2 py-0.5 rounded text-xs">
-                    Bạn
-                  </div>
-                </div>
-              )}
-
-              {/* Remote participants thumbnails */}
-              {remoteUsers.map((user) => (
-                <div key={user.uid} className="w-32 h-24 flex-shrink-0">
-                  <RemoteVideoCard user={user} />
-                </div>
-              ))}
-            </div>
+            {/* Ẩn local video khi đang chia sẻ màn hình */}
           </div>
         )}
 
         {/* Normal Video Grid */}
-        {!isScreenSharing && (
+  {!isScreenSharing && !remoteScreenUser && (
           <div className="h-full">
             {/* Show loading state when not joined yet */}
             {!isJoined && (
@@ -358,66 +339,55 @@ export default function VideoSection({
 
             {/* Show video grid when joined */}
             {isJoined && (
-              <div
-                className={`h-full grid gap-4 ${
-                  remoteUsers.length === 0
-                    ? "grid-cols-1"
-                    : remoteUsers.length === 1
-                    ? "grid-cols-2"
-                    : remoteUsers.length <= 4
-                    ? "grid-cols-2"
-                    : "grid-cols-3"
-                }`}
-              >
-                {/* Local video - always show when joined */}
-                <div className="bg-black rounded-2xl overflow-hidden relative">
-                  {localVideoTrack ? (
-                    <div
-                      ref={localVideoRef}
-                      className="agora-video-container w-full h-full"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center">
-                      <div className="text-center text-white">
-                        <VideoOff
-                          size={48}
-                          className="mx-auto mb-2 opacity-50"
-                        />
-                        <p className="text-sm opacity-75">Camera tắt</p>
+              <div className="h-full w-full flex items-center justify-center relative">
+                {/* Nếu có remote user, hiển thị remote to, local nhỏ (trừ khi có remoteScreenUser thì ẩn local) */}
+                {remoteUsers.length > 0 ? (
+                  <>
+                    {/* Remote video lớn */}
+                    <div className="w-full h-full bg-black rounded-2xl overflow-hidden flex items-center justify-center">
+                      <RemoteVideoCard user={remoteUsers[0]} />
+                    </div>
+                    {/* Local video nhỏ, overlay góc phải dưới, chỉ ẩn khi tôi là người chia sẻ màn hình (isScreenSharing) */}
+                    {!isScreenSharing && (
+                      <div className="absolute bottom-8 right-8 w-56 h-40 bg-black rounded-xl overflow-hidden shadow-lg border-2 border-white">
+                        {localVideoTrack ? (
+                          <div ref={localVideoRef} className="agora-video-container w-full h-full" />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center">
+                            <div className="text-center text-white">
+                              <VideoOff size={32} className="mx-auto mb-2 opacity-50" />
+                              <p className="text-xs opacity-75">Camera tắt</p>
+                            </div>
+                          </div>
+                        )}
+                        <div className="absolute bottom-2 left-2 bg-black bg-opacity-70 text-white px-2 py-0.5 rounded text-xs">
+                          Bạn ({userName})
+                        </div>
                       </div>
+                    )}
+                  </>
+                ) : (
+                  // Nếu không có remote user, local video to
+                  <div className="w-full h-full bg-black rounded-2xl overflow-hidden flex items-center justify-center">
+                    {localVideoTrack ? (
+                      <div ref={localVideoRef} className="agora-video-container w-full h-full" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <div className="text-center text-white">
+                          <VideoOff size={48} className="mx-auto mb-2 opacity-50" />
+                          <p className="text-sm opacity-75">Camera tắt</p>
+                        </div>
+                      </div>
+                    )}
+                    <div className="absolute bottom-4 left-4 bg-black bg-opacity-70 text-white px-3 py-1 rounded-full text-sm">
+                      Bạn ({userName})
                     </div>
-                  )}
-
-                  <div className="absolute bottom-4 left-4 bg-black bg-opacity-70 text-white px-3 py-1 rounded-full text-sm">
-                    Bạn ({userName})
-                  </div>
-                </div>
-
-                {/* Remote participants */}
-                {remoteUsers.map((user) => {
-                  console.log("🎭 Rendering remote user:", {
-                    uid: user.uid,
-                    hasVideo: !!user.videoTrack,
-                    hasAudio: !!user.audioTrack,
-                  });
-                  return (
-                    <div
-                      key={user.uid}
-                      className="bg-black rounded-2xl overflow-hidden"
-                    >
-                      <RemoteVideoCard user={user} />
-                    </div>
-                  );
-                })}
-
-                {/* Show message when alone in room */}
-                {remoteUsers.length === 0 && (
-                  <div className="bg-gray-800 bg-opacity-50 rounded-2xl flex items-center justify-center border-2 border-dashed border-gray-600">
-                    <div className="text-center text-white">
-                      <Users size={32} className="mx-auto mb-2 opacity-50" />
-                      <p className="text-sm opacity-75">
-                        Chờ người khác tham gia...
-                      </p>
+                    {/* Thông báo chờ */}
+                    <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-gray-800 bg-opacity-70 rounded-2xl px-6 py-4 border-2 border-dashed border-gray-600">
+                      <div className="text-center text-white">
+                        <Users size={32} className="mx-auto mb-2 opacity-50" />
+                        <p className="text-sm opacity-75">Chờ người khác tham gia...</p>
+                      </div>
                     </div>
                   </div>
                 )}
