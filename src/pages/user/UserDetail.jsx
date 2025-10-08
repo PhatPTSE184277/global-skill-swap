@@ -1,19 +1,39 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
+import { useSelector } from "react-redux";
+import { authSelector } from "../../reduxs/reducers/AuthReducer";
 import blogApi from "../../apis/blogApi";
 import userService from "../../services/userService";
 import UserAbout from "./UserAbout";
 import UserFeedback from "./UserFeedback";
 import MentorSchedule from "./MentorSchedule";
+import UserSchedule from "./UserSchedule";
 
 const UserDetail = () => {
   const { id } = useParams();
+  const authUser = useSelector(authSelector);
   const [posts, setPosts] = useState([]);
   const [user, setUser] = useState(null);
+  const [currentUser, setCurrentUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("about"); // mặc định vào Giới thiệu
   const [underlineStyle, setUnderlineStyle] = useState({});
   const tabRefs = useRef({});
+
+  // Kiểm tra xem có phải là profile của chính mình không
+  const isOwnProfile = currentUser?.id?.toString() === id?.toString();
+  const isTeacherOwner = isOwnProfile && user?.accountRole === "TEACHER";
+
+  // Debug logs
+  console.log("Debug UserDetail:", {
+    authUser: authUser,
+    currentUser: currentUser,
+    currentUserId: currentUser?.id,
+    profileId: id,
+    userRole: user?.accountRole,
+    isOwnProfile,
+    isTeacherOwner,
+  });
 
   // Tạo tabs động dựa trên accountRole
   const getTabsForUser = (userData) => {
@@ -31,10 +51,31 @@ const UserDetail = () => {
       );
     }
 
+    // Thêm tab "Lịch học" cho USER (chỉ hiển thị khi xem profile của chính mình)
+    if (userData?.accountRole === "USER" && isOwnProfile) {
+      baseTabs.push({ key: "my-schedule", label: "Lịch học" });
+    }
+
     return baseTabs;
   };
 
   const tabs = getTabsForUser(user);
+
+  // Fetch current user từ API /user/me
+  useEffect(() => {
+    const fetchCurrentUser = async () => {
+      try {
+        if (authUser?.token) {
+          const currentUserData = await userService.getCurrentUser();
+          setCurrentUser(currentUserData);
+        }
+      } catch (error) {
+        console.error("Error fetching current user:", error);
+      }
+    };
+
+    fetchCurrentUser();
+  }, [authUser]);
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -175,8 +216,11 @@ const UserDetail = () => {
             <UserFeedback userId={id} />
           )}
           {activeTab === "schedule" && user?.accountRole === "TEACHER" && (
-            <MentorSchedule userId={id} />
+            <MentorSchedule userId={id} isOwner={isTeacherOwner} />
           )}
+          {activeTab === "my-schedule" &&
+            user?.accountRole === "USER" &&
+            isOwnProfile && <UserSchedule userId={id} />}
         </div>
       </div>
     </div>
