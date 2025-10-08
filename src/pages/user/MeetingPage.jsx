@@ -8,6 +8,7 @@ import useAgora from "../../hooks/useAgora";
 import socketService from "../../services/socketService";
 import userService from "../../services/userService";
 import apiService from "../../services/apiService";
+import axios from "axios";
 
 const { Text } = Typography;
 
@@ -39,6 +40,10 @@ export default function MeetingPage() {
   const [showParticipants, setShowParticipants] = useState(false);
   const [showRoomInfo, setShowRoomInfo] = useState(false);
 
+  // State for API participants
+  const [apiParticipants, setApiParticipants] = useState([]);
+  const [participantCount, setParticipantCount] = useState(0);
+
   // Chat state - persistent
   const [messages, setMessages] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -48,6 +53,31 @@ export default function MeetingPage() {
 
   // Get Agora hook values
   const { leaveChannel, remoteUsers, isJoined } = useAgora();
+
+  // Fetch participants from API
+  const fetchParticipants = async () => {
+    if (!roomId) return;
+    
+    try {
+      const response = await axios.get(`https://gss-room-service.onrender.com/api/agora/rooms/${roomId}/participants`);
+      if (response.data.success) {
+        setApiParticipants(response.data.data.participants);
+        setParticipantCount(response.data.data.count);
+      }
+    } catch (error) {
+      console.error("Error fetching participants:", error);
+    }
+  };
+
+  // Fetch participants when roomId changes
+  useEffect(() => {
+    if (roomId) {
+      fetchParticipants();
+      // Refresh every 5 seconds
+      const interval = setInterval(fetchParticipants, 5000);
+      return () => clearInterval(interval);
+    }
+  }, [roomId]);
 
   // Lấy thông tin user thực khi component mount
   useEffect(() => {
@@ -359,6 +389,9 @@ export default function MeetingPage() {
               userId={uid}
               remoteUsers={remoteUsers}
               isJoined={isJoined}
+              apiParticipants={apiParticipants}
+              participantCount={participantCount}
+              onRefresh={fetchParticipants}
               onClose={() => setShowParticipants(false)}
             />
           )}
@@ -420,7 +453,7 @@ export default function MeetingPage() {
                     Số người tham gia
                   </label>
                   <p className="text-sm text-gray-900">
-                    {remoteUsers.length + (isJoined ? 1 : 0)} người
+                    {participantCount} người
                   </p>
                 </div>
               </div>

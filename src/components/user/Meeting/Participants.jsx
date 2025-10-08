@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { Button, Avatar, Badge, List, Typography } from "antd";
 import socketService from "../../../services/socketService";
+import axios from "axios";
 
 const { Text } = Typography;
 
@@ -17,6 +18,9 @@ export default function Participants({
   roomId,
   remoteUsers,
   isJoined,
+  apiParticipants,
+  participantCount,
+  onRefresh,
   onClose,
 }) {
   const [participants, setParticipants] = useState([]);
@@ -96,16 +100,20 @@ export default function Participants({
     };
   }, [roomId]);
 
+  // Use API participants if available, otherwise fallback to socket participants
+  useEffect(() => {
+    if (apiParticipants && apiParticipants.length > 0) {
+      setParticipants(apiParticipants);
+    }
+  }, [apiParticipants]);
+
   const loadParticipants = async () => {
     setLoading(true);
     try {
-      // This could trigger a refresh of participants from the server
-      // For now, we rely on socket events for real-time updates
       console.log("👥 Refreshing participants...");
-
-      // You could call an API endpoint here if needed
-      // const response = await apiService.getRoomParticipants(roomId);
-      // setParticipants(response);
+      if (onRefresh) {
+        await onRefresh();
+      }
     } catch (error) {
       console.error("❌ Error loading participants:", error);
     } finally {
@@ -136,7 +144,7 @@ export default function Participants({
     );
   };
 
-  const totalParticipants = participants.length + (isJoined ? 1 : 0);
+  const totalParticipants = participantCount || (participants.length + (isJoined ? 1 : 0));
 
   return (
     <div className="h-full flex flex-col">
