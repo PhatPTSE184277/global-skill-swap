@@ -1,5 +1,6 @@
 import { AlarmClockCheck, Check, Search } from "lucide-react";
 import { motion } from "framer-motion";
+import homeIllu from "../../img/svg/homeIllu.svg";
 import feature1 from "../../img/svg/f1.svg";
 import feature2 from "../../img/svg/f2.svg";
 import feature3 from "../../img/svg/f3.svg";
@@ -140,7 +141,7 @@ const HomePage = () => {
         >
           {" "}
           <motion.img
-            src="/src/img/svg/homeIllu.svg"
+            src={homeIllu}
             alt="Illustration"
             className="w-[480px]"
             animate={{

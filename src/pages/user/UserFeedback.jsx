@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { ThumbsUp, ThumbsDown } from "lucide-react";
 import {
   Listbox,
@@ -164,9 +164,22 @@ const Dropdown = ({ label, options, selected, setSelected }) => (
 );
 
 // ⭐ Main component
-const UserFeedback = () => {
+const UserFeedback = ({ userId }) => {
   const [sortOrder, setSortOrder] = useState("Mới nhất");
   const [filterRate, setFilterRate] = useState("Tất cả");
+
+  useEffect(() => {
+    // Fetch feedback data based on userId
+    if (userId) {
+      try {
+        // TODO: Implement API call to get feedback by user ID
+        // const response = await feedbackApi.getFeedbackByUserId(userId);
+        console.log("Fetching feedback for user ID:", userId);
+      } catch (error) {
+        console.error("Error fetching feedback:", error);
+      }
+    }
+  }, [userId]);
 
   const parseDate = (dateStr) => new Date(dateStr);
 

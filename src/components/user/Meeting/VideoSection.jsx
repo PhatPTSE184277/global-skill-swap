@@ -12,6 +12,12 @@ export default function VideoSection({
   uid,
   currentUser,
   onLeave,
+  showChat,
+  showParticipants,
+  showRoomInfo,
+  onToggleChat,
+  onToggleParticipants,
+  onToggleRoomInfo,
 }) {
   const {
     localVideoTrack,
@@ -216,7 +222,7 @@ export default function VideoSection({
     };
   }, [localScreenTrack]);
 
-  // Remote video component (improved similar to NEW project)
+  // Remote video component
   const RemoteVideoCard = ({ user }) => {
     const videoRef = useRef(null);
     const audioRef = useRef(null);
@@ -225,20 +231,21 @@ export default function VideoSection({
       if (user.videoTrack && videoRef.current) {
         try {
           user.videoTrack.play(videoRef.current);
-        } catch (error) {
+        } catch {
           // Error handled silently
         }
       }
 
       return () => {
         // Cleanup video element
-        if (videoRef.current) {
+        const currentRef = videoRef.current;
+        if (currentRef) {
           try {
-            const videoElement = videoRef.current.querySelector("video");
+            const videoElement = currentRef.querySelector("video");
             if (videoElement) {
               videoElement.srcObject = null;
             }
-          } catch (error) {
+          } catch {
             // Cleanup error handled silently
           }
         }
@@ -249,16 +256,16 @@ export default function VideoSection({
       if (user.audioTrack && audioRef.current) {
         try {
           user.audioTrack.play(audioRef.current);
-        } catch (error) {
+        } catch {
           // Error handled silently
         }
       }
     }, [user.audioTrack]);
 
     return (
-      <div className="relative bg-gray-900 rounded-lg overflow-hidden aspect-video">
+      <div className="relative bg-black rounded-2xl overflow-hidden w-full h-full">
         {user.videoTrack ? (
-          <div ref={videoRef} className="agora-video-container" />
+          <div ref={videoRef} className="agora-video-container w-full h-full" />
         ) : (
           <div className="w-full h-full flex items-center justify-center">
             <div className="text-center text-white">
@@ -272,15 +279,13 @@ export default function VideoSection({
         <div ref={audioRef} className="hidden" />
 
         {/* User info overlay */}
-        <div className="absolute bottom-2 left-2 bg-black bg-opacity-50 text-white px-2 py-1 rounded text-xs">
+        <div className="absolute bottom-4 left-4 bg-black bg-opacity-70 text-white px-3 py-1 rounded-full text-sm">
           UID: {user.uid}
         </div>
 
         {/* Audio indicator */}
         {user.audioTrack && (
-          <div className="absolute top-2 left-2">
-            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-          </div>
+          <div className="absolute top-4 left-4 w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
         )}
       </div>
     );
@@ -299,208 +304,101 @@ export default function VideoSection({
   const hasScreenShare = isScreenSharing || remoteScreenUser;
 
   return (
-    <div className="h-full flex flex-col min-h-0">
-      {/* Connection Status */}
-      <div className="mb-4 flex items-center justify-between">
-        <div className="flex items-center space-x-2">
-          <div
-            className={`w-3 h-3 rounded-full ${
-              connectionState === "CONNECTED"
-                ? "bg-green-500"
-                : connectionState === "CONNECTING"
-                ? "bg-yellow-500"
-                : "bg-red-500"
-            }`}
-          ></div>
-          <span className="text-sm text-gray-600">
-            {connectionState === "CONNECTED"
-              ? "Đã kết nối"
-              : connectionState === "CONNECTING"
-              ? "Đang kết nối"
-              : "Mất kết nối"}
-          </span>
-        </div>
-
-        <div className="flex items-center space-x-4">
-          <div className="flex items-center space-x-2 text-sm text-gray-600">
-            <Users size={16} />
-            <span>
-              {remoteUsers.length + (isJoined ? 1 : 0)} người tham gia
-            </span>
-          </div>
-
-          {/* Camera Test Button */}
-          <Button
-            size="small"
-            type="default"
-            icon={<TestTube size={16} />}
-            onClick={() => {
-              setTestCameraVisible(true);
-              testCamera();
-            }}
-            disabled={loading || isJoined}
-          >
-            Test Camera
-          </Button>
-
-          {/* Manual Camera Toggle for Debug */}
-          {isJoined && (
-            <Button
-              size="small"
-              type={isCameraOn ? "primary" : "default"}
-              danger={!isCameraOn}
-              onClick={async () => {
-                try {
-                  await toggleCamera();
-                } catch (error) {
-                  // Error handled silently
-                }
-              }}
-            >
-              {isCameraOn ? "Turn OFF Camera" : "Turn ON Camera"}
-            </Button>
-          )}
-        </div>
-      </div>
-
+    <div className="h-screen flex flex-col bg-gray-900 relative">
       {/* Main Video Area */}
-      <div className="flex-1 grid gap-4 overflow-auto max-h-[65vh]">
-        {/* Screen Sharing View - only show when local user is sharing */}
+      <div className="flex-1 p-6">
+        {/* Screen Sharing View */}
         {isScreenSharing && localScreenTrack && (
-          <div className="grid grid-cols-1 gap-4">
+          <div className="h-full flex flex-col gap-4">
             {/* Main screen share display */}
-            <div className="aspect-video bg-gray-900 rounded-lg overflow-hidden relative">
+            <div className="flex-1 bg-black rounded-2xl overflow-hidden relative">
               <div ref={localScreenRef} className="w-full h-full" />
-              <div className="absolute top-2 left-2 bg-black bg-opacity-50 text-white px-2 py-1 rounded text-xs">
+              <div className="absolute top-4 left-4 bg-black bg-opacity-70 text-white px-3 py-1 rounded-full text-sm">
                 🖥️ Bạn đang chia sẻ màn hình
               </div>
             </div>
-
-            {/* Participant thumbnails during screen share */}
-            <div className="grid grid-cols-4 gap-2">
-              {/* Local video thumbnail (only show camera if not screen sharing) */}
-              {isJoined && localVideoTrack && (
-                <div className="aspect-video bg-gray-800 rounded overflow-hidden relative">
-                  <div ref={localVideoRef} className="w-full h-full" />
-                  <div className="absolute bottom-1 left-1 bg-black bg-opacity-50 text-white px-1 py-0.5 rounded text-xs">
-                    Bạn
-                  </div>
-                </div>
-              )}
-
-              {/* Remote participants thumbnails */}
-              {remoteUsers.map((user) => (
-                <div key={user.uid} className="aspect-video">
-                  <RemoteVideoCard user={user} />
-                </div>
-              ))}
-            </div>
+            {/* Ẩn local video khi đang chia sẻ màn hình */}
           </div>
         )}
 
-        {/* Normal Video Grid (no local screen sharing) */}
-        {!isScreenSharing && (
-          <div
-            className={`grid gap-4 ${
-              remoteUsers.length === 0
-                ? "grid-cols-1"
-                : remoteUsers.length === 1
-                ? "grid-cols-2"
-                : remoteUsers.length <= 4
-                ? "grid-cols-2"
-                : "grid-cols-3"
-            }`}
-          >
-            {/* Local video */}
+        {/* Normal Video Grid */}
+  {!isScreenSharing && !remoteScreenUser && (
+          <div className="h-full">
+            {/* Show loading state when not joined yet */}
+            {!isJoined && (
+              <div className="h-full bg-gray-800 rounded-2xl flex items-center justify-center">
+                <div className="text-center text-white">
+                  <Video size={48} className="mx-auto mb-2 opacity-50" />
+                  <p>Đang kết nối vào phòng họp...</p>
+                  {loading && (
+                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white mx-auto mt-2"></div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Show video grid when joined */}
             {isJoined && (
-              <div className="aspect-video bg-gray-900 rounded-lg overflow-hidden relative">
-                {localVideoTrack ? (
+              <div className="h-full w-full flex items-center justify-center relative">
+                {/* Nếu có remote user, hiển thị remote to, local nhỏ (trừ khi có remoteScreenUser thì ẩn local) */}
+                {remoteUsers.length > 0 ? (
                   <>
-                    <div
-                      ref={localVideoRef}
-                      className="agora-video-container"
-                    />
-                    {/* Debug info overlay */}
-                    <div className="absolute top-2 right-2 bg-green-500 text-white px-2 py-1 rounded text-xs">
-                      📹 Camera ON
+                    {/* Remote video lớn */}
+                    <div className="w-full h-full bg-black rounded-2xl overflow-hidden flex items-center justify-center">
+                      <RemoteVideoCard user={remoteUsers[0]} />
                     </div>
+                    {/* Local video nhỏ, overlay góc phải dưới, chỉ ẩn khi tôi là người chia sẻ màn hình (isScreenSharing) */}
+                    {!isScreenSharing && (
+                      <div className="absolute bottom-8 right-8 w-56 h-40 bg-black rounded-xl overflow-hidden shadow-lg border-2 border-white">
+                        {localVideoTrack ? (
+                          <div ref={localVideoRef} className="agora-video-container w-full h-full" />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center">
+                            <div className="text-center text-white">
+                              <VideoOff size={32} className="mx-auto mb-2 opacity-50" />
+                              <p className="text-xs opacity-75">Camera tắt</p>
+                            </div>
+                          </div>
+                        )}
+                        <div className="absolute bottom-2 left-2 bg-black bg-opacity-70 text-white px-2 py-0.5 rounded text-xs">
+                          Bạn ({userName})
+                        </div>
+                      </div>
+                    )}
                   </>
                 ) : (
-                  <>
-                    <div className="w-full h-full flex items-center justify-center">
+                  // Nếu không có remote user, local video to
+                  <div className="w-full h-full bg-black rounded-2xl overflow-hidden flex items-center justify-center">
+                    {localVideoTrack ? (
+                      <div ref={localVideoRef} className="agora-video-container w-full h-full" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <div className="text-center text-white">
+                          <VideoOff size={48} className="mx-auto mb-2 opacity-50" />
+                          <p className="text-sm opacity-75">Camera tắt</p>
+                        </div>
+                      </div>
+                    )}
+                    <div className="absolute bottom-4 left-4 bg-black bg-opacity-70 text-white px-3 py-1 rounded-full text-sm">
+                      Bạn ({userName})
+                    </div>
+                    {/* Thông báo chờ */}
+                    <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-gray-800 bg-opacity-70 rounded-2xl px-6 py-4 border-2 border-dashed border-gray-600">
                       <div className="text-center text-white">
-                        <VideoOff
-                          size={48}
-                          className="mx-auto mb-2 opacity-50"
-                        />
-                        <p className="text-sm opacity-75">Camera tắt</p>
+                        <Users size={32} className="mx-auto mb-2 opacity-50" />
+                        <p className="text-sm opacity-75">Chờ người khác tham gia...</p>
                       </div>
                     </div>
-                    {/* Debug info overlay */}
-                    <div className="absolute top-2 right-2 bg-red-500 text-white px-2 py-1 rounded text-xs">
-                      📹 Camera OFF
-                    </div>
-                  </>
+                  </div>
                 )}
-
-                <div className="absolute bottom-2 left-2 bg-black bg-opacity-50 text-white px-2 py-1 rounded text-xs">
-                  Bạn ({userName})
-                </div>
-              </div>
-            )}
-
-            {/* Remote participants - includes screen sharing from other users */}
-            {remoteUsers.map((user) => {
-              console.log("🎭 Rendering remote user:", {
-                uid: user.uid,
-                hasVideo: !!user.videoTrack,
-                hasAudio: !!user.audioTrack,
-              });
-              return (
-                <div key={user.uid} className="aspect-video">
-                  <RemoteVideoCard user={user} />
-                </div>
-              );
-            })}
-
-            {/* Debug info for remote users */}
-            {remoteUsers.length > 0 && (
-              <div className="col-span-full">
-                <div className="bg-blue-50 border border-blue-200 rounded p-2 text-xs text-blue-800">
-                  🔍 Debug: {remoteUsers.length} remote user(s) detected - UIDs:{" "}
-                  {remoteUsers.map((u) => u.uid).join(", ")}
-                </div>
-              </div>
-            )}
-
-            {/* Empty state */}
-            {remoteUsers.length === 0 && !isJoined && (
-              <div className="aspect-video bg-gray-100 rounded-lg flex items-center justify-center">
-                <div className="text-center text-gray-500">
-                  <Video size={48} className="mx-auto mb-2 opacity-50" />
-                  <p>Đang chờ kết nối...</p>
-                </div>
-              </div>
-            )}
-
-            {/* Debug state when joined but no remote users */}
-            {remoteUsers.length === 0 && isJoined && (
-              <div className="aspect-video bg-yellow-50 border border-yellow-200 rounded-lg flex items-center justify-center">
-                <div className="text-center text-yellow-700">
-                  <Users size={48} className="mx-auto mb-2 opacity-50" />
-                  <p>Đã kết nối - chờ người khác tham gia</p>
-                  <p className="text-xs mt-1">
-                    Hoặc có thể người khác đã có sẵn nhưng chưa được sync
-                  </p>
-                </div>
               </div>
             )}
           </div>
         )}
       </div>
 
-      {/* Meeting Controls (fixed footer area so buttons don't get pushed out) */}
-      <div className="flex-none mt-3">
+      {/* Meeting Controls */}
+      <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2">
         <MeetingControls
           onLeave={onLeave}
           isLeaving={loading}
@@ -511,27 +409,14 @@ export default function VideoSection({
           toggleCamera={toggleCamera}
           toggleMicrophone={toggleMicrophone}
           toggleScreenShare={toggleScreenShare}
+          showChat={showChat}
+          showParticipants={showParticipants}
+          showRoomInfo={showRoomInfo}
+          onToggleChat={onToggleChat}
+          onToggleParticipants={onToggleParticipants}
+          onToggleRoomInfo={onToggleRoomInfo}
         />
       </div>
-
-      {/* Camera Test Modal */}
-      <Modal
-        title="Test Camera"
-        open={testCameraVisible}
-        onCancel={() => setTestCameraVisible(false)}
-        footer={null}
-        width={480}
-        centered
-      >
-        <div className="text-center">
-          <div className="aspect-video bg-gray-900 rounded-lg overflow-hidden mb-4">
-            <div ref={testVideoRef} className="w-full h-full" />
-          </div>
-          <p className="text-gray-600">
-            Kiểm tra camera... (sẽ tự đóng sau 3 giây)
-          </p>
-        </div>
-      </Modal>
     </div>
   );
 }

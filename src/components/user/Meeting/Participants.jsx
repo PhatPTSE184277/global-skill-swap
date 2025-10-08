@@ -1,11 +1,28 @@
 import React, { useState, useEffect } from "react";
-import { MicOff, VideoOff, Mic, Video, RefreshCw, User, Monitor } from "lucide-react";
+import {
+  MicOff,
+  VideoOff,
+  Mic,
+  Video,
+  RefreshCw,
+  User,
+  Monitor,
+} from "lucide-react";
 import { Button, Avatar, Badge, List, Typography } from "antd";
 import socketService from "../../../services/socketService";
+import axios from "axios";
 
 const { Text } = Typography;
 
-export default function Participants({ roomId, remoteUsers, isJoined }) {
+export default function Participants({
+  roomId,
+  remoteUsers,
+  isJoined,
+  apiParticipants,
+  participantCount,
+  onRefresh,
+  onClose,
+}) {
   const [participants, setParticipants] = useState([]);
   const [loading, setLoading] = useState(false);
 
@@ -13,18 +30,18 @@ export default function Participants({ roomId, remoteUsers, isJoined }) {
   useEffect(() => {
     if (!roomId) return;
 
-    console.log('👥 Setting up participants listeners for room:', roomId);
+    console.log("👥 Setting up participants listeners for room:", roomId);
 
     // Listen for participant updates from socket
     const handleRoomParticipants = (participantList) => {
-      console.log('👥 Room participants update:', participantList);
+      console.log("👥 Room participants update:", participantList);
       setParticipants(participantList);
     };
 
     const handleUserJoined = (user) => {
-      console.log('👥 User joined:', user);
-      setParticipants(prev => {
-        const exists = prev.find(p => p.socketId === user.socketId);
+      console.log("👥 User joined:", user);
+      setParticipants((prev) => {
+        const exists = prev.find((p) => p.socketId === user.socketId);
         if (!exists) {
           return [...prev, user];
         }
@@ -33,34 +50,46 @@ export default function Participants({ roomId, remoteUsers, isJoined }) {
     };
 
     const handleUserLeft = (user) => {
-      console.log('👥 User left:', user);
-      setParticipants(prev => prev.filter(p => p.socketId !== user.socketId));
+      console.log("👥 User left:", user);
+      setParticipants((prev) =>
+        prev.filter((p) => p.socketId !== user.socketId)
+      );
     };
 
     const handleMediaStatusUpdate = (data) => {
-      console.log('👥 Media status update:', data);
-      setParticipants(prev => prev.map(p => 
-        p.socketId === data.socketId 
-          ? { ...p, isCameraOn: data.isCameraOn, isMicOn: data.isMicOn }
-          : p
-      ));
+      console.log("👥 Media status update:", data);
+      setParticipants((prev) =>
+        prev.map((p) =>
+          p.socketId === data.socketId
+            ? { ...p, isCameraOn: data.isCameraOn, isMicOn: data.isMicOn }
+            : p
+        )
+      );
     };
 
     const handleScreenSharingUpdate = (data) => {
-      console.log('👥 Screen sharing update:', data);
-      setParticipants(prev => prev.map(p => 
-        p.socketId === data.socketId 
-          ? { ...p, isScreenSharing: data.isScreenSharing }
-          : p
-      ));
+      console.log("👥 Screen sharing update:", data);
+      setParticipants((prev) =>
+        prev.map((p) =>
+          p.socketId === data.socketId
+            ? { ...p, isScreenSharing: data.isScreenSharing }
+            : p
+        )
+      );
     };
 
     // Set up socket listeners
-    const unsubscribeParticipants = socketService.onRoomParticipants(handleRoomParticipants);
+    const unsubscribeParticipants = socketService.onRoomParticipants(
+      handleRoomParticipants
+    );
     const unsubscribeJoined = socketService.onUserJoined(handleUserJoined);
     const unsubscribeLeft = socketService.onUserLeft(handleUserLeft);
-    const unsubscribeMedia = socketService.onMediaStatusUpdate(handleMediaStatusUpdate);
-    const unsubscribeScreen = socketService.onScreenSharingUpdate(handleScreenSharingUpdate);
+    const unsubscribeMedia = socketService.onMediaStatusUpdate(
+      handleMediaStatusUpdate
+    );
+    const unsubscribeScreen = socketService.onScreenSharingUpdate(
+      handleScreenSharingUpdate
+    );
 
     return () => {
       unsubscribeParticipants();
@@ -71,17 +100,20 @@ export default function Participants({ roomId, remoteUsers, isJoined }) {
     };
   }, [roomId]);
 
+  // Use API participants if available, otherwise fallback to socket participants
+  useEffect(() => {
+    if (apiParticipants && apiParticipants.length > 0) {
+      setParticipants(apiParticipants);
+    }
+  }, [apiParticipants]);
+
   const loadParticipants = async () => {
     setLoading(true);
     try {
-      // This could trigger a refresh of participants from the server
-      // For now, we rely on socket events for real-time updates
-      console.log('👥 Refreshing participants...');
-      
-      // You could call an API endpoint here if needed
-      // const response = await apiService.getRoomParticipants(roomId);
-      // setParticipants(response);
-      
+      console.log("👥 Refreshing participants...");
+      if (onRefresh) {
+        await onRefresh();
+      }
     } catch (error) {
       console.error("❌ Error loading participants:", error);
     } finally {
@@ -90,36 +122,75 @@ export default function Participants({ roomId, remoteUsers, isJoined }) {
   };
 
   const getAvatarColor = (userName) => {
-    const colors = ['#f56565', '#48bb78', '#ed8936', '#4299e1', '#9f7aea', '#38b2ac'];
-    const hash = userName?.split('').reduce((a, b) => {
-      a = ((a << 5) - a) + b.charCodeAt(0);
-      return a & a;
-    }, 0) || 0;
+    const colors = [
+      "#f56565",
+      "#48bb78",
+      "#ed8936",
+      "#4299e1",
+      "#9f7aea",
+      "#38b2ac",
+    ];
+    const hash =
+      userName?.split("").reduce((a, b) => {
+        a = (a << 5) - a + b.charCodeAt(0);
+        return a & a;
+      }, 0) || 0;
     return colors[Math.abs(hash) % colors.length];
   };
 
   const isUserInAgoraCall = (participant) => {
-    return remoteUsers.some(user => user.uid.toString() === participant.userId?.toString());
+    return remoteUsers.some(
+      (user) => user.uid.toString() === participant.userId?.toString()
+    );
   };
 
-  const totalParticipants = participants.length + (isJoined ? 1 : 0);
+  const totalParticipants = participantCount || (participants.length + (isJoined ? 1 : 0));
 
   return (
     <div className="h-full flex flex-col">
       {/* Header */}
-      <div className="flex items-center justify-between p-3 border-b bg-gray-50">
-        <div className="flex items-center space-x-2">
-          <User size={18} className="text-blue-500" />
-          <Text strong>Người tham gia</Text>
-          <Badge count={totalParticipants} showZero />
+      <div className="flex items-center justify-between p-4 border-b bg-white">
+        <div className="flex items-center space-x-3">
+          <User size={20} className="text-blue-500" />
+          <div>
+            <h3 className="font-semibold text-gray-900">Người tham gia</h3>
+            <p className="text-xs text-gray-500">{totalParticipants} người</p>
+          </div>
         </div>
-        <Button
-          type="text"
-          icon={<RefreshCw className="w-4 h-4" />}
-          onClick={loadParticipants}
-          loading={loading}
-          size="small"
-        />
+
+        <div className="flex items-center space-x-2">
+          <button
+            onClick={loadParticipants}
+            disabled={loading}
+            className="p-1 hover:bg-gray-100 rounded transition-colors"
+            title="Làm mới danh sách"
+          >
+            <RefreshCw
+              className={`w-4 h-4 text-gray-500 ${
+                loading ? "animate-spin" : ""
+              }`}
+            />
+          </button>
+
+          <button
+            onClick={onClose}
+            className="p-1 hover:bg-gray-100 rounded transition-colors"
+          >
+            <svg
+              className="w-5 h-5 text-gray-500"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M6 18L18 6M6 6l12 12"
+              />
+            </svg>
+          </button>
+        </div>
       </div>
 
       {/* Participants List */}
@@ -128,18 +199,22 @@ export default function Participants({ roomId, remoteUsers, isJoined }) {
           size="small"
           dataSource={[
             // Add self as first participant if joined
-            ...(isJoined ? [{
-              id: 'self',
-              userName: 'Bạn',
-              userId: 'self',
-              socketId: 'self',
-              isCameraOn: true, // This should come from useAgora
-              isMicOn: true,    // This should come from useAgora
-              isScreenSharing: false,
-              joinedAt: new Date(),
-              isSelf: true
-            }] : []),
-            ...participants
+            ...(isJoined
+              ? [
+                  {
+                    id: "self",
+                    userName: "Bạn",
+                    userId: "self",
+                    socketId: "self",
+                    isCameraOn: true, // This should come from useAgora
+                    isMicOn: true, // This should come from useAgora
+                    isScreenSharing: false,
+                    joinedAt: new Date(),
+                    isSelf: true,
+                  },
+                ]
+              : []),
+            ...participants,
           ]}
           renderItem={(participant) => (
             <List.Item className="px-3 py-2">
@@ -149,37 +224,36 @@ export default function Participants({ roomId, remoteUsers, isJoined }) {
                   <div className="relative">
                     <Avatar
                       size="small"
-                      style={{ 
-                        backgroundColor: getAvatarColor(participant.userName)
+                      style={{
+                        backgroundColor: getAvatarColor(participant.userName),
                       }}
                       icon={<User size={12} />}
                     >
                       {participant.userName?.charAt(0)?.toUpperCase()}
                     </Avatar>
-                    
+
                     {/* Online indicator */}
                     {(participant.isSelf || isUserInAgoraCall(participant)) && (
                       <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 border-2 border-white rounded-full" />
                     )}
                   </div>
-                  
+
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center space-x-1">
                       <Text className="text-sm font-medium truncate">
                         {participant.userName}
-                        {participant.isSelf && ' (Bạn)'}
+                        {participant.isSelf && " (Bạn)"}
                       </Text>
                       {participant.isScreenSharing && (
                         <Monitor size={12} className="text-blue-500" />
                       )}
                     </div>
                     <Text type="secondary" className="text-xs">
-                      {participant.isSelf 
-                        ? 'Đang tham gia' 
+                      {participant.isSelf
+                        ? "Đang tham gia"
                         : isUserInAgoraCall(participant)
-                          ? 'Trong cuộc gọi'
-                          : 'Đang chờ'
-                      }
+                        ? "Trong cuộc gọi"
+                        : "Đang chờ"}
                     </Text>
                   </div>
                 </div>
@@ -187,11 +261,13 @@ export default function Participants({ roomId, remoteUsers, isJoined }) {
                 {/* Media Status */}
                 <div className="flex items-center space-x-1">
                   {/* Microphone Status */}
-                  <div className={`p-1 rounded ${
-                    participant.isMicOn 
-                      ? 'text-green-500 bg-green-50' 
-                      : 'text-red-500 bg-red-50'
-                  }`}>
+                  <div
+                    className={`p-1 rounded ${
+                      participant.isMicOn
+                        ? "text-green-500 bg-green-50"
+                        : "text-red-500 bg-red-50"
+                    }`}
+                  >
                     {participant.isMicOn ? (
                       <Mic size={12} />
                     ) : (
@@ -200,11 +276,13 @@ export default function Participants({ roomId, remoteUsers, isJoined }) {
                   </div>
 
                   {/* Camera Status */}
-                  <div className={`p-1 rounded ${
-                    participant.isCameraOn 
-                      ? 'text-green-500 bg-green-50' 
-                      : 'text-red-500 bg-red-50'
-                  }`}>
+                  <div
+                    className={`p-1 rounded ${
+                      participant.isCameraOn
+                        ? "text-green-500 bg-green-50"
+                        : "text-red-500 bg-red-50"
+                    }`}
+                  >
                     {participant.isCameraOn ? (
                       <Video size={12} />
                     ) : (
@@ -221,7 +299,7 @@ export default function Participants({ roomId, remoteUsers, isJoined }) {
                 <User size={32} className="mx-auto mb-2 text-gray-400" />
                 <Text type="secondary">Chưa có người tham gia</Text>
               </div>
-            )
+            ),
           }}
         />
       </div>
@@ -229,7 +307,9 @@ export default function Participants({ roomId, remoteUsers, isJoined }) {
       {/* Footer Info */}
       <div className="p-3 border-t bg-gray-50">
         <Text type="secondary" className="text-xs">
-          {participants.filter(p => isUserInAgoraCall(p)).length + (isJoined ? 1 : 0)} trong cuộc gọi video
+          {participants.filter((p) => isUserInAgoraCall(p)).length +
+            (isJoined ? 1 : 0)}{" "}
+          trong cuộc gọi video
         </Text>
       </div>
     </div>

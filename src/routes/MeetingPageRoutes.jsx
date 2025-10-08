@@ -11,15 +11,16 @@ const MeetingPageRoutes = [
       //   path: "/meeting-lobby",
       //   element: <MeetingLobby />,
       // },
-      {
-        path: ":roomLink",
-        element: <MeetingPage />,
-      },
+
       {
         path: "",
         element: <PublicRoom />,
       },
     ],
+  },
+  {
+    path: "/meeting/:roomLink",
+    element: <MeetingPage />,
   },
 ];
 

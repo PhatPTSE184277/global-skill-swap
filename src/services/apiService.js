@@ -1,4 +1,5 @@
 import apiRoom from '../apis/axiosRoom.js';
+import userService from './userService.js';
 
 class ApiService {
   constructor() {
@@ -18,7 +19,7 @@ class ApiService {
 
   async getMeetingRoom(roomId) {
     const response = await this.api.get(`/meeting-rooms/${roomId}`);
-    return response.data?.data?.rooms || response.data;
+    return response.data?.data?.room ;
   }
 
    async getIdbyLink(roomLink) {
@@ -62,14 +63,35 @@ class ApiService {
 
   async getRoomParticipants(roomId) {
     const response = await this.api.get(`/agora/rooms/${roomId}/participants`);
-    return response.data?.participants || [];
+    return response?.data || [];
   }
 
   async refreshAgoraTokens(roomId, uid) {
     const response = await this.api.post('/agora/tokens/refresh', { roomId, uid });
     return response.data;
   }
+
+  // Get user information from meeting room
+  async getUsernameFromMeetingRoom(roomId) {
+    try {
+      // Lấy thông tin meeting room
+      const roomResponse = await this.getMeetingRoom(roomId);
+      const roomData = roomResponse ;
+      
+      if (!roomData || !roomData?.user_id) {
+        throw new Error('Meeting room not found or missing user_id');
+      }
+      // Lấy thông tin user từ user_id
+      const userResponse = await userService.getUserById(roomData?.user_id);
+      
+      return userResponse?.username;
+    } catch (error) {
+     console.error('Error getting username from meeting room:', error);
+      return 'Mentor GSS'; // Fallback name
+    }
+  }
+
 }
 
-const apiService = new ApiService();
+const apiService = new ApiService();  
 export default apiService;

@@ -23,13 +23,13 @@ const authService = {
         );
         return response;
     },
-    resetPassword: async (userId, token) => {
+    resetPassword: async (token, password) => {
         const response = await axiosClient.post(
             '/authentication/reset-password',
-            token,
+            { password },
             {
                 headers: {
-                    'X-User-ID': userId
+                    Authorization: `Bearer ${token}`
                 }
             }
         );

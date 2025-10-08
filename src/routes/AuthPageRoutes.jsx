@@ -1,5 +1,11 @@
-import AuthPageLayout from '../layouts/auth/AuthPageLayout';
-import { LoginPage, RegisterPage, ForgotPasswordPage, VerifyOtpPage } from "../pages/auth";
+import AuthPageLayout from "../layouts/auth/AuthPageLayout";
+import {
+  LoginPage,
+  RegisterPage,
+  ForgotPasswordPage,
+  VerifyOtpPage,
+  ResetPasswordPage,
+} from "../pages/auth";
 
 const AuthRoutes = [
   {
@@ -12,20 +18,24 @@ const AuthRoutes = [
       },
       {
         path: "/register",
-        element: <RegisterPage />
+        element: <RegisterPage />,
       },
       {
         path: "/forgot-password",
-        element: <ForgotPasswordPage />
+        element: <ForgotPasswordPage />,
       },
       {
         path: "/verify-otp",
-        element: <VerifyOtpPage />
+        element: <VerifyOtpPage />,
       },
       {
         path: "/verify-otp/:token",
-        element: <VerifyOtpPage />
-      }
+        element: <VerifyOtpPage />,
+      },
+      {
+        path: "/reset-password/:token",
+        element: <ResetPasswordPage />,
+      },
     ],
   },
 ];

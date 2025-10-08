@@ -19,6 +19,11 @@ const BlogHome = () => {
     navigate(`/blog/${postId}`);
   };
 
+  // Function để handle click vào tên tác giả
+  const handleAuthorClick = (username) => {
+    navigate(`/profile/${username}`);
+  };
+
   // Fetch data khi component mount
   React.useEffect(() => {
     const fetchData = async () => {
@@ -215,7 +220,15 @@ const BlogHome = () => {
 
                     <div className="flex items-center text-xs text-gray-500">
                       <div className="w-6 h-6 bg-gray-300 rounded-full mr-2"></div>
-                      <span>{post.author}</span>
+                      <span
+                        className="cursor-pointer text-purple-700 hover:underline"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleAuthorClick(post.authorUsername || post.author);
+                        }}
+                      >
+                        {post.author}
+                      </span>
                       <span className="mx-2">•</span>
                       <span>{post.date}</span>
                       <span className="mx-2">•</span>
@@ -270,7 +283,15 @@ const BlogHome = () => {
 
                   <div className="flex items-center text-xs text-gray-500">
                     <div className="w-4 h-4 bg-gray-300 rounded-full mr-2"></div>
-                    <span>{post.author}</span>
+                    <span
+                      className="cursor-pointer text-purple-700 hover:underline"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleAuthorClick(post.authorUsername || post.author);
+                      }}
+                    >
+                      {post.author}
+                    </span>
                     <span className="mx-2">•</span>
                     <span>{post.date}</span>
                     <span className="mx-2">•</span>

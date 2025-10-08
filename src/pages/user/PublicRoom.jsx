@@ -17,20 +17,16 @@ import {
   Calendar,
 } from "lucide-react";
 
-const avatars = [
-  "https://i.pravatar.cc/100?img=5",
-  "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=facearea&w=100&h=100",
-  "https://images.unsplash.com/photo-1464306076886-debede1a7c94?auto=format&fit=facearea&w=100&h=100",
-  "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=facearea&w=100&h=100",
-  "https://images.unsplash.com/photo-1464306076886-debede1a7c94?auto=format&fit=facearea&w=100&h=100",
-];
 
 export default function PublicRoom() {
-  const [page, setPage] = useState(1);
+  // const [page, setPage] = useState(1);
   const [meetingRooms, setMeetingRooms] = useState([]);
   const [loading, setLoading] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [searchText, setSearchText] = useState("");
+  const [creatorNames, setCreatorNames] = useState({});
+  const [participantCounts, setParticipantCounts] = useState({});
+  const [activeTab, setActiveTab] = useState("all"); // "all" or "my-rooms"
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -40,19 +36,56 @@ export default function PublicRoom() {
   const loadMeetingRooms = async () => {
     setLoading(true);
     try {
-      const response = await apiService.getMeetingRooms();
-      console.log("API Response:", response); // Debug log
+      const rooms = await apiService.getMeetingRooms();
 
-      // Đảm bảo response là array
-      const rooms = Array.isArray(response) ? response : [];
       setMeetingRooms(rooms);
+
+      // Load creator names và participant counts sau, không block UI
+      loadAdditionalData(rooms);
     } catch (error) {
       console.error("Error loading rooms:", error);
       message.error("Lỗi khi tải danh sách phòng học");
-      setMeetingRooms([]); // Set empty array on error
+      setMeetingRooms([]);
     } finally {
       setLoading(false);
     }
+  };
+
+  const loadAdditionalData = async (rooms) => {
+    // Load creator names và participant counts trong background
+    const names = {};
+    const counts = {};
+
+    // Chỉ load cho 5 phòng đầu tiên để tăng tốc
+    const roomsToLoad = rooms.slice(0, 5);
+
+    await Promise.all(
+      roomsToLoad.map(async (room) => {
+        if (room?.id) {
+          try {
+            // Load song song cả 2 API
+            const [username, participantsResponse] = await Promise.all([
+              apiService
+                .getUsernameFromMeetingRoom(room.id)
+                .catch(() => "Mentor GSS"),
+              apiService
+                .getRoomParticipants(room.id)
+                .catch(() => ({ data: { count: 0 } })),
+            ]);
+
+            names[room.id] = username;
+            counts[room.id] = participantsResponse?.data?.count || 0;
+          } catch (error) {
+            console.log(error);
+            names[room.id] = "Mentor GSS";
+            counts[room.id] = 0;
+          }
+        }
+      })
+    );
+
+    setCreatorNames(names);
+    setParticipantCounts(counts);
   };
 
   const getCurrentUser = () => {
@@ -134,25 +167,43 @@ export default function PublicRoom() {
     return texts[status] || status;
   };
 
-  const getJoinedCount = () =>
-    `${Math.floor(Math.random() * 8) + 3}/${
-      Math.floor(Math.random() * 5) + 10
-    }`; // Random joined count
+  const getJoinedCount = (room) => {
+    const count = participantCounts[room.id] || 0;
+    return `${count}/5`;
+  };
+
+  const isRoomFull = (room) => {
+    const count = participantCounts[room.id] || 0;
+    return count >= 5;
+  };
 
   const getCreatorName = (room) => {
-    return room.creator_name || room.mentor_name || "Mentor GSS";
+    return creatorNames[room.id] || "Mentor GSS";
   };
 
   const filteredMeetingRooms = Array.isArray(meetingRooms)
-    ? meetingRooms.filter((room) =>
-        room?.room_name?.toLowerCase().includes(searchText.toLowerCase())
-      )
+    ? meetingRooms.filter((room) => {
+        // Filter by sear ch text
+        const matchesSearch = room?.room_name
+          ?.toLowerCase()
+          .includes(searchText.toLowerCase());
+
+        // Filter by tab
+        if (activeTab === "my-rooms") {
+          const currentUser = getCurrentUser();
+          const creatorName = getCreatorName(room);
+          const isMyRoom = currentUser && creatorName === currentUser?.username;
+          return matchesSearch && isMyRoom;
+        }
+
+        return matchesSearch;
+      })
     : [];
 
   return (
     <div className="p-8 max-w-5xl mx-auto">
-      <div className="flex flex-col  gap-6">
-        <div className="flex justify-start gap-8 ml-20">
+      <div className="flex flex-col  gap-3">
+        {/* <div className="flex justify-start gap-8 ml-20">
           {avatars.map((src, i) => (
             <img
               key={i}
@@ -162,17 +213,42 @@ export default function PublicRoom() {
               style={{ background: "#fff" }}
             />
           ))}
-        </div>
+        </div> */}
         {/* Header */}
         <div className="flex justify-between items-center gap-6">
-          <h1 className="text-xl font-bold mt-3">
-            Phòng Học <span className="text-orange-500">Miễn Phí</span>
-          </h1>
+          <div>
+            <h1 className="text-3xl font-bold mt-3 mb-8">
+              Cùng nhau <span className="text-orange-500">học tập</span>
+            </h1>
+            {/* Tabs */}
+            <div className="flex gap-4 mt-4">
+              <button
+                onClick={() => setActiveTab("all")}
+                className={`px-4 py-2 rounded-full font-medium transition ${
+                  activeTab === "all"
+                    ? "bg-purple-900 text-white"
+                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                }`}
+              >
+                Tất cả
+              </button>
+              <button
+                onClick={() => setActiveTab("my-rooms")}
+                className={`px-4 py-2 rounded-full font-medium transition ${
+                  activeTab === "my-rooms"
+                    ? "bg-purple-900 text-white"
+                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                }`}
+              >
+                Phòng của tôi
+              </button>
+            </div>
+          </div>
 
           <div className="flex gap-4 items-center">
             <button
               onClick={() => setShowCreateModal(true)}
-              className="flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-full font-semibold transition"
+              className="flex justify-center items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white w-50 py-2 rounded-full font-semibold transition"
             >
               <Plus size={16} />
               Tạo Phòng
@@ -235,8 +311,9 @@ export default function PublicRoom() {
           </div>
         ) : (
           filteredMeetingRooms.map((room) => {
-            const joinedCount = getJoinedCount();
+            const joinedCount = getJoinedCount(room);
             const creatorName = getCreatorName(room);
+            const roomFull = isRoomFull(room);
 
             return (
               <div
@@ -249,7 +326,7 @@ export default function PublicRoom() {
                   className="w-full h-35 rounded-2xl"
                 />
                 <div className="p-4 flex flex-col flex-1">
-                  <div className="flex justify-between items-center mb-2">
+                  <div className="flex justify-between items-center">
                     <p className="text-sm text-gray-500">{creatorName}</p>
                     <span
                       className="px-2 py-1 rounded-full text-xs font-semibold text-white"
@@ -258,37 +335,49 @@ export default function PublicRoom() {
                       {getStatusText(room.status)}
                     </span>
                   </div>
-                  <h2 className="text-base font-semibold mb-2">
+                  <h2 className="text-base font-semibold mb-1 ">
                     {room.room_name}
                   </h2>
                   <div className="flex justify-between items-center text-sm text-gray-600 mb-4">
                     <div className="flex items-center gap-1">
                       <Clock size={16} />
                       <span>
-                        Tạo:{" "}
+                        {" "}
                         {new Date(room.start_time).toLocaleDateString("vi-VN")}
                       </span>
                     </div>
                     <div className="flex items-center gap-1">
                       <Users size={16} />
-                      <span className="font-semibold">{joinedCount}</span>
+                      <span
+                        className={`font-semibold ${
+                          roomFull ? "text-red-500" : ""
+                        }`}
+                      >
+                        {joinedCount}
+                      </span>
                     </div>
                   </div>
                   <button
                     className={`self-center px-8 py-1.5 rounded-full font-semibold transition ${
-                      room.status === "completed" || room.status === "canceled"
+                      room.status === "completed" ||
+                      room.status === "canceled" ||
+                      roomFull
                         ? "bg-gray-300 text-gray-500 cursor-not-allowed"
                         : "bg-orange-500 hover:bg-orange-600 text-white"
                     }`}
                     onClick={() => handleJoinMeetingRoom(room)}
                     disabled={
-                      room.status === "completed" || room.status === "canceled"
+                      room.status === "completed" ||
+                      room.status === "canceled" ||
+                      roomFull
                     }
                   >
                     {room.status === "completed"
                       ? "Đã kết thúc"
                       : room.status === "canceled"
                       ? "Đã hủy"
+                      : roomFull
+                      ? "Phòng đầy"
                       : "Tham gia"}
                   </button>
                 </div>
@@ -298,7 +387,7 @@ export default function PublicRoom() {
         )}
       </div>
 
-      <div className="flex justify-end items-center gap-15 mt-10">
+      {/* <div className="flex justify-end items-center gap-15 mt-10">
         <button
           className="flex items-center gap-2 bg-purple-800 hover:bg-purple-900 text-white px-4 py-3 rounded-full shadow transition"
           onClick={() => setPage(page > 1 ? page - 1 : 1)}
@@ -312,12 +401,16 @@ export default function PublicRoom() {
         >
           <ChevronRight size={16} />
         </button>
-      </div>
+      </div> */}
 
       {/* Create Room Modal */}
       <CreateRoomModal
         visible={showCreateModal}
         onCancel={() => setShowCreateModal(false)}
+        onSuccess={() => {
+          setShowCreateModal(false);
+          loadMeetingRooms(); // Reload rooms after successful creation
+        }}
       />
     </div>
   );

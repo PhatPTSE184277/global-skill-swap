@@ -26,6 +26,11 @@ class UserService {
             return this.getCurrentUserFromStorage();
         }
     }
+
+    async getUserById(id) {
+        const response = await api.get(`/user/${id}`);
+        return response?.data?.data;
+    }
 }
 
 const userService = new UserService();
