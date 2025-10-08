@@ -694,12 +694,7 @@ const MentorRegister = () => {
                       <span className="text-gray-600">Chuyên môn:</span>
                       <span className="font-medium">{formData.expertise}</span>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Mức phí:</span>
-                      <span className="font-medium">
-                        {Number(formData.hourlyRate).toLocaleString()} VNĐ/giờ
-                      </span>
-                    </div>
+
                     <hr className="my-3" />
                     <div className="flex justify-between font-semibold">
                       <span>Phí đăng ký:</span>

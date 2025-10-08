@@ -1,18 +1,76 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { MessageCircleMore } from "lucide-react";
+import { useParams } from "react-router-dom";
+import userService from "../../services/userService";
 
-const UserHeader = () => {
+const UserHeader = ({ name }) => {
+  const { id } = useParams();
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        if (id) {
+          const userData = await userService.getUserById(id);
+          setUser(userData);
+        }
+      } catch (error) {
+        console.error("Error fetching user data:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUserData();
+  }, [id]);
+
+  // Ưu tiên lấy từ API, fallback về prop, cuối cùng là default
+  const displayName = user?.name || user?.username || name || "User";
+  if (loading) {
+    return (
+      <div className="pt-10 pb-0 px-8 rounded-b-3xl">
+        <div className="max-w-4xl flex flex-col md:flex-row gap-13 mx-auto">
+          <div className="w-32 h-32 rounded-full bg-gray-200 animate-pulse border-4 border-white shadow"></div>
+          <div className="flex-1">
+            <div className="h-6 bg-gray-200 rounded w-48 mb-4 animate-pulse"></div>
+            <div className="h-4 bg-gray-200 rounded w-32 mb-2 animate-pulse"></div>
+            <div className="h-4 bg-gray-200 rounded w-40 mb-4 animate-pulse"></div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="pt-10 pb-0 px-8 rounded-b-3xl">
       <div className="max-w-4xl flex flex-col md:flex-row gap-13 mx-auto">
         <img
-          src="https://images.pexels.com/photos/414171/pexels-photo-414171.jpeg"
-          alt="Jenny Kia"
+          src={
+            user?.avatar ||
+            user?.avatarUrl ||
+            "https://images.pexels.com/photos/414171/pexels-photo-414171.jpeg"
+          }
+          alt={displayName}
           className="w-32 h-32 rounded-full object-cover border-4 border-white shadow"
         />
         <div className="flex-1">
           <div className="flex items-center justify-between gap-5">
-            <h2 className="text-xl font-normal text-[#4D2C5E] ">Jenny Kia</h2>
+            <div className="flex flex-col">
+              <div className="flex items-center gap-10">
+                <h2 className="text-xl font-normal text-[#4D2C5E] ">
+                  {displayName}
+                </h2>
+                {user?.accountRole === "TEACHER" && (
+                  <span className="bg-blue-100 text-blue-800 text-xs font-medium px-2 py-1 rounded-full">
+                    Mentor
+                  </span>
+                )}
+              </div>
+              {user?.email && (
+                <span className="text-sm text-gray-500">{user.email}</span>
+              )}
+            </div>
             <div className="flex gap-3">
               <button className="bg-orange-500 text-white px-5 py-1 rounded-xl font-medium flex items-center justify-center hover:bg-orange-600 transition-all duration-200">
                 Theo Dõi
@@ -25,19 +83,22 @@ const UserHeader = () => {
 
           <div className="flex gap-8 text-base font-medium mt-3 mb-6">
             <span>
-              <span className="font-bold">12</span> bài viết
+              <span className="font-bold">{user?.postsCount || 0}</span> bài
+              viết
             </span>
             <span>
-              <span className="font-bold">737</span> người theo dõi
+              <span className="font-bold">{user?.followersCount || 0}</span>{" "}
+              người theo dõi
             </span>
             <span>
-              Đang theo dõi <span className="font-bold">114</span> người dùng
+              Đang theo dõi{" "}
+              <span className="font-bold">{user?.followingCount || 0}</span>{" "}
+              người dùng
             </span>
           </div>
 
           <p className="text-gray-700">
-            Hiện đang sống và làm việc tại Nhật 3 năm kinh nghiệm dạy tiếng Anh
-            giao tiếp cho người mới bắt đầu...
+            {user?.bio || user?.description || "Chưa có thông tin giới thiệu"}
           </p>
           <div className="flex gap-3 mb-4">
             <a href="#" className="text-gray-400 hover:text-orange-500">

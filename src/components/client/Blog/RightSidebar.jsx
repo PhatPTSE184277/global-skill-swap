@@ -2,12 +2,12 @@ import React from "react";
 import { useNavigate } from "react-router-dom";
 
 // Component cho tác giả nổi bật
-const TopAuthor = ({ avatar, name, title, description, id }) => {
+const TopAuthor = ({ avatar, name, title, description, username }) => {
   const navigate = useNavigate();
   return (
     <div
       className="flex items-start space-x-3 p-3 hover:bg-gray-50 rounded-lg transition-colors cursor-pointer"
-      onClick={() => navigate(`/profile/${id}`)}
+      onClick={() => navigate(`/profile/${username}`)}
     >
       <img
         src={avatar}
@@ -64,6 +64,7 @@ const RightSidebar = () => {
     {
       id: 1,
       name: "Jenny Kia",
+      username: "jenny.kia", // thêm username
       title: "Fashion Designer, Blogger, Activist",
       description: "Creating unique fashion content and lifestyle tips",
       avatar:
@@ -72,6 +73,7 @@ const RightSidebar = () => {
     {
       id: 2,
       name: "Andreas Rasel",
+      username: "andreas.rasel",
       title: "Blogger for www.panyounglishnet.com",
       description: "English language learning and cultural exchange expert",
       avatar:
@@ -80,6 +82,7 @@ const RightSidebar = () => {
     {
       id: 3,
       name: "Sophia Clark",
+      username: "sophia.clark",
       title: "Content Designer, Blogger, Activist",
       description: "Passionate about storytelling and visual design",
       avatar:
@@ -170,14 +173,7 @@ const RightSidebar = () => {
         </h3>
         <div className="space-y-1">
           {topAuthors.map((author) => (
-            <TopAuthor
-              key={author.id}
-              id={author.id}
-              avatar={author.avatar}
-              name={author.name}
-              title={author.title}
-              description={author.description}
-            />
+            <TopAuthor key={author.id} {...author} />
           ))}
         </div>
       </div>

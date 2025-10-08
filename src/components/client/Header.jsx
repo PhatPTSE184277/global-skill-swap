@@ -2,6 +2,7 @@ import { useSelector, useDispatch } from "react-redux";
 import { authSelector, removeAuth } from "../../reduxs/reducers/AuthReducer";
 import { useState, useRef, useEffect } from "react";
 import { LogOut, User, ChevronDown } from "lucide-react";
+import userService from "../../services/userService";
 
 import { Link, useNavigate } from "react-router-dom";
 
@@ -15,6 +16,7 @@ const handleLogoClick = (navigate) => {
 
 const Header = () => {
   const user = useSelector(authSelector);
+  console.log("user in header:", user);
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const [showDropdown, setShowDropdown] = useState(false);
@@ -47,6 +49,24 @@ const Header = () => {
   const handleServicesClick = (path) => {
     setShowServicesDropdown(false);
     navigate(path);
+  };
+
+  const handleProfileClick = async () => {
+    try {
+      setShowDropdown(false);
+      // Gọi API /user/me để lấy ID chính xác
+      const currentUser = await userService.getCurrentUser();
+      if (currentUser && currentUser.id) {
+        navigate(`/profile/${currentUser.id}`);
+      } else {
+        // Fallback nếu không lấy được ID từ API
+        console.error("Cannot get user ID from API");
+        // Có thể hiển thị thông báo lỗi hoặc redirect về trang khác
+      }
+    } catch (error) {
+      console.error("Error fetching current user:", error);
+      // Xử lý lỗi - có thể hiển thị thông báo hoặc redirect
+    }
   };
 
   return (
@@ -159,10 +179,7 @@ const Header = () => {
                 </div>
                 <button
                   className="flex items-center gap-2 w-full px-4 py-3 text-sm text-gray-700 hover:bg-purple-50 transition rounded-none cursor-pointer"
-                  onClick={() => {
-                    setShowDropdown(false);
-                    navigate("/profile");
-                  }}
+                  onClick={handleProfileClick}
                 >
                   <User className="w-4 h-4 text-purple-700" />
                   Thông tin cá nhân

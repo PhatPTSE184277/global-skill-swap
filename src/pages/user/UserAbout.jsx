@@ -1,10 +1,29 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Briefcase, GraduationCap } from "lucide-react";
+import userService from "../../services/userService";
 
 const menuItems = ["Tổng quan", "Thông tin liên hệ", "Chi tiết"];
 
-const UserAbout = () => {
+const UserAbout = ({ userId }) => {
   const [active, setActive] = useState(0);
+  const [userData, setUserData] = useState(null);
+
+  useEffect(() => {
+    // Fetch user data based on userId
+    const fetchUserData = async () => {
+      if (userId) {
+        try {
+          const response = await userService.getUserById(userId);
+          setUserData(response);
+          console.log("Fetching user data for ID:", userId);
+        } catch (error) {
+          console.error("Error fetching user data:", error);
+        }
+      }
+    };
+
+    fetchUserData();
+  }, [userId]);
 
   return (
     <div className="flex bg-white rounded-lg shadow min-h-[400px]">

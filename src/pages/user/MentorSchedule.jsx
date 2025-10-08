@@ -1,10 +1,23 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom"; // Thêm dòng này
 
-const MentorSchedule = () => {
+const MentorSchedule = ({ userId }) => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(new Date());
   const navigate = useNavigate(); // Thêm dòng này
+
+  useEffect(() => {
+    // Fetch schedule data based on userId
+    if (userId) {
+      try {
+        // TODO: Implement API call to get schedule by user ID
+        // const response = await scheduleApi.getScheduleByUserId(userId);
+        console.log("Fetching schedule for user ID:", userId);
+      } catch (error) {
+        console.error("Error fetching schedule:", error);
+      }
+    }
+  }, [userId]);
 
   // Fake data: khung giờ theo ngày (demo)
   const timeSlotsByDate = {

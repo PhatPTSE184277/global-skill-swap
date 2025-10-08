@@ -1,32 +1,76 @@
 import React, { useEffect, useRef, useState } from "react";
+import { useParams } from "react-router-dom";
 import blogApi from "../../apis/blogApi";
+import userService from "../../services/userService";
 import UserAbout from "./UserAbout";
 import UserFeedback from "./UserFeedback";
 import MentorSchedule from "./MentorSchedule";
 
 const UserDetail = () => {
+  const { id } = useParams();
   const [posts, setPosts] = useState([]);
+  const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("about"); // mặc định vào Giới thiệu
   const [underlineStyle, setUnderlineStyle] = useState({});
   const tabRefs = useRef({});
 
-  const tabs = [
-    { key: "about", label: "Giới thiệu" },
-    { key: "posts", label: "Bài viết" },
-    { key: "lectures", label: "Bài giảng" },
-    { key: "reviews", label: "Đánh giá" },
-    { key: "schedule", label: "Lịch trình" },
-  ];
+  // Tạo tabs động dựa trên accountRole
+  const getTabsForUser = (userData) => {
+    const baseTabs = [
+      { key: "about", label: "Giới thiệu" },
+      { key: "posts", label: "Bài viết" },
+    ];
+
+    // Chỉ hiển thị tab "Bài giảng", "Đánh giá" và "Lịch trình" nếu là TEACHER
+    if (userData?.accountRole === "TEACHER") {
+      baseTabs.push(
+        { key: "lectures", label: "Bài giảng" },
+        { key: "reviews", label: "Đánh giá" },
+        { key: "schedule", label: "Lịch trình" }
+      );
+    }
+
+    return baseTabs;
+  };
+
+  const tabs = getTabsForUser(user);
 
   useEffect(() => {
-    const fetchPosts = async () => {
-      const res = await blogApi.getFollowingPosts();
-      setPosts(res.data);
-      setLoading(false);
+    const fetchUserData = async () => {
+      try {
+        // Fetch user data by ID
+        const userData = await userService.getUserById(id);
+        setUser(userData);
+
+        // Fetch user posts - có thể cần API endpoint mới để lấy posts của user cụ thể
+        const res = await blogApi.getFollowingPosts(); // TODO: Thay bằng API lấy posts của user theo ID
+        setPosts(res.data);
+      } catch (error) {
+        console.error("Error fetching user data:", error);
+      } finally {
+        setLoading(false);
+      }
     };
-    fetchPosts();
-  }, []);
+
+    if (id) {
+      fetchUserData();
+    }
+  }, [id]);
+
+  // Reset activeTab nếu tab hiện tại không hợp lệ cho user role
+  useEffect(() => {
+    if (user) {
+      const availableTabs = getTabsForUser(user);
+      const isCurrentTabAvailable = availableTabs.some(
+        (tab) => tab.key === activeTab
+      );
+
+      if (!isCurrentTabAvailable) {
+        setActiveTab("about"); // Reset về tab đầu tiên
+      }
+    }
+  }, [user, activeTab]);
 
   useEffect(() => {
     const currentTab = tabRefs.current[activeTab];
@@ -65,7 +109,7 @@ const UserDetail = () => {
 
         {/* Nội dung theo tab */}
         <div className="max-w-5xl mx-auto gap-10 py-10">
-          {activeTab === "about" && <UserAbout />}{" "}
+          {activeTab === "about" && <UserAbout userId={id} />}{" "}
           {activeTab === "posts" && (
             <div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -122,13 +166,17 @@ const UserDetail = () => {
               </div>
             </div>
           )}
-          {activeTab === "lectures" && (
+          {activeTab === "lectures" && user?.accountRole === "TEACHER" && (
             <div className="text-center text-gray-500 py-10">
               Đây là phần Bài giảng.
             </div>
           )}
-          {activeTab === "reviews" && <UserFeedback />}
-          {activeTab === "schedule" && <MentorSchedule />}
+          {activeTab === "reviews" && user?.accountRole === "TEACHER" && (
+            <UserFeedback userId={id} />
+          )}
+          {activeTab === "schedule" && user?.accountRole === "TEACHER" && (
+            <MentorSchedule userId={id} />
+          )}
         </div>
       </div>
     </div>
