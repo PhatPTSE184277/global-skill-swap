@@ -4,9 +4,6 @@ import socketService from '../services/socketService';
 import apiService from '../services/apiService';
 
 const useAgora = () => {
-  // Debug log to ensure file is loaded correctly
-  console.log('🔧 useAgora hook initialized with remoteScreenUser support');
-  
   const [localVideoTrack, setLocalVideoTrack] = useState(null);
   const [localAudioTrack, setLocalAudioTrack] = useState(null);
   const [localScreenTrack, setLocalScreenTrack] = useState(null);
@@ -249,8 +246,12 @@ const useAgora = () => {
       // Reset states
       setIsJoined(false);
       setRemoteUsers([]);
+      setRemoteScreenUser(null);
       setConnectionState('DISCONNECTED');
       setAgoraTokens(null);
+      setIsCameraOn(false);
+      setIsMicOn(false);
+      setIsScreenSharing(false);
 
       // Clear stored info
       currentRoomId.current = null;
@@ -401,77 +402,19 @@ const useAgora = () => {
         setRemoteUsers(existingUsers);
       }
 
-      // Auto-enable camera and microphone after joining
-      try {
-        console.log('📹 Auto-enabling camera and microphone...');
-        
-        // Try to create and publish video track
-        try {
-          console.log('📹 Attempting to create camera video track...');
-          const videoTrack = await AgoraRTC.createCameraVideoTrack({
-            optimizationMode: 'motion',
-            encoderConfig: '480p_1'
-          });
-          console.log('📹 Camera track created successfully, publishing...');
-          await client.publish(videoTrack);
-          setLocalVideoTrack(videoTrack);
-          setIsCameraOn(true);
-          console.log('✅ Camera enabled and published');
-        } catch (cameraError) {
-          console.error('❌ Camera error details:', {
-            code: cameraError.code,
-            message: cameraError.message,
-            name: cameraError.name,
-            stack: cameraError.stack
-          });
-          
-          // Specific error handling
-          if (cameraError.code === 'PERMISSION_DENIED') {
-            console.error('❌ Camera permission denied by user');
-          } else if (cameraError.code === 'DEVICE_NOT_FOUND') {
-            console.error('❌ No camera device found');
-          } else if (cameraError.code === 'DEVICE_BUSY') {
-            console.error('❌ Camera is being used by another application');
-          }
-          
-          // Continue without camera but log the error
-        }
-
-        // Try to create and publish audio track
-        try {
-          console.log('🎤 Attempting to create microphone audio track...');
-          const audioTrack = await AgoraRTC.createMicrophoneAudioTrack({
-            echoCancellation: true,
-            noiseSuppression: true
-          });
-          console.log('🎤 Audio track created successfully, publishing...');
-          await client.publish(audioTrack);
-          setLocalAudioTrack(audioTrack);
-          setIsMicOn(true);
-          console.log('✅ Microphone enabled and published');
-        } catch (micError) {
-          console.error('❌ Microphone error details:', {
-            code: micError.code,
-            message: micError.message,
-            name: micError.name,
-            stack: micError.stack
-          });
-          
-          // Specific error handling
-          if (micError.code === 'PERMISSION_DENIED') {
-            console.error('❌ Microphone permission denied by user');
-          } else if (micError.code === 'DEVICE_NOT_FOUND') {
-            console.error('❌ No microphone device found');
-          } else if (micError.code === 'DEVICE_BUSY') {
-            console.error('❌ Microphone is being used by another application');
-          }
-          
-          // Continue without microphone but log the error
-        }
-
-      } catch (mediaError) {
-        console.warn('⚠️ Could not auto-enable media:', mediaError.message);
-        // Continue even if media fails
+      // Don't auto-enable camera and microphone - let user choose
+      console.log('✅ Joined successfully - camera and mic are OFF by default');
+      
+      // Send initial media status to others
+      if (currentRoomId.current && currentUserInfo.current) {
+        socketService.updateMediaStatus({
+          roomId: currentRoomId.current,
+          userId: currentUserInfo.current.uid,
+          userName: currentUserInfo.current.userName,
+          isCameraOn: false, // Start with camera OFF
+          isMicOn: false // Start with mic OFF
+        });
+        console.log('📡 Sent initial media status (both OFF)');
       }
 
     } catch (error) {
@@ -514,14 +457,17 @@ const useAgora = () => {
         console.log('✅ Camera turned OFF');
       }
 
-      // Notify others via socket
+      // Notify others via socket with NEW status
       if (currentRoomId.current && currentUserInfo.current) {
+        const newCameraStatus = !localVideoTrack ? true : false; // True if we just turned ON, false if we just turned OFF
         socketService.updateMediaStatus({
           roomId: currentRoomId.current,
-          isCameraOn: !isCameraOn,
-          isMicOn,
-          userId: currentUserInfo.current.uid
+          userId: currentUserInfo.current.uid,
+          userName: currentUserInfo.current.userName,
+          isCameraOn: newCameraStatus,
+          isMicOn: isMicOn
         });
+        console.log('📡 Sent camera status update:', { isCameraOn: newCameraStatus, isMicOn });
       }
 
     } catch (error) {
@@ -569,14 +515,17 @@ const useAgora = () => {
         setIsMicOn(false);
       }
 
-      // Notify others via socket
+      // Notify others via socket with NEW status
       if (currentRoomId.current && currentUserInfo.current) {
+        const newMicStatus = !localAudioTrack ? true : false; // True if we just turned ON, false if we just turned OFF
         socketService.updateMediaStatus({
           roomId: currentRoomId.current,
-          isCameraOn,
-          isMicOn: !isMicOn,
-          userId: currentUserInfo.current.uid
+          userId: currentUserInfo.current.uid,
+          userName: currentUserInfo.current.userName,
+          isCameraOn: isCameraOn,
+          isMicOn: newMicStatus
         });
+        console.log('📡 Sent mic status update:', { isCameraOn, isMicOn: newMicStatus });
       }
 
     } catch (error) {
