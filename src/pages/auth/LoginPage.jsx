@@ -5,6 +5,7 @@ import { useDispatch } from 'react-redux';
 import Illustration from '../../img/svg/Illustration.svg'
 import GoogleIcon from '../../img/svg/icons8-google.svg';
 import authService from '../../services/authService';
+import userService from '../../services/userService';
 import { addAuth } from '../../reduxs/reducers/AuthReducer';
 import { toast } from 'react-toastify';
 import { motion } from "framer-motion";
@@ -35,17 +36,13 @@ const LoginPage = () => {
       const res = response.data;
 
       if (res.success) {
-        const user = res.data;
-        const token = user.access_token;
+        const token = res.data.access_token;
+        localStorage.setItem('authData', JSON.stringify({ token }));
 
-        dispatch(addAuth({ user, token }));
-
-        const storagePayload = JSON.stringify({
-          token: token,
-          username: user.username,
-          email: user.email
-        });
-        localStorage.setItem('authData', storagePayload);
+        const userRes = await userService.getCurrentUser();
+        if (userRes?.success && userRes?.data) {
+          dispatch(addAuth({ user: userRes.data, token }));
+        }
 
         toast.success('Đăng nhập thành công');
         navigate('/');

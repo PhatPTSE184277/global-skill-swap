@@ -1,5 +1,6 @@
-import UserPageLayout from "../layouts/user/UserPageLayout";
+import { PostProvider } from "../contexts/PostContext";
 import UserDetail from "../pages/user/UserDetail";
+import UserPageLayout from "../layouts/user/UserPageLayout";
 
 const UserPageRoutes = [
   {
@@ -7,8 +8,12 @@ const UserPageRoutes = [
     element: <UserPageLayout />,
     children: [
       {
-        path: ":id",
-        element: <UserDetail />,
+        path: "",
+        element: (
+          <PostProvider>
+            <UserDetail />
+          </PostProvider>
+        ),
       },
     ],
   },
