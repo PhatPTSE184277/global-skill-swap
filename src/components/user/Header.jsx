@@ -1,46 +1,12 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
 import { MessageCircleMore } from "lucide-react";
-import { useParams } from "react-router-dom";
-import userService from "../../services/userService";
+import { useSelector } from "react-redux";
+import { authSelector } from "../../reduxs/reducers/AuthReducer";
 
-const UserHeader = ({ name }) => {
-  const { id } = useParams();
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
+const UserHeader = () => {
+  const user = useSelector(authSelector);
 
-  useEffect(() => {
-    const fetchUserData = async () => {
-      try {
-        if (id) {
-          const userData = await userService.getUserById(id);
-          setUser(userData);
-        }
-      } catch (error) {
-        console.error("Error fetching user data:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchUserData();
-  }, [id]);
-
-  // Ưu tiên lấy từ API, fallback về prop, cuối cùng là default
-  const displayName = user?.name || user?.username || name || "User";
-  if (loading) {
-    return (
-      <div className="pt-10 pb-0 px-8 rounded-b-3xl">
-        <div className="max-w-4xl flex flex-col md:flex-row gap-13 mx-auto">
-          <div className="w-32 h-32 rounded-full bg-gray-200 animate-pulse border-4 border-white shadow"></div>
-          <div className="flex-1">
-            <div className="h-6 bg-gray-200 rounded w-48 mb-4 animate-pulse"></div>
-            <div className="h-4 bg-gray-200 rounded w-32 mb-2 animate-pulse"></div>
-            <div className="h-4 bg-gray-200 rounded w-40 mb-4 animate-pulse"></div>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  const displayName = user?.username || "User";
 
   return (
     <div className="pt-10 pb-0 px-8 rounded-b-3xl">
@@ -49,7 +15,7 @@ const UserHeader = ({ name }) => {
           src={
             user?.avatar ||
             user?.avatarUrl ||
-            "https://images.pexels.com/photos/414171/pexels-photo-414171.jpeg"
+            "https://i.pinimg.com/736x/b3/c2/77/b3c2779d6b6195793b72bf73e284b3e8.jpg"
           }
           alt={displayName}
           className="w-32 h-32 rounded-full object-cover border-4 border-white shadow"
@@ -83,17 +49,13 @@ const UserHeader = ({ name }) => {
 
           <div className="flex gap-8 text-base font-medium mt-3 mb-6">
             <span>
-              <span className="font-bold">{user?.postsCount || 0}</span> bài
-              viết
+              <span className="font-bold">{user?.postsCount || 0}</span> bài viết
             </span>
             <span>
-              <span className="font-bold">{user?.followersCount || 0}</span>{" "}
-              người theo dõi
+              <span className="font-bold">{user?.followersCount || 0}</span> người theo dõi
             </span>
             <span>
-              Đang theo dõi{" "}
-              <span className="font-bold">{user?.followingCount || 0}</span>{" "}
-              người dùng
+              Đang theo dõi <span className="font-bold">{user?.followingCount || 0}</span> người dùng
             </span>
           </div>
 

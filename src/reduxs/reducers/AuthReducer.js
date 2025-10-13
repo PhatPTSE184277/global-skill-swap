@@ -1,54 +1,34 @@
 import { createSlice } from '@reduxjs/toolkit';
 
-const localDataNames = {
-    authData: 'authData'
-};
-
 const initialState = {
+    loading: true,
     token: '',
+    _id: '',
     username: '',
-    email: ''
-};
-
-
-const getInitialAuth = () => {
-    let data = {};
-    try {
-        data = JSON.parse(localStorage.getItem(localDataNames.authData)) || {};
-    } catch {
-        data = {};
-    }
-    return {
-        token: data.token || '',
-        username: data.username || '',
-        email: data.email || ''
-    };
-};
-
-const syncLocal = (data) => {
-    localStorage.setItem(localDataNames.authData, JSON.stringify(data));
+    email: '',
+    accountRole: ''
 };
 
 const authSlice = createSlice({
     name: 'auth',
     initialState: {
-        data: getInitialAuth()
+        data: initialState
     },
     reducers: {
         addAuth: (state, action) => {
             const { user, token } = action.payload;
-            const payload = {
-                token: token,
+            state.data = {
+                loading: false,
+                token,
                 _id: user.id,
                 username: user.username,
-                email: user.email
+                email: user.email,
+                accountRole: user.accountRole   
             };
-            state.data = payload;
-            syncLocal(payload);
         },
         removeAuth: (state) => {
-            state.data = initialState;
-            localStorage.removeItem(localDataNames.authData);
+            localStorage.removeItem('authData');
+            state.data = { ...initialState, loading: false };
         }
     }
 });
