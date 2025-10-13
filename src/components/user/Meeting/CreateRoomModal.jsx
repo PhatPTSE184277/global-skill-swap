@@ -142,7 +142,7 @@ const CreateRoomModal = ({ visible, onCancel, onSuccess }) => {
 
         <Form.Item
           name="startTime"
-          label="Thời gian bắt đầu (Bỏ trống để bắt đầu ngay)"
+          label="Thời gian bắt đầu "
         >
           <DatePicker
             showTime
