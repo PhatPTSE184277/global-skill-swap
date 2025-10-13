@@ -15,7 +15,7 @@ const UserHeader = () => {
           src={
             user?.avatar ||
             user?.avatarUrl ||
-            "https://images.pexels.com/photos/414171/pexels-photo-414171.jpeg"
+            "https://i.pinimg.com/736x/b3/c2/77/b3c2779d6b6195793b72bf73e284b3e8.jpg"
           }
           alt={displayName}
           className="w-32 h-32 rounded-full object-cover border-4 border-white shadow"

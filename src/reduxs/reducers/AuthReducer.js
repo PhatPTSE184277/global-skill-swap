@@ -18,15 +18,16 @@ const authSlice = createSlice({
         addAuth: (state, action) => {
             const { user, token } = action.payload;
             state.data = {
-                loading: false, 
+                loading: false,
                 token,
                 _id: user.id,
                 username: user.username,
                 email: user.email,
-                accountRole: user.accountRole
+                accountRole: user.accountRole   
             };
         },
         removeAuth: (state) => {
+            localStorage.removeItem('authData');
             state.data = { ...initialState, loading: false };
         }
     }
