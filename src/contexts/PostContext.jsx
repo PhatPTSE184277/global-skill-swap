@@ -1,17 +1,25 @@
 import { createContext, useState, useCallback } from "react";
-import { fetchPostsByUser, createPost as createPostService, updatePost as updatePostService } from "../services/postService";
+import {
+    fetchPostsByUser,
+    createPost as createPostService,
+    updatePost as updatePostService,
+    interactPost,
+    deletePostInteraction,
+    checkPostLiked
+} from "../services/postService";
 
 const PostContext = createContext();
 
 export const PostProvider = ({ children }) => {
     const [posts, setPosts] = useState([]);
     const [loading, setLoading] = useState(false);
+    const [likedMap, setLikedMap] = useState({});
+    const [loadingLikeMap, setLoadingLikeMap] = useState({});
 
     const fetchPosts = useCallback(async (params) => {
         setLoading(true);
         try {
             const response = await fetchPostsByUser(params);
-            console.log(response.data.content);
             setPosts(response.data.content);
         } catch (error) {
             console.log(error);
@@ -24,7 +32,6 @@ export const PostProvider = ({ children }) => {
         setLoading(true);
         try {
             const response = await fetchPostById(postId);
-            console.log(response.data);
             setPosts(response.data.content);
         } catch (error) {
             console.log(error);
@@ -63,12 +70,56 @@ export const PostProvider = ({ children }) => {
         }
     }, []);
 
+
+    const checkLiked = useCallback(async (postId) => {
+        setLoadingLikeMap((prev) => ({ ...prev, [postId]: true }));
+        try {
+            const res = await checkPostLiked(postId);
+            setLikedMap((prev) => ({ ...prev, [postId]: res?.data === true }));
+        } catch {
+            setLikedMap((prev) => ({ ...prev, [postId]: false }));
+        } finally {
+            setLoadingLikeMap((prev) => ({ ...prev, [postId]: false }));
+        }
+    }, []);
+
+    const likePost = useCallback(async (postId) => {
+        setLoadingLikeMap((prev) => ({ ...prev, [postId]: true }));
+        try {
+            await interactPost(postId, "LIKE");
+            setLikedMap((prev) => ({ ...prev, [postId]: true }));
+        } catch (err) {
+            setLikedMap((prev) => ({ ...prev, [postId]: false }));
+            throw err;
+        } finally {
+            setLoadingLikeMap((prev) => ({ ...prev, [postId]: false }));
+        }
+    }, []);
+
+    const unlikePost = useCallback(async (postId) => {
+        setLoadingLikeMap((prev) => ({ ...prev, [postId]: true }));
+        try {
+            await deletePostInteraction(postId);
+            setLikedMap((prev) => ({ ...prev, [postId]: false }));
+        } catch (err) {
+            setLikedMap((prev) => ({ ...prev, [postId]: true }));
+            throw err;
+        } finally {
+            setLoadingLikeMap((prev) => ({ ...prev, [postId]: false }));
+        }
+    }, []);
+
     const value = {
         posts,
         loading,
         fetchPosts,
         createPost,
         updatePost,
+        likedMap,
+        loadingLikeMap,
+        checkLiked,
+        likePost,
+        unlikePost,
     };
 
     return (

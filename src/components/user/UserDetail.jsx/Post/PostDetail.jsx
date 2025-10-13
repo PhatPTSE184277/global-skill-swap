@@ -1,7 +1,11 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useContext, useState } from "react";
 import { Heart, Navigation, Bookmark, ImagePlus, SendHorizontal, ChevronRight, ChevronLeft, X } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { motion, AnimatePresence } from "framer-motion";
+import PostContext from "../../../../contexts/PostContext";
+import { toast } from "react-toastify";
+import PostDetailSkeleton from "./PostDetailSkeleton";
+import CommentSection from "../Comment/CommentSection";
 
 const fadeInUp = {
     initial: { opacity: 0, y: 60 },
@@ -17,7 +21,6 @@ const mockPost = {
     date: "02 December 2022",
     readTime: "3 Min. To Read",
     views: "1.2K views",
-    likes: "1.6K likes",
     image: `https://picsum.photos/seed/2/800/400`,
     tags: ["Japan", "Life"],
     content: `
@@ -74,6 +77,41 @@ const PostDetail = ({
         content: currentPostRaw.content || mockPost.content,
     };
 
+    // Context quản lý like
+    const {
+        likedMap,
+        loadingLikeMap,
+        checkLiked,
+        likePost,
+        unlikePost,
+    } = useContext(PostContext);
+
+    const [isReady, setIsReady] = useState(false);
+
+    useEffect(() => {
+        setIsReady(false);
+        if (currentPost.id) {
+            checkLiked(currentPost.id).then(() => setIsReady(true));
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [currentPost.id]);
+
+    const handleHeartClick = async () => {
+        if (likedMap[currentPost.id]) {
+            try {
+                await unlikePost(currentPost.id);
+            } catch (err) {
+                toast.error("Không thể bỏ like bài viết này!");
+            }
+        } else {
+            try {
+                await likePost(currentPost.id);
+            } catch (err) {
+                toast.error("Không thể like bài viết này!");
+            }
+        }
+    };
+
     const goPrev = () => {
         if (currentIndex > 0) {
             setCurrentIndex(currentIndex - 1);
@@ -120,130 +158,66 @@ const PostDetail = ({
                     {...fadeInUp}
                     className="bg-white rounded-xl shadow-2xl w-full max-w-5xl mx-auto relative overflow-y-auto max-h-[90vh]"
                 >
-                    <div className="grid grid-cols-1 lg:grid-cols-1 gap-6">
-                        <div className="lg:col-span-2">
-                            <article className="bg-white rounded-xl shadow-sm overflow-hidden">
-                                <img
-                                    src={`https://picsum.photos/seed/${currentPost.id}/1000/600`}
-                                    alt={currentPost.title}
-                                    className="w-full h-64 object-cover rounded-xl"
-                                />
-                                <div className="p-10">
-                                    <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-4">
-                                        {currentPost.title}
-                                    </h1>
-                                    <div className="flex items-center gap-3 mb-6 pb-6 border-b border-gray-200">
-                                        <div className="w-10 h-10 bg-gray-300 rounded-full"></div>
-                                        <div>
-                                            <h3 className="font-semibold text-gray-900">
-                                                {currentPost.author}
-                                            </h3>
-                                            <div className="flex items-center text-xs text-gray-500 gap-2">
-                                                <span>{currentPost.date}</span>
-                                                <span>•</span>
-                                                <span>{currentPost.readTime}</span>
-                                                <span>•</span>
-                                                <span>{currentPost.views}</span>
-                                                <span>•</span>
-                                                <span>{currentPost.likes}</span>
+                    {!isReady ? (
+                        <PostDetailSkeleton />
+                    ) : (
+                        <div className="grid grid-cols-1 lg:grid-cols-1 gap-6">
+                            <div className="lg:col-span-2">
+                                <article className="bg-white rounded-xl shadow-sm overflow-hidden">
+                                    <img
+                                        src={`https://picsum.photos/seed/${currentPost.id}/1000/600`}
+                                        alt={currentPost.title}
+                                        className="w-full h-64 object-cover rounded-xl"
+                                    />
+                                    <div className="p-10">
+                                        <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-4">
+                                            {currentPost.title}
+                                        </h1>
+                                        <div className="flex items-center gap-3 mb-6 pb-6 border-b border-gray-200">
+                                            <div className="w-10 h-10 bg-gray-300 rounded-full"></div>
+                                            <div>
+                                                <h3 className="font-semibold text-gray-900">
+                                                    {currentPost.author}
+                                                </h3>
+                                                <div className="flex items-center text-xs text-gray-500 gap-2">
+                                                    <span>{currentPost.date}</span>
+                                                    <span>•</span>
+                                                    <span>{currentPost.readTime}</span>
+                                                    <span>•</span>
+                                                    <span>{currentPost.views}</span>
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
-                                    <div className="prose prose-gray max-w-none mb-6">
-                                        <ReactMarkdown>{currentPost.content}</ReactMarkdown>
-                                    </div>
-                                    <div className="flex justify-between my-6">
-                                        <Heart size={23} color="#fb5607" strokeWidth={2.5} cursor="pointer" />
-                                        <div className="flex gap-6">
-                                            <Navigation size={23} color="#4D2C5E" strokeWidth={2.5} cursor="pointer" />
-                                            <Bookmark size={23} color="#4D2C5E" strokeWidth={2.5} cursor="pointer" />
+                                        <div className="prose prose-gray max-w-none mb-6">
+                                            <ReactMarkdown>{currentPost.content}</ReactMarkdown>
                                         </div>
-                                    </div>
-
-                                    <div className="mt-8 pt-6 border-t border-gray-200">
-                                        <h2 className="text-xl font-bold mb-4">Bình luận</h2>
-                                        <p className="text-sm text-gray-500 mb-4">
-                                            Chính sách bình luận: Chúng tôi rất trân trọng các bình luận
-                                            và thời gian mà độc giả dành để chia sẻ ý tưởng và phản hồi.
-                                            Tuy nhiên, tất cả bình luận đều được kiểm duyệt thủ công và
-                                            những bình luận được xem là spam hoặc chỉ mang tính quảng cáo
-                                            sẽ bị xóa.
-                                        </p>
-                                        <div className="space-y-4">
-                                            {mockComments.map((comment) => (
-                                                <div key={comment.id} className="border-b border-gray-100 pb-4">
-                                                    <div className="flex items-start gap-3">
-                                                        <div className="w-8 h-8 bg-gray-300 rounded-full flex-shrink-0"></div>
-                                                        <div className="flex-1">
-                                                            <div className="flex items-center gap-2 mb-1">
-                                                                <h3 className="font-semibold text-sm text-gray-900">
-                                                                    {comment.author}
-                                                                </h3>
-                                                                <span className="text-xs text-gray-500">
-                                                                    {comment.date}
-                                                                </span>
-                                                            </div>
-                                                            <p className="text-sm text-gray-600 mb-2">
-                                                                {comment.content}
-                                                            </p>
-                                                            {comment.replies &&
-                                                                comment.replies.map((reply) => (
-                                                                    <div
-                                                                        key={reply.id}
-                                                                        className="mt-5 ml-6 pl-4 border-l-2 border-gray-200 flex gap-3"
-                                                                    >
-                                                                        <div className="w-8 h-8 bg-gray-300 rounded-full flex-shrink-0"></div>
-                                                                        <div>
-                                                                            <div className="flex items-center gap-2 mb-1">
-                                                                                <h4 className="font-semibold text-sm text-gray-900">
-                                                                                    {reply.author}
-                                                                                </h4>
-                                                                                <span className="text-xs text-gray-500">
-                                                                                    {reply.date}
-                                                                                </span>
-                                                                            </div>
-                                                                            <p className="text-sm text-gray-600">
-                                                                                {reply.content}
-                                                                            </p>
-                                                                        </div>
-                                                                    </div>
-                                                                ))}
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            ))}
-                                        </div>
-                                        <div className="flex justify-end mt-4">
-                                            <a
-                                                href="#"
-                                                className="text-xs text-gray-500 underline hover:text-gray-700"
+                                        <div className="flex justify-between my-6">
+                                            <button
+                                                onClick={handleHeartClick}
+                                                className="flex items-center gap-2"
+                                                title={likedMap[currentPost.id] ? "Bỏ like bài viết" : "Like bài viết"}
+                                                disabled={loadingLikeMap[currentPost.id]}
                                             >
-                                                View All...
-                                            </a>
-                                        </div>
-                                        <div className="mt-6 flex items-center gap-3">
-                                            <div className="w-10 h-10 bg-gray-300 rounded-full flex-shrink-0"></div>
-                                            <div className="flex-1 relative">
-                                                <input
-                                                    type="text"
-                                                    placeholder="Add a comment..."
-                                                    className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+                                                <Heart
+                                                    size={23}
+                                                    color="#ef4444"
+                                                    fill={likedMap[currentPost.id] ? "#ef4444" : "none"}
+                                                    strokeWidth={2.5}
+                                                    cursor="pointer"
                                                 />
-                                                <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-3">
-                                                    <button type="button" className="text-gray-400 hover:text-gray-600">
-                                                        <ImagePlus size={20} />
-                                                    </button>
-                                                    <button type="button" className="text-gray-400 hover:text-orange-500">
-                                                        <SendHorizontal size={20} />
-                                                    </button>
-                                                </div>
+                                            </button>
+                                            <div className="flex gap-6">
+                                                <Navigation size={23} color="#4D2C5E" strokeWidth={2.5} cursor="pointer" />
+                                                <Bookmark size={23} color="#4D2C5E" strokeWidth={2.5} cursor="pointer" />
                                             </div>
                                         </div>
+
+                                        <CommentSection comments={mockComments} />
                                     </div>
-                                </div>
-                            </article>
+                                </article>
+                            </div>
                         </div>
-                    </div>
+                    )}
                 </motion.div>
             </div>
         </AnimatePresence>

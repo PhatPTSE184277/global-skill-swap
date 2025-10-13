@@ -1,6 +1,6 @@
 import React, { useContext, useState, useRef, useEffect } from "react";
 import PostShow from "./PostShow";
-import PostSkeleton from "./PostSkereton";
+import PostSkeleton from "./PostSkeleton";
 import PostContext from "../../../../contexts/PostContext";
 import PostCreate from "./PostCreate";
 import PostDetail from "./PostDetail";

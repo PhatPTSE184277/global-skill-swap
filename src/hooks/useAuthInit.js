@@ -9,7 +9,20 @@ const useAuthInit = () => {
 
     useEffect(() => {
         const fetchUser = async () => {
-            const authData = JSON.parse(localStorage.getItem("authData"));
+            const authRaw = localStorage.getItem("authData");
+            if (!authRaw) {
+                dispatch(removeAuth());
+                setLoadingUser(false);
+                return;
+            }
+            let authData;
+            try {
+                authData = JSON.parse(authRaw);
+            } catch {
+                dispatch(removeAuth());
+                setLoadingUser(false);
+                return;
+            }
             const token = authData?.token;
             if (token) {
                 try {
