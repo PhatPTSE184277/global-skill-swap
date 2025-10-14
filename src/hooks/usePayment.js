@@ -35,8 +35,8 @@ export const usePayment = () => {
       if (onError) {
         onError(error);
       } else {
-        // Chuyển đến trang lỗi mặc định
-        navigate('/mentor/payment-cancel', {
+        // Chuyển đến trang lỗi mặc định (sử dụng route chung)
+        navigate('/payment-cancel', {
           search: `?error=PAYMENT_FAILED&message=${encodeURIComponent(error.message || 'Thanh toán thất bại')}&orderId=${paymentData.orderId}`
         });
       }

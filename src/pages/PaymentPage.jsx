@@ -118,19 +118,11 @@ const PaymentPage = () => {
     setIsProcessing(true);
 
     try {
-      const fullPaymentData = {
-        ...paymentData,
-        paymentType,
-        registrationData:
-          paymentType === "mentor_registration" ? registrationData : null,
-        bookingData: paymentType === "lesson_booking" ? bookingData : null,
-      };
-
-      // Gọi API thanh toán dựa trên phương thức được chọn
+      // Gọi API thanh toán (cả ZaloPay và VNPay đều dùng chung invoice API)
       if (paymentData.paymentMethod === "zalopay") {
-        await paymentService.processZaloPayPayment(fullPaymentData);
+        await paymentService.processZaloPayPayment();
       } else if (paymentData.paymentMethod === "vnpay") {
-        await paymentService.processVNPayPayment(fullPaymentData);
+        await paymentService.processVNPayPayment();
       }
 
       // Nếu không chuyển hướng, có thể là thanh toán local hoặc mock

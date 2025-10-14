@@ -1,5 +1,5 @@
-import React, { useEffect } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { useNavigate, useLocation, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
   FiCheck,
@@ -8,13 +8,16 @@ import {
   FiMail,
   FiCalendar,
   FiUser,
+  FiUpload,
 } from "react-icons/fi";
+import userService from "../services/userService";
 
 const PaymentSuccess = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const [searchParams] = useSearchParams();
 
-  // Lấy dữ liệu từ trang thanh toán
+  // Lấy dữ liệu từ trang thanh toán hoặc URL parameters
   const {
     paymentData,
     paymentType,
@@ -23,21 +26,79 @@ const PaymentSuccess = () => {
     transactionId,
   } = location.state || {};
 
+  // Lấy transaction info từ URL parameters (khi redirect từ payment gateway)
+  const urlTransactionId =
+    searchParams.get("transactionId") ||
+    searchParams.get("vnp_TxnRef") ||
+    searchParams.get("orderId");
+  const paymentStatus =
+    searchParams.get("status") || searchParams.get("vnp_ResponseCode");
+
+  // Xác định transaction ID từ state hoặc URL
+  const finalTransactionId = transactionId || urlTransactionId;
+
+  // Xác định payment type mặc định nếu không có trong state
+  const finalPaymentType = paymentType || "mentor_registration"; // Default cho mentor registration
+
+  const [isUploadingCV, setIsUploadingCV] = useState(false);
+  const [cvUploadSuccess, setCvUploadSuccess] = useState(false);
+  const [cvUploadError, setCvUploadError] = useState(null);
+
   useEffect(() => {
-    // Nếu không có dữ liệu thanh toán, chuyển về trang chủ
-    if (!transactionId) {
+    // Nếu không có transaction ID từ cả state và URL, chuyển về trang chủ
+    if (!finalTransactionId) {
+      console.log("No transaction ID found, redirecting to home");
       navigate("/");
+      return;
     }
-  }, [transactionId, navigate]);
+
+    // Log để debug
+    console.log("PaymentSuccess loaded:", {
+      finalTransactionId,
+      paymentStatus,
+      finalPaymentType,
+      hasRegistrationData: !!registrationData,
+      urlParams: Object.fromEntries(searchParams.entries()),
+      locationState: location.state,
+    });
+
+    // Upload CV sau khi thanh toán thành công (chỉ cho mentor registration)
+    if (finalPaymentType === "mentor_registration" && registrationData?.cv) {
+      uploadCV();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [finalTransactionId, navigate, finalPaymentType]);
+
+  const uploadCV = async () => {
+    if (!registrationData?.cv) return;
+
+    try {
+      setIsUploadingCV(true);
+      setCvUploadError(null);
+
+      await userService.uploadCV(registrationData.cv);
+
+      setCvUploadSuccess(true);
+      console.log("CV uploaded successfully after payment");
+    } catch (error) {
+      console.error("Lỗi upload CV sau thanh toán:", error);
+      setCvUploadError(
+        "Có lỗi xảy ra khi tải lên CV. CV sẽ được xử lý trong vòng 24h."
+      );
+    } finally {
+      setIsUploadingCV(false);
+    }
+  };
 
   const handleDownloadReceipt = () => {
     // Xử lý tải xuống hóa đơn
     const receiptData = {
-      transactionId,
+      transactionId: finalTransactionId,
       paymentData,
-      paymentType,
+      paymentType: finalPaymentType,
       registrationData,
       bookingData,
+      paymentStatus,
       date: new Date().toLocaleDateString("vi-VN"),
       time: new Date().toLocaleTimeString("vi-VN"),
     };
@@ -52,9 +113,9 @@ const PaymentSuccess = () => {
 
   const goToDashboard = () => {
     // Chuyển đến dashboard tương ứng với loại thanh toán
-    if (paymentType === "mentor_registration") {
+    if (finalPaymentType === "mentor_registration") {
       navigate("/mentor/dashboard");
-    } else if (paymentType === "lesson_booking") {
+    } else if (finalPaymentType === "lesson_booking") {
       navigate("/user/dashboard");
     } else {
       navigate("/");
@@ -62,7 +123,7 @@ const PaymentSuccess = () => {
   };
 
   const getSuccessContent = () => {
-    switch (paymentType) {
+    switch (finalPaymentType) {
       case "mentor_registration":
         return {
           title: "Đăng ký Mentor thành công!",
@@ -137,7 +198,7 @@ const PaymentSuccess = () => {
 
   const content = getSuccessContent();
 
-  if (!transactionId) {
+  if (!finalTransactionId) {
     return null;
   }
 
@@ -191,9 +252,25 @@ const PaymentSuccess = () => {
                 <div className="flex justify-between">
                   <span className="text-gray-600">Mã giao dịch:</span>
                   <span className="font-mono text-sm font-medium">
-                    {transactionId}
+                    {finalTransactionId}
                   </span>
                 </div>
+                {paymentStatus && (
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Trạng thái:</span>
+                    <span
+                      className={`font-medium ${
+                        paymentStatus === "00"
+                          ? "text-green-600"
+                          : "text-red-600"
+                      }`}
+                    >
+                      {paymentStatus === "00"
+                        ? "Thành công"
+                        : `Lỗi: ${paymentStatus}`}
+                    </span>
+                  </div>
+                )}
                 <div className="flex justify-between">
                   <span className="text-gray-600">Thời gian:</span>
                   <span className="font-medium">
@@ -234,7 +311,7 @@ const PaymentSuccess = () => {
               Thông tin thanh toán
             </h3>
 
-            {paymentType === "mentor_registration" && registrationData && (
+            {finalPaymentType === "mentor_registration" && registrationData && (
               <div className="bg-gray-50 rounded-lg p-4">
                 <div className="grid md:grid-cols-2 gap-4">
                   <div className="space-y-2">
@@ -266,10 +343,46 @@ const PaymentSuccess = () => {
                     </div>
                   </div>
                 </div>
+
+                {/* CV Upload Status */}
+                <div className="mt-4 pt-4 border-t border-gray-200">
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-600 flex items-center">
+                      <FiUpload className="mr-2" />
+                      Trạng thái CV:
+                    </span>
+                    <div className="flex items-center">
+                      {isUploadingCV && (
+                        <div className="flex items-center text-blue-600">
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2"></div>
+                          <span className="text-sm">Đang tải lên...</span>
+                        </div>
+                      )}
+                      {cvUploadSuccess && !isUploadingCV && (
+                        <div className="flex items-center text-green-600">
+                          <FiCheck className="mr-1" />
+                          <span className="text-sm font-medium">
+                            Đã tải lên thành công
+                          </span>
+                        </div>
+                      )}
+                      {cvUploadError && !isUploadingCV && (
+                        <div className="flex items-center text-amber-600">
+                          <span className="text-sm">Sẽ xử lý trong 24h</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  {cvUploadError && (
+                    <p className="mt-2 text-sm text-amber-600 bg-amber-50 p-2 rounded">
+                      {cvUploadError}
+                    </p>
+                  )}
+                </div>
               </div>
             )}
 
-            {paymentType === "lesson_booking" && bookingData && (
+            {finalPaymentType === "lesson_booking" && bookingData && (
               <div className="bg-gray-50 rounded-lg p-4">
                 <div className="grid md:grid-cols-2 gap-4">
                   <div className="space-y-2">
@@ -400,13 +513,13 @@ const PaymentSuccess = () => {
           className="text-center mt-8 text-sm text-gray-500"
         >
           <p>Cảm ơn bạn đã tham gia vào cộng đồng Global Skill Swap!</p>
-          {paymentType === "mentor_registration" && (
+          {finalPaymentType === "mentor_registration" && (
             <p className="mt-1">
               Hãy chuẩn bị để chia sẻ kiến thức và kinh nghiệm của bạn với mọi
               người.
             </p>
           )}
-          {paymentType === "lesson_booking" && (
+          {finalPaymentType === "lesson_booking" && (
             <p className="mt-1">Chúc bạn có buổi học thú vị và hiệu quả!</p>
           )}
         </motion.div>

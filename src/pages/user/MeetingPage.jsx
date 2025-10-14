@@ -57,9 +57,11 @@ export default function MeetingPage() {
   // Fetch participants from API
   const fetchParticipants = async () => {
     if (!roomId) return;
-    
+
     try {
-      const response = await axios.get(`https://gss-room-service.onrender.com/api/agora/rooms/${roomId}/participants`);
+      const response = await axios.get(
+        `https://gss-room-service.onrender.com/api/agora/rooms/${roomId}/participants`
+      );
       if (response.data.success) {
         setApiParticipants(response.data.data.participants);
         setParticipantCount(response.data.data.count);
@@ -83,7 +85,7 @@ export default function MeetingPage() {
   useEffect(() => {
     const fetchUserInfo = async () => {
       try {
-        const user = await userService.getUserInfo();
+        const user = await userService.getCurrentUser();
         if (user) {
           setCurrentUser(user);
           setUid(user.id);

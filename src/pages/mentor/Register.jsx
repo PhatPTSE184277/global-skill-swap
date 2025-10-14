@@ -10,7 +10,6 @@ import {
   FiArrowLeft,
   FiFileText,
 } from "react-icons/fi";
-import userService from "../../services/userService";
 
 const MentorRegister = () => {
   const navigate = useNavigate();
@@ -43,7 +42,6 @@ const MentorRegister = () => {
   const [dragActive, setDragActive] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const steps = [
     { id: 1, title: "Thông tin cá nhân", icon: FiUser },
@@ -104,7 +102,7 @@ const MentorRegister = () => {
     }
   };
 
-  const nextStep = async () => {
+  const nextStep = () => {
     if (currentStep === 2) {
       // Validate required fields before going to payment
       if (
@@ -119,24 +117,12 @@ const MentorRegister = () => {
         return;
       }
 
-      try {
-        setIsSubmitting(true);
-
-        // Upload CV trước khi chuyển đến trang thanh toán
-        await userService.uploadCV(formData.cv);
-
-        // Chuyển đến trang thanh toán chung sau khi upload thành công
-        navigate("/payment", {
-          state: {
-            registrationData: formData,
-          },
-        });
-      } catch (error) {
-        console.error("Lỗi upload CV:", error);
-        alert("Có lỗi xảy ra khi tải lên CV. Vui lòng thử lại.");
-      } finally {
-        setIsSubmitting(false);
-      }
+      // Chuyển đến trang thanh toán với CV file (sẽ upload sau khi thanh toán thành công)
+      navigate("/payment", {
+        state: {
+          registrationData: formData,
+        },
+      });
     } else if (currentStep < 2) {
       setCurrentStep(currentStep + 1);
     }
@@ -339,20 +325,6 @@ const MentorRegister = () => {
                     </select>
                   </div>
                 </div>
-
-                <div className="mt-6">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Giới thiệu bản thân *
-                  </label>
-                  <textarea
-                    name="bio"
-                    value={formData.bio}
-                    onChange={handleInputChange}
-                    rows="4"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
-                    placeholder="Hãy chia sẻ về kinh nghiệm, kỹ năng và những gì bạn có thể mang lại cho học viên..."
-                  />
-                </div>
               </motion.div>
             )}
 
@@ -519,24 +491,10 @@ const MentorRegister = () => {
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={nextStep}
-              disabled={isSubmitting}
-              className={`flex items-center px-8 py-3 ${
-                isSubmitting
-                  ? "bg-gray-400 cursor-not-allowed"
-                  : "bg-orange-500 hover:bg-orange-600"
-              } text-white font-medium rounded-lg hover:shadow-lg transition-all`}
+              className="flex items-center px-8 py-3 bg-orange-500 hover:bg-orange-600 text-white font-medium rounded-lg hover:shadow-lg transition-all"
             >
-              {isSubmitting ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                  Đang tải CV...
-                </>
-              ) : (
-                <>
-                  {currentStep === 2 ? "Tiếp tục thanh toán" : "Tiếp tục"}
-                  <FiArrowRight className="ml-2" />
-                </>
-              )}
+              {currentStep === 2 ? "Tiếp tục thanh toán" : "Tiếp tục"}
+              <FiArrowRight className="ml-2" />
             </motion.button>
           </div>
         </motion.div>

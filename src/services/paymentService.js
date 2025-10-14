@@ -1,10 +1,13 @@
 import axiosClient from '../apis/axiosClient';
 
 const paymentService = {
-  // Tạo đơn thanh toán
-  createPayment: async (paymentData) => {
+  // Tạo hóa đơn thanh toán
+  createPayment: async () => {
     try {
-      const response = await axiosClient.post('/payments/create', paymentData);
+      // Sử dụng product ID duy nhất từ hệ thống
+      const response = await axiosClient.post('/invoice', {
+        productId: "1"  // ID cho "Upgrade user role" - 100000 VND
+      });
       return response.data;
     } catch (error) {
       throw error.response?.data || error.message;
@@ -12,44 +15,38 @@ const paymentService = {
   },
 
   // Xử lý thanh toán ZaloPay
-  processZaloPayPayment: async (paymentData) => {
+  processZaloPayPayment: async () => {
     try {
-      const response = await axiosClient.post('/payments/zalopay', {
-        amount: paymentData.amount,
-        orderId: paymentData.orderId,
-        description: `Thanh toán đăng ký mentor - ${paymentData.orderId}`,
-        redirectUrl: `${window.location.origin}/mentor/payment-success`,
-        registrationData: paymentData.registrationData
+      // Tạo hóa đơn và nhận paymentUrl trực tiếp
+      const invoice = await axiosClient.post('/invoice', {
+        productId: "1"  // "Upgrade user role" - 100000 VND
       });
-      
-      // Chuyển hướng đến ZaloPay
-      if (response.data.paymentUrl) {
-        window.location.href = response.data.paymentUrl;
+
+      // Chuyển hướng đến paymentUrl từ invoice response
+      if (invoice.data.data && invoice.data.data.paymentUrl) {
+        window.location.href = invoice.data.data.paymentUrl;
       }
-      
-      return response.data;
+
+      return invoice.data;
     } catch (error) {
       throw error.response?.data || error.message;
     }
   },
 
   // Xử lý thanh toán VNPay
-  processVNPayPayment: async (paymentData) => {
+  processVNPayPayment: async () => {
     try {
-      const response = await axiosClient.post('/payments/vnpay', {
-        amount: paymentData.amount,
-        orderId: paymentData.orderId,
-        description: `Thanh toán đăng ký mentor - ${paymentData.orderId}`,
-        returnUrl: `${window.location.origin}/mentor/payment-success`,
-        registrationData: paymentData.registrationData
+      // Tạo hóa đơn và nhận paymentUrl trực tiếp
+      const invoice = await axiosClient.post('/invoice', {
+        productId: "1"  // "Upgrade user role" - 100000 VND
       });
-      
-      // Chuyển hướng đến VNPay
-      if (response.data.paymentUrl) {
-        window.location.href = response.data.paymentUrl;
+
+      // Chuyển hướng đến paymentUrl từ invoice response
+      if (invoice.data.data && invoice.data.data.paymentUrl) {
+        window.location.href = invoice.data.data.paymentUrl;
       }
-      
-      return response.data;
+
+      return invoice.data;
     } catch (error) {
       throw error.response?.data || error.message;
     }
@@ -68,7 +65,17 @@ const paymentService = {
     }
   },
 
-  // Lấy thông tin thanh toán
+  // Lấy thông tin hóa đơn
+  getInvoiceStatus: async (invoiceId) => {
+    try {
+      const response = await axiosClient.get(`/invoice/${invoiceId}`);
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error.message;
+    }
+  },
+
+  // Lấy thông tin thanh toán (backward compatibility)
   getPaymentStatus: async (orderId) => {
     try {
       const response = await axiosClient.get(`/payments/status/${orderId}`);
@@ -94,7 +101,7 @@ const paymentService = {
       const response = await axiosClient.get(`/payments/receipt/${transactionId}`, {
         responseType: 'blob'
       });
-      
+
       // Tạo URL để download file PDF
       const blob = new Blob([response.data], { type: 'application/pdf' });
       const url = window.URL.createObjectURL(blob);
@@ -105,7 +112,7 @@ const paymentService = {
       link.click();
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
-      
+
       return { success: true };
     } catch (error) {
       throw error.response?.data || error.message;
