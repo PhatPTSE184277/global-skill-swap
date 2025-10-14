@@ -13,7 +13,11 @@ const AuthPageLayout = () => {
 
   useEffect(() => {
     if (user && user.token) {
-      navigate("/");
+      if (user.accountRole === "ADMIN") {
+        navigate("/admin/dashboard");
+      } else {
+        navigate("/");
+      }
     } else {
       setChecked(true);
     }

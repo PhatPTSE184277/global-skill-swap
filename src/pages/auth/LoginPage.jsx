@@ -42,10 +42,14 @@ const LoginPage = () => {
         const userRes = await userService.getCurrentUser();
         if (userRes?.success && userRes?.data) {
           dispatch(addAuth({ user: userRes.data, token }));
+          const role = userRes.data.accountRole;
+          console.log(role === "ADMIN");
+          if (role === "ADMIN") {
+            navigate("/admin/dashboard");
+          } else {
+            navigate("/");
+          }
         }
-
-        toast.success('Đăng nhập thành công');
-        navigate('/');
       }
     } catch (err) {
       console.error('Login error:', err);
