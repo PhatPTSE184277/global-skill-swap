@@ -37,7 +37,7 @@ const PostShow = ({ post }) => {
         </div>
       </div>
       <h3 className="font-semibold text-lg mb-2 text-[#4D2C5E] line-clamp-2">
-        {post.title && post.title.trim() ? post.title : "Không có tiêu đề"}
+        {post.title && post.title.trim()}
       </h3>
       <div className="flex items-center text-xs text-gray-500 mb-2">
         <span>{formatDate(post.createdAt)}</span>

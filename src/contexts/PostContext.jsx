@@ -44,7 +44,7 @@ export const PostProvider = ({ children }) => {
         setLoading(true);
         try {
             const response = await createPostService(postData);
-            setPosts((prevPosts) => [response, ...prevPosts]);
+            await fetchPosts();
             return response;
         } catch (error) {
             console.log(error);
@@ -52,15 +52,13 @@ export const PostProvider = ({ children }) => {
         } finally {
             setLoading(false);
         }
-    }, []);
+    }, [fetchPosts]);
 
     const updatePost = useCallback(async (postId, postData) => {
         setLoading(true);
         try {
             const response = await updatePostService(postId, postData);
-            setPosts((prevPosts) =>
-                prevPosts.map((post) => (post.id === postId ? response : post))
-            );
+            await fetchPosts();
             return response;
         } catch (error) {
             console.log(error);
@@ -68,7 +66,7 @@ export const PostProvider = ({ children }) => {
         } finally {
             setLoading(false);
         }
-    }, []);
+    }, [fetchPosts]);
 
 
     const checkLiked = useCallback(async (postId) => {

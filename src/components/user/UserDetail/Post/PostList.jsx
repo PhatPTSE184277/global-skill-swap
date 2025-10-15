@@ -81,7 +81,7 @@ const PostList = () => {
         {loading ? (
           <>
             {[1, 2, 3, 4].map((i) => (
-              <PostSkeleton key={i} />
+              <PostSkeleton key={`skeleton-${i}`} />
             ))}
           </>
         ) : (
