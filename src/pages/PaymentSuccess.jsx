@@ -60,6 +60,23 @@ const PaymentSuccess = () => {
       return;
     }
 
+    // Kiểm tra payment status - nếu không thành công, chuyển đến trang cancel
+    if (paymentStatus && paymentStatus !== "00") {
+      console.log("Payment failed with status:", paymentStatus);
+      navigate("/payment-cancel", {
+        state: {
+          paymentStatus,
+          transactionId: finalTransactionId,
+          paymentType: finalPaymentType,
+          registrationData,
+          bookingData,
+          errorCode: paymentStatus,
+          urlParams: Object.fromEntries(searchParams.entries()),
+        },
+      });
+      return;
+    }
+
     // Log để debug
     console.log("PaymentSuccess loaded:", {
       finalTransactionId,
@@ -75,7 +92,7 @@ const PaymentSuccess = () => {
       uploadCV();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [finalTransactionId, navigate, finalPaymentType]);
+  }, [finalTransactionId, navigate, finalPaymentType, paymentStatus]);
 
   const uploadCV = async () => {
     if (!registrationData?.cv) return;
@@ -389,7 +406,7 @@ const PaymentSuccess = () => {
               Thông tin thanh toán
             </h3> */}
 
-            {/* {finalPaymentType === "mentor_registration" && registrationData && (
+          {/* {finalPaymentType === "mentor_registration" && registrationData && (
               <div className="bg-gray-50 rounded-lg p-4">
                 <div className="grid md:grid-cols-2 gap-4">
                   <div className="space-y-2">
@@ -422,7 +439,7 @@ const PaymentSuccess = () => {
                   </div>
                 </div> */}
 
-                {/* CV Upload Status
+          {/* CV Upload Status
                 <div className="mt-4 pt-4 border-t border-gray-200">
                   <div className="flex items-center justify-between">
                     <span className="text-gray-600 flex items-center">
@@ -459,7 +476,7 @@ const PaymentSuccess = () => {
                 </div>
               </div>
             )} */}
-{/* 
+          {/* 
             {finalPaymentType === "lesson_booking" && bookingData && (
               <div className="bg-gray-50 rounded-lg p-4">
                 <div className="grid md:grid-cols-2 gap-4">

@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
   FiX,
@@ -12,15 +12,34 @@ import {
 const PaymentCancel = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const [searchParams] = useSearchParams();
 
   // Lấy thông tin lỗi từ query params hoặc state
-  const searchParams = new URLSearchParams(location.search);
   const errorCode = searchParams.get("error");
   const errorMessage = searchParams.get("message");
   const orderId = searchParams.get("orderId");
 
+  // Lấy thông tin VNPay từ URL parameters
+  const vnpResponseCode = searchParams.get("vnp_ResponseCode");
+  const vnpTxnRef = searchParams.get("vnp_TxnRef");
+  const vnpAmount = searchParams.get("vnp_Amount");
+  const vnpBankCode = searchParams.get("vnp_BankCode");
+  const vnpOrderInfo = searchParams.get("vnp_OrderInfo");
+
   // Lấy thông tin về loại thanh toán từ state
-  const { paymentType, registrationData, bookingData } = location.state || {};
+  const {
+    paymentType,
+    registrationData,
+    bookingData,
+    paymentStatus,
+    transactionId,
+    errorCode: stateErrorCode,
+    urlParams,
+  } = location.state || {};
+
+  // Xác định final values
+  const finalErrorCode = stateErrorCode || vnpResponseCode || errorCode;
+  const finalTransactionId = transactionId || vnpTxnRef || orderId;
 
   useEffect(() => {
     // Log thông tin hủy thanh toán để debug
@@ -34,7 +53,22 @@ const PaymentCancel = () => {
   }, [errorCode, errorMessage, orderId, paymentType]);
 
   const getErrorMessage = () => {
-    switch (errorCode) {
+    // Kiểm tra VNPay response codes trước
+    switch (finalErrorCode) {
+      // VNPay response codes
+      case "24":
+        return "Giao dịch bị hủy bởi người dùng";
+      case "51":
+        return "Số dư tài khoản không đủ để thực hiện giao dịch";
+      case "65":
+        return "Tài khoản của quý khách đã vượt quá hạn mức giao dịch trong ngày";
+      case "75":
+        return "Ngân hàng thanh toán đang bảo trì";
+      case "79":
+        return "KH nhập sai mật khẩu thanh toán quá số lần quy định";
+      case "99":
+        return "Lỗi không xác định";
+      // Custom error codes
       case "USER_CANCELLED":
         return "Bạn đã hủy giao dịch thanh toán";
       case "PAYMENT_TIMEOUT":
@@ -46,7 +80,9 @@ const PaymentCancel = () => {
       case "NETWORK_ERROR":
         return "Lỗi kết nối mạng";
       default:
-        return errorMessage || "Có lỗi xảy ra trong quá trình thanh toán";
+        return errorMessage || finalErrorCode
+          ? `Thanh toán thất bại với mã lỗi: ${finalErrorCode}`
+          : "Có lỗi xảy ra trong quá trình thanh toán";
     }
   };
 
@@ -142,6 +178,33 @@ const PaymentCancel = () => {
           >
             {getErrorMessage()}
           </motion.p>
+
+          {/* Hiển thị thông tin giao dịch VNPay nếu có */}
+          {vnpTxnRef && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.5 }}
+              className="mt-6 bg-gray-100 rounded-lg p-4"
+            >
+              <h3 className="text-sm font-semibold text-gray-700 mb-2">
+                Thông tin giao dịch
+              </h3>
+              <div className="space-y-1 text-sm text-gray-600">
+                <div>
+                  Mã giao dịch: <span className="font-mono">{vnpTxnRef}</span>
+                </div>
+                {finalErrorCode && (
+                  <div>
+                    Mã lỗi:{" "}
+                    <span className="font-mono text-red-600">
+                      {finalErrorCode}
+                    </span>
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          )}
         </motion.div>
 
         {/* Error Details */}
@@ -162,9 +225,18 @@ const PaymentCancel = () => {
                 </h3>
                 <div className="mt-2 text-sm text-red-700">
                   <p>{getErrorMessage()}</p>
-                  {orderId && (
+                  {finalTransactionId && (
                     <p className="mt-1">
-                      Mã đơn hàng: <span className="font-mono">{orderId}</span>
+                      Mã giao dịch:{" "}
+                      <span className="font-mono">{finalTransactionId}</span>
+                    </p>
+                  )}
+                  {finalErrorCode && finalErrorCode !== "24" && (
+                    <p className="mt-1">
+                      Mã lỗi:{" "}
+                      <span className="font-mono text-red-600">
+                        {finalErrorCode}
+                      </span>
                     </p>
                   )}
                   <p className="mt-1">
