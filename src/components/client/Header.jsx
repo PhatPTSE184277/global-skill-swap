@@ -1,7 +1,7 @@
 import { useSelector, useDispatch } from "react-redux";
 import { authSelector, removeAuth } from "../../reduxs/reducers/AuthReducer";
 import { useState, useRef, useEffect } from "react";
-import { LogOut, User, ChevronDown } from "lucide-react";
+import { LogOut, User, ChevronDown, Pencil, KeyRound } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 
 const handleLogoClick = (navigate) => {
@@ -175,6 +175,26 @@ const Header = () => {
                   <User className="w-4 h-4 text-purple-700" />
                   Thông tin cá nhân
                 </button>
+                <button
+                  className="flex items-center gap-2 w-full px-4 py-3 text-sm text-indigo-700 hover:bg-indigo-50 transition rounded-none cursor-pointer"
+                  onClick={() => {
+                    setShowDropdown(false);
+                    navigate("/profile/change-password");
+                  }}
+                >
+                  <KeyRound className="w-4 h-4 text-indigo-700" />
+                  Đổi mật khẩu
+                </button>
+                {/* <button
+                  className="flex items-center gap-2 w-full px-4 py-3 text-sm text-indigo-700 hover:bg-indigo-50 transition rounded-none cursor-pointer"
+                  onClick={() => {
+                    setShowDropdown(false);
+                    navigate("/profile/edit");
+                  }}
+                >
+                  <Pencil className="w-4 h-4 text-indigo-700" />
+                  Sửa thông tin cá nhân
+                </button> */}
                 {user.accountRole === "ADMIN" && (
                   <button
                     className="flex items-center gap-2 w-full px-4 py-3 text-sm text-amber-700 hover:bg-amber-50 transition rounded-none cursor-pointer"

@@ -12,3 +12,13 @@ export const fetchAllUsers = async ({
   const response = await axiosClient.get("/user", { params });
   return response?.data;
 };
+
+export const deleteUserById = async (userId) => {
+  const response = await axiosClient.delete(`/user/${userId}`);
+  return response?.data;
+}
+
+export const restoreUserById = async (userId) => {
+  const response = await axiosClient.put(`/user/restore/${userId}`);
+  return response?.data;
+}

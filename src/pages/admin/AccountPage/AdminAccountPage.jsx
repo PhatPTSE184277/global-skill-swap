@@ -1,19 +1,32 @@
 import React, { useContext, useEffect, useState } from 'react';
 import { FaUserCog, FaSearch } from "react-icons/fa";
-import AdminAccountSkeleton from './AdminAccountSkeleton';
+import AdminAccountListSkeleton from './AdminAccountListSkeleton';
 import AdminAccountList from '../../../components/admin/account/AdminAccountList';
 import UserContext from '../../../contexts/UserContext';
 import Pagination from '../../../components/admin/Pagination';
+import AdminSelect from '../../../components/admin/AdminSelect';
+import AdminSearchInput from '../../../components/admin/AdminSearchInput';
+
+const statusOptions = [
+  { value: 'all', label: 'Tất cả trạng thái' },
+  { value: 'true', label: 'Hoạt động' },
+  { value: 'false', label: 'Đã khóa' },
+];
 
 const AdminAccountPage = () => {
   const { users, loading, fetchUsers, totalPages } = useContext(UserContext);
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(0);
+  const [isActive, setIsActive] = useState('all');
   const size = 10;
 
   useEffect(() => {
-    fetchUsers({ page, size });
-  }, [fetchUsers, page, size]);
+    fetchUsers({
+      page,
+      size,
+      ...(isActive !== 'all' ? { isActive: isActive === 'true' } : {})
+    });
+  }, [fetchUsers, page, size, isActive]);
 
   const filteredAccounts = users.filter(member =>
     (member.username || '').toLowerCase().includes(search.toLowerCase()) ||
@@ -35,24 +48,29 @@ const AdminAccountPage = () => {
         </div>
       </div>
 
-      {/* Search */}
+      {/* Search & Filter */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+        <div className="w-full md:w-48">
+          <AdminSelect
+            value={isActive}
+            onChange={setIsActive}
+            options={statusOptions}
+            placeholder="Chọn trạng thái"
+          />
+        </div>
         <div className="relative w-full md:w-72">
-          <input
-            type="text"
-            placeholder="Tìm kiếm thành viên..."
-            className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 w-full"
+          <AdminSearchInput
             value={search}
             onChange={e => setSearch(e.target.value)}
+            placeholder="Tìm kiếm thành viên..."
           />
-          <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
         </div>
       </div>
 
       {/* Members Table */}
       <div className="admin-card rounded-xl p-6 bg-white shadow">
         {loading ? (
-          <AdminAccountSkeleton />
+          <AdminAccountListSkeleton />
         ) : (
           <>
             <AdminAccountList accounts={filteredAccounts} />

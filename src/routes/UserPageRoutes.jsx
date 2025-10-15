@@ -1,5 +1,6 @@
 import { PostProvider } from "../contexts/PostContext";
 import UserDetail from "../pages/user/UserDetail";
+import UserEditPage from "../pages/user/UserEditPage";
 import UserPageLayout from "../layouts/user/UserPageLayout";
 
 const UserPageRoutes = [
@@ -14,6 +15,10 @@ const UserPageRoutes = [
             <UserDetail />
           </PostProvider>
         ),
+      },
+      {
+        path: "edit",
+        element: <UserEditPage />,
       },
     ],
   },
