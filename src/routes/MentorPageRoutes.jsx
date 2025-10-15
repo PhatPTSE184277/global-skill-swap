@@ -11,6 +11,7 @@ const MentorPageRoutes = [
         path: "register",
         element: <MentorRegister />,
       },
+
       {
         path: "finding",
         element: <FindingMentor />,

@@ -1,5 +1,5 @@
 import apiRoom from '../apis/axiosRoom.js';
-import userService from './userService.js';
+import userRoomService from './userRoomService.js';
 
 class ApiService {
   constructor() {
@@ -81,8 +81,8 @@ class ApiService {
       if (!roomData || !roomData?.user_id) {
         throw new Error('Meeting room not found or missing user_id');
       }
-      // Lấy thông tin user từ user_id
-      const userResponse = await userService.getUserById(roomData?.user_id);
+  // Lấy thông tin user từ user_id
+  const userResponse = await userRoomService.getUserById(roomData?.user_id);
       
       return userResponse?.username;
     } catch (error) {

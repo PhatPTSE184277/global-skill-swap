@@ -15,7 +15,6 @@ const HomePageRoutes = [
         path: "/paymentconfirmation",
         element: <PaymentConfirm />,
       },
-      
     ],
   },
 ];

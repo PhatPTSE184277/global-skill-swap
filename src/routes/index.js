@@ -5,6 +5,7 @@ import BlogPageRoutes from './BlogPageRoutes';
 import UserPageRoutes from './UserPageRoutes';
 import MeetingPageRoutes from './MeetingPageRoutes';
 import MentorPageRoutes from './MentorPageRoutes';
+import PaymentPageRoutes from './PaymentPageRoutes';
 
 import AdminPageRoutes from './admin/AdminPageRoutes';
 
@@ -15,6 +16,7 @@ const routes = [
     ...UserPageRoutes,
     ...MeetingPageRoutes,
     ...MentorPageRoutes,
+    ...PaymentPageRoutes,
 
     ...AdminPageRoutes,
 

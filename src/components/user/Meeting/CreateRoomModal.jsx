@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Button, Input, Form, Card, message, Modal, DatePicker } from "antd";
 import { Users } from "lucide-react";
-import userService from "../../../services/userService"; // Import userService
+import userRoomService from "../../../services/userRoomService"; // Use userRoomService for meeting flows
 import apiService from "../../../services/apiService";
 
 const CreateRoomModal = ({ visible, onCancel, onSuccess }) => {
@@ -15,8 +15,9 @@ const CreateRoomModal = ({ visible, onCancel, onSuccess }) => {
       // Load user info from Gateway Service
       const loadUserInfo = async () => {
         try {
-          const currentUser = await userService.getUserInfo();
-
+          const response = await userRoomService.getCurrentUser();
+          const currentUser = response?.data;
+          console.log("Current User from Gateway:", currentUser);
           if (currentUser) {
             // Chỉ set giá trị mặc định cho form, không hiển thị các field ẩn
             form.setFieldsValue({
@@ -29,6 +30,7 @@ const CreateRoomModal = ({ visible, onCancel, onSuccess }) => {
             message.warning("Vui lòng đăng nhập để tạo phòng!");
           }
         } catch (error) {
+          console.error("Error loading user info:", error);
           message.warning("Có lỗi khi tải thông tin user. Vui lòng thử lại!");
         }
       };
@@ -41,8 +43,9 @@ const CreateRoomModal = ({ visible, onCancel, onSuccess }) => {
     setLoading(true);
     try {
       // Lấy thông tin user thực từ Gateway Service API
-      const currentUser = await userService.getUserInfo();
-      console.log("Current User from Gateway:", currentUser);
+      const res = await userRoomService.getCurrentUser();
+      const currentUser = res?.data;
+      console.log("Current User from :", currentUser);
 
       if (!currentUser) {
         message.error("Vui lòng đăng nhập để tạo phòng!");
@@ -140,10 +143,7 @@ const CreateRoomModal = ({ visible, onCancel, onSuccess }) => {
           />
         </Form.Item>
 
-        <Form.Item
-          name="startTime"
-          label="Thời gian bắt đầu (Bỏ trống để bắt đầu ngay)"
-        >
+        <Form.Item name="startTime" label="Thời gian bắt đầu ">
           <DatePicker
             showTime
             placeholder="Chọn thời gian bắt đầu"
@@ -232,14 +232,14 @@ const CreateRoomModal = ({ visible, onCancel, onSuccess }) => {
             loading={loading}
             size="large"
             style={{
-              background: "linear-gradient(135deg, #ff6b35 0%, #f7931e 100%)",
+              background: "#ff7426",
               border: "none",
               borderRadius: "25px",
               padding: "0 40px",
               height: "45px",
             }}
           >
-            {loading ? "Đang tạo phòng..." : "🚀 Tạo Phòng Học"}
+            {loading ? "Đang tạo phòng..." : "Tạo Phòng Học"}
           </Button>
         </div>
       </Form>
