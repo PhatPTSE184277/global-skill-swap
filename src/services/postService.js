@@ -12,8 +12,11 @@ export const fetchPostById = async (postId) => {
     return response?.data;
 }
 
-export const createPost = async (postData) => {
-    const response = await axiosClient.post("/forum-post", postData);
+export const createPost = async (postData, sharePostId) => {
+    const config = sharePostId
+        ? { params: { sharePostId } }
+        : undefined;
+    const response = await axiosClient.post("/forum-post", postData, config);
     return response?.data;
 };
 
