@@ -9,7 +9,7 @@ const userService = {
     updateCurrentUser: async (data) => {
         const response = await axiosClient.put('/user/me', data);
         return response?.data; 
-    }
+    },
 
     uploadCV: async (cvFile) => {
         const formData = new FormData();
@@ -22,3 +22,4 @@ const userService = {
 };
 
 export default userService;
+ 
