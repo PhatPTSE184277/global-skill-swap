@@ -2,7 +2,7 @@ import React, { useContext, useEffect, useState } from 'react';
 import { FaUserCog, FaSearch } from "react-icons/fa";
 import AdminAccountListSkeleton from './AdminAccountListSkeleton';
 import AdminAccountList from '../../../components/admin/account/AdminAccountList';
-import UserContext from '../../../contexts/UserContext';
+import UserContext from '../../../contexts/admin/UserContext';
 import Pagination from '../../../components/admin/Pagination';
 import AdminSelect from '../../../components/admin/AdminSelect';
 import AdminSearchInput from '../../../components/admin/AdminSearchInput';

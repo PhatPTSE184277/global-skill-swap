@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
-import ConfirmModal from "../admin/account/ConfirmModal";
+import ConfirmModal from "../admin/ConfirmModal";
 import "../../styles/datepicker-custom.css";
 
 const UserEditForm = ({ user, onSubmit, loading }) => {
