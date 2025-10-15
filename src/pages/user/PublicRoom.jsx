@@ -17,7 +17,6 @@ import {
   Calendar,
 } from "lucide-react";
 
-
 export default function PublicRoom() {
   // const [page, setPage] = useState(1);
   const [meetingRooms, setMeetingRooms] = useState([]);
@@ -56,8 +55,8 @@ export default function PublicRoom() {
     const names = {};
     const counts = {};
 
-    // Chỉ load cho 5 phòng đầu tiên để tăng tốc
-    const roomsToLoad = rooms.slice(0, 5);
+    // Load cho TẤT CẢ các phòng để tab "Phòng của tôi" hoạt động đúng
+    const roomsToLoad = rooms;
 
     await Promise.all(
       roomsToLoad.map(async (room) => {
@@ -72,7 +71,7 @@ export default function PublicRoom() {
                 .getRoomParticipants(room.id)
                 .catch(() => ({ data: { count: 0 } })),
             ]);
-
+            console.log("Username:", username);
             names[room.id] = username;
             counts[room.id] = participantsResponse?.data?.count || 0;
           } catch (error) {

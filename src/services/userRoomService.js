@@ -40,7 +40,7 @@ class UserService {
     // Get user by id (used by meeting room helpers)
     async getUserById(userId) {
         try {
-            const response = await api.get(`/users/${userId}`);
+            const response = await api.get(`/user/${userId}`);
             // return user object if available
             return response?.data?.data || response?.data || null;
         } catch (err) {
