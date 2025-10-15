@@ -1,8 +1,7 @@
 import { useSelector, useDispatch } from "react-redux";
 import { authSelector, removeAuth } from "../../reduxs/reducers/AuthReducer";
 import { useState, useRef, useEffect } from "react";
-import { LogOut, User, ChevronDown } from "lucide-react";
-
+import { LogOut, User, ChevronDown, Pencil, KeyRound } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 
 const handleLogoClick = (navigate) => {
@@ -176,6 +175,40 @@ const Header = () => {
                   <User className="w-4 h-4 text-purple-700" />
                   Thông tin cá nhân
                 </button>
+                <button
+                  className="flex items-center gap-2 w-full px-4 py-3 text-sm text-indigo-700 hover:bg-indigo-50 transition rounded-none cursor-pointer"
+                  onClick={() => {
+                    setShowDropdown(false);
+                    navigate("/profile/change-password");
+                  }}
+                >
+                  <KeyRound className="w-4 h-4 text-indigo-700" />
+                  Đổi mật khẩu
+                </button>
+                {/* <button
+                  className="flex items-center gap-2 w-full px-4 py-3 text-sm text-indigo-700 hover:bg-indigo-50 transition rounded-none cursor-pointer"
+                  onClick={() => {
+                    setShowDropdown(false);
+                    navigate("/profile/edit");
+                  }}
+                >
+                  <Pencil className="w-4 h-4 text-indigo-700" />
+                  Sửa thông tin cá nhân
+                </button> */}
+                {user.accountRole === "ADMIN" && (
+                  <button
+                    className="flex items-center gap-2 w-full px-4 py-3 text-sm text-amber-700 hover:bg-amber-50 transition rounded-none cursor-pointer"
+                    onClick={() => {
+                      setShowDropdown(false);
+                      navigate("/admin/dashboard");
+                    }}
+                  >
+                    <svg className="w-4 h-4 text-amber-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l9-9 9 9M4 10v10a1 1 0 001 1h6m8-11v10a1 1 0 01-1 1h-6" />
+                    </svg>
+                    Bảng điều khiển
+                  </button>
+                )}
                 <button
                   className="flex items-center gap-2 w-full px-4 py-3 text-sm text-red-600 hover:bg-red-50 transition rounded-none cursor-pointer"
                   onClick={handleLogout}

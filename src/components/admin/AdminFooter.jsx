@@ -4,7 +4,7 @@ const AdminFooter = () => {
   return (
     <footer className="bg-white text-center py-5 shadow-md w-full border-l border-gray-200">
       <div className="text-gray-600 text-sm">
-        &copy; {new Date().getFullYear()} Your Company Name. All rights reserved.
+        &copy; {new Date().getFullYear()} Global Skill. All rights reserved.
       </div>
     </footer>
   );

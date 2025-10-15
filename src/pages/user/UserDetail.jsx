@@ -5,7 +5,7 @@ import UserAbout from "./UserAbout";
 import UserFeedback from "./UserFeedback";
 import MentorSchedule from "./MentorSchedule";
 import UserSchedule from "./UserSchedule";
-import PostList from "../../components/user/UserDetail.jsx/Post/PostList";
+import PostList from "../../components/user/UserDetail/Post/PostList";
 import PostContext from "../../contexts/PostContext";
 
 const UserDetail = () => {

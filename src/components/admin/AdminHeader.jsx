@@ -1,20 +1,27 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
+import { useSelector, useDispatch } from 'react-redux';
+import { authSelector, removeAuth } from '../../reduxs/reducers/AuthReducer';
 import { Crown } from 'lucide-react';
 
 export default function AdminHeader() {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const [showDropdown, setShowDropdown] = useState(false);
 
+  const user = useSelector(authSelector);
+
   const profile = {
-    name: 'Quản trị viên',
-    email: 'admin@example.com',
-    isAdmin: true,
+    name: user.username || '',
+    email: user.email || '',
+    isAdmin: user.accountRole === 'ADMIN',
   };
 
   const handleLogout = () => {
+    localStorage.removeItem('authData');
+    dispatch(removeAuth());
     setShowDropdown(false);
-    navigate('/', { replace: true });
+    navigate('/', { state: { loggedOut: true } });
   };
 
   useEffect(() => {
@@ -33,7 +40,7 @@ export default function AdminHeader() {
     <header className="bg-white fixed top-0 left-0 right-0 z-50 font-poppins border-b border-gray-200 shadow-lg h-16 flex items-center px-8">
       <Link to="/admin/dashboard" className="flex items-center group transition-all duration-300 hover:scale-105">
         <div className="w-10 h-10 admin-avatar rounded-full flex items-center justify-center mr-3 shadow-md group-hover:shadow-lg transition-shadow">
-          <span className="text-white font-bold text-sm">⚽</span>
+          <span className="text-white font-bold text-sm"></span>
         </div>
         <span className="text-gray-900 text-xl font-extrabold tracking-tight">BẢNG ĐIỀU KHIỂN</span>
       </Link>
@@ -43,24 +50,27 @@ export default function AdminHeader() {
             onClick={() => setShowDropdown(!showDropdown)}
             aria-haspopup="true"
             aria-expanded={showDropdown}
-            className="flex items-center gap-3 px-4 py-2 rounded-xl text-gray-700 hover:text-purple-600 hover:bg-white/80 transition-all duration-200 backdrop-blur-sm border border-transparent hover:border-purple-200 focus:outline-none focus:ring-2 focus:ring-purple-300"
+            className="flex items-center gap-3 px-4 py-2 rounded-xl text-gray-700 hover:text-purple-600 hover:bg-white/80 transition-all duration-200 backdrop-blur-sm border border-transparent hover:border-purple-200 focus:outline-none focus:ring-2 focus:ring-purple-300 cursor-pointer"
             tabIndex={0}
             onKeyDown={e => {
               if (e.key === 'Escape') setShowDropdown(false);
               if (e.key === 'Enter' || e.key === ' ') setShowDropdown(v => !v);
             }}
           >
-            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-purple-600 via-blue-500 to-cyan-400 flex items-center justify-center shadow-lg ring-2 ring-white/20">
-              <span className="text-white font-bold text-sm">
-                {profile.name.charAt(0).toUpperCase()}
-              </span>
-            </div>
+            <img
+              src={
+                user.avatarUrl ||
+                "https://i.pinimg.com/736x/b3/c2/77/b3c2779d6b6195793b72bf73e284b3e8.jpg"
+              }
+              alt="Admin Avatar"
+              className="h-9 w-9 rounded-full border-2 border-purple-200 shadow-sm object-cover"
+            />
             <div className="hidden sm:block text-left min-w-[80px]">
               <p className="font-semibold text-sm leading-tight">
                 {profile.name}
               </p>
               <p className="text-xs text-gray-500">
-                {profile.isAdmin ? 'Quản trị viên' : 'Thành viên'}
+                {profile.isAdmin ? 'Admin' : 'Thành viên'}
               </p>
             </div>
             <svg
@@ -78,14 +88,16 @@ export default function AdminHeader() {
               tabIndex={-1}
               onKeyDown={e => { if (e.key === 'Escape') setShowDropdown(false); }}
             >
-              {/* User Info Header */}
               <div className="px-4 py-4 border-b border-gray-100/50">
                 <div className="flex items-start gap-3">
-                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-600 via-blue-500 to-cyan-400 flex items-center justify-center shadow-lg flex-shrink-0">
-                    <span className="text-white font-bold text-lg">
-                      {profile.name.charAt(0).toUpperCase()}
-                    </span>
-                  </div>
+                  <img
+                    src={
+                      user.avatarUrl ||
+                      "https://i.pinimg.com/736x/b3/c2/77/b3c2779d6b6195793b72bf73e284b3e8.jpg"
+                    }
+                    alt="Admin Avatar"
+                    className="w-12 h-12 rounded-full border-2 border-purple-200 shadow-sm object-cover flex-shrink-0"
+                  />
                   <div className="flex-1 min-w-0">
                     <p className="font-semibold text-gray-900 text-base truncate">{profile.name}</p>
                     <p className="text-sm text-gray-500 truncate" title={profile.email}>
@@ -95,14 +107,7 @@ export default function AdminHeader() {
                       ? 'bg-purple-100 text-purple-800'
                       : 'bg-blue-100 text-blue-800'
                       }`}>
-                      {profile.isAdmin ? (
-                        <>
-                          <Crown className="w-5 h-5 mr-1 inline-block align-middle text-yellow-500" />
-                          Quản trị viên
-                        </>
-                      ) : (
-                        'Thành viên'
-                      )}
+                      {profile.isAdmin ? 'Admin' : 'Thành viên'}
                     </span>
                   </div>
                 </div>
@@ -161,7 +166,7 @@ export default function AdminHeader() {
               <div className="px-2 pb-2">
                 <button
                   onClick={handleLogout}
-                  className="flex items-center gap-3 w-full px-4 py-3 text-sm text-red-600 hover:bg-red-50 hover:text-red-700 rounded-xl transition-all duration-200 group"
+                  className="flex items-center gap-3 w-full px-4 py-3 text-sm text-red-600 hover:bg-red-50 hover:text-red-700 rounded-xl transition-all duration-200 group cursor-pointer"
                 >
                   <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-red-100 to-pink-100 flex items-center justify-center group-hover:from-red-200 group-hover:to-pink-200 transition-all duration-200">
                     <svg className="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
