@@ -6,7 +6,7 @@ import VideoSection from "../../components/user/Meeting/VideoSection";
 import Participants from "../../components/user/Meeting/Participants";
 import useAgora from "../../hooks/useAgora";
 import socketService from "../../services/socketService";
-import userService from "../../services/userService";
+import userRoomService from "../../services/userRoomService";
 import apiService from "../../services/apiService";
 import axios from "axios";
 
@@ -85,17 +85,26 @@ export default function MeetingPage() {
   useEffect(() => {
     const fetchUserInfo = async () => {
       try {
-        const user = await userService.getCurrentUser();
+        const user = await userRoomService.getUserInfo();
         if (user) {
           setCurrentUser(user);
-          setUid(user.id);
+          const userId = userRoomService.getUserId() || user.id;
+          setUid(userId);
         } else {
           const fallbackUid = Math.floor(Math.random() * 100000);
           setUid(fallbackUid);
         }
       } catch {
-        const fallbackUid = Math.floor(Math.random() * 100000);
-        setUid(fallbackUid);
+        // Fallback to localStorage if API fails
+        const storageUser = userRoomService.getCurrentUserFromStorage();
+        if (storageUser) {
+          setCurrentUser(storageUser);
+          const userId = userRoomService.getUserId() || storageUser.id;
+          setUid(userId);
+        } else {
+          const fallbackUid = Math.floor(Math.random() * 100000);
+          setUid(fallbackUid);
+        }
       }
     };
 
