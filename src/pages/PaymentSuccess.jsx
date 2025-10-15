@@ -34,6 +34,14 @@ const PaymentSuccess = () => {
   const paymentStatus =
     searchParams.get("status") || searchParams.get("vnp_ResponseCode");
 
+  // Lấy thêm thông tin từ VNPay
+  const vnpAmount = searchParams.get("vnp_Amount"); // Số tiền (x100)
+  const vnpBankCode = searchParams.get("vnp_BankCode");
+  const vnpBankTranNo = searchParams.get("vnp_BankTranNo");
+  const vnpCardType = searchParams.get("vnp_CardType");
+  const vnpPayDate = searchParams.get("vnp_PayDate");
+  const vnpTransactionNo = searchParams.get("vnp_TransactionNo");
+
   // Xác định transaction ID từ state hoặc URL
   const finalTransactionId = transactionId || urlTransactionId;
 
@@ -99,8 +107,26 @@ const PaymentSuccess = () => {
       registrationData,
       bookingData,
       paymentStatus,
-      date: new Date().toLocaleDateString("vi-VN"),
-      time: new Date().toLocaleTimeString("vi-VN"),
+      vnpInfo: {
+        amount: vnpAmount ? parseInt(vnpAmount) / 100 : null,
+        bankCode: vnpBankCode,
+        bankTranNo: vnpBankTranNo,
+        cardType: vnpCardType,
+        payDate: vnpPayDate,
+        transactionNo: vnpTransactionNo,
+      },
+      date: vnpPayDate
+        ? vnpPayDate.replace(
+            /(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})/,
+            "$3/$2/$1"
+          )
+        : new Date().toLocaleDateString("vi-VN"),
+      time: vnpPayDate
+        ? vnpPayDate.replace(
+            /(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})/,
+            "$4:$5:$6"
+          )
+        : new Date().toLocaleTimeString("vi-VN"),
     };
 
     console.log("Downloading receipt:", receiptData);
@@ -255,6 +281,14 @@ const PaymentSuccess = () => {
                     {finalTransactionId}
                   </span>
                 </div>
+                {vnpTransactionNo && (
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Mã GD VNPay:</span>
+                    <span className="font-mono text-sm font-medium">
+                      {vnpTransactionNo}
+                    </span>
+                  </div>
+                )}
                 {paymentStatus && (
                   <div className="flex justify-between">
                     <span className="text-gray-600">Trạng thái:</span>
@@ -274,25 +308,69 @@ const PaymentSuccess = () => {
                 <div className="flex justify-between">
                   <span className="text-gray-600">Thời gian:</span>
                   <span className="font-medium">
-                    {new Date().toLocaleString("vi-VN")}
+                    {vnpPayDate
+                      ? vnpPayDate.replace(
+                          /(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})/,
+                          "$3/$2/$1 $4:$5:$6"
+                        )
+                      : new Date().toLocaleString("vi-VN")}
                   </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Phương thức:</span>
                   <span className="font-medium capitalize">
-                    {paymentData?.paymentMethod === "zalopay"
+                    {vnpBankCode
+                      ? "VNPay"
+                      : paymentData?.paymentMethod === "zalopay"
                       ? "ZaloPay"
                       : "VNPay"}
                   </span>
                 </div>
+                {vnpPayDate && (
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Thời gian thanh toán:</span>
+                    <span className="font-medium">
+                      {vnpPayDate.replace(
+                        /(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})/,
+                        "$3/$2/$1 $4:$5:$6"
+                      )}
+                    </span>
+                  </div>
+                )}
               </div>
               <div className="space-y-3">
                 <div className="flex justify-between">
                   <span className="text-gray-600">Số tiền:</span>
                   <span className="font-semibold text-green-600">
-                    {paymentData?.amount?.toLocaleString("vi-VN")} VNĐ
+                    {vnpAmount
+                      ? (parseInt(vnpAmount) / 100).toLocaleString("vi-VN")
+                      : paymentData?.amount?.toLocaleString("vi-VN") ||
+                        "100,000"}{" "}
+                    VNĐ
                   </span>
                 </div>
+                {vnpBankCode && (
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Ngân hàng:</span>
+                    <span className="font-medium uppercase">{vnpBankCode}</span>
+                  </div>
+                )}
+                {vnpCardType && (
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Loại thẻ:</span>
+                    <span className="font-medium">
+                      {vnpCardType === "ATM" ? "Thẻ ATM" : vnpCardType}
+                    </span>
+                  </div>
+                )}
+                {vnpBankTranNo && (
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Mã GD ngân hàng:</span>
+                    <span className="font-mono text-sm font-medium">
+                      {vnpBankTranNo}
+                    </span>
+                  </div>
+                )}
                 <div className="flex justify-between">
                   <span className="text-gray-600">Trạng thái:</span>
                   <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
@@ -304,14 +382,14 @@ const PaymentSuccess = () => {
             </div>
           </div>
 
-          {/* Payment Summary */}
+          {/* Payment Summary
           <div className="border-b border-gray-200 pb-6 mb-6">
             <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
               <FiUser className="mr-2 text-purple-600" />
               Thông tin thanh toán
-            </h3>
+            </h3> */}
 
-            {finalPaymentType === "mentor_registration" && registrationData && (
+            {/* {finalPaymentType === "mentor_registration" && registrationData && (
               <div className="bg-gray-50 rounded-lg p-4">
                 <div className="grid md:grid-cols-2 gap-4">
                   <div className="space-y-2">
@@ -342,9 +420,9 @@ const PaymentSuccess = () => {
                       </span>
                     </div>
                   </div>
-                </div>
+                </div> */}
 
-                {/* CV Upload Status */}
+                {/* CV Upload Status
                 <div className="mt-4 pt-4 border-t border-gray-200">
                   <div className="flex items-center justify-between">
                     <span className="text-gray-600 flex items-center">
@@ -380,8 +458,8 @@ const PaymentSuccess = () => {
                   )}
                 </div>
               </div>
-            )}
-
+            )} */}
+{/* 
             {finalPaymentType === "lesson_booking" && bookingData && (
               <div className="bg-gray-50 rounded-lg p-4">
                 <div className="grid md:grid-cols-2 gap-4">
@@ -416,7 +494,7 @@ const PaymentSuccess = () => {
                 </div>
               </div>
             )}
-          </div>
+          </div> */}
 
           {/* Next Steps */}
           <div className="mb-6">
