@@ -1,7 +1,7 @@
 import { Pencil, Trash2, RotateCcw } from 'lucide-react';
 import { useContext, useState } from 'react';
-import UserContext from '../../../contexts/UserContext';
-import ConfirmModal from './ConfirmModal';
+import UserContext from '../../../contexts/admin/UserContext';
+import ConfirmModal from '../ConfirmModal';
 
 const AdminAccountShow = ({ account }) => {
   const { deleteUser, restoreUser } = useContext(UserContext);
