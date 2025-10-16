@@ -12,6 +12,7 @@ import { Rate } from "antd";
 import UserFeedback from "../../components/client/Home/UserFeedback";
 import NewBlog from "../../components/client/Home/NewBlog";
 import SubscribeSection from "../../components/client/Home/SubscribeSection";
+import FloatingChatAI from "../../components/client/ChatAI/FloatingChatAI";
 
 // Animation variants
 const fadeInUp = {
@@ -853,6 +854,8 @@ const HomePage = () => {
       >
         <SubscribeSection />
       </motion.div>
+      {/* Floating Chat AI Widget */}
+      <FloatingChatAI />
     </div>
   );
 };

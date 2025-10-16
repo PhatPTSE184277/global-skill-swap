@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 // eslint-disable-next-line no-unused-vars
 import { motion, AnimatePresence } from "framer-motion";
@@ -10,10 +10,14 @@ import {
   FiArrowLeft,
   FiFileText,
 } from "react-icons/fi";
+import userService from "../../services/userService";
+import { message } from "antd";
 
 const MentorRegister = () => {
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(1);
+  const [currentUserData, setCurrentUserData] = useState(null); // Lưu data user hiện tại
+  const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     // Personal Info
     fullName: "",
@@ -23,7 +27,8 @@ const MentorRegister = () => {
 
     // Professional Info
     expertise: "",
-    experience: "",
+    customExpertise: "", // Thêm field cho lĩnh vực tự nhập
+    languages: [], // Đổi experience thành languages array để chọn nhiều
     bio: "",
     hourlyRate: "",
 
@@ -43,6 +48,31 @@ const MentorRegister = () => {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
 
+  // Load thông tin user hiện tại khi component mount
+  useEffect(() => {
+    const loadCurrentUser = async () => {
+      try {
+        const userData = await userService.getCurrentUser();
+        if (userData) {
+          setCurrentUserData(userData);
+          // Tự động điền các field đã có
+          setFormData((prev) => ({
+            ...prev,
+            fullName: userData.fullName || "",
+            email: userData.email || "",
+            phone: userData.phone || "",
+            // Không tự động điền password vì bảo mật
+            languages: userData.languageNames || [],
+            expertise: userData.domainNames?.[0] || "",
+          }));
+        }
+      } catch (error) {
+        console.error("Error loading user data:", error);
+      }
+    };
+    loadCurrentUser();
+  }, []);
+
   const steps = [
     { id: 1, title: "Thông tin cá nhân", icon: FiUser },
     { id: 2, title: "Tài liệu & CV", icon: FiFileText },
@@ -54,6 +84,16 @@ const MentorRegister = () => {
       ...prev,
       [name]: value,
     }));
+  };
+
+  // Handler cho checkbox ngôn ngữ
+  const handleLanguageChange = (language) => {
+    setFormData((prev) => {
+      const languages = prev.languages.includes(language)
+        ? prev.languages.filter((lang) => lang !== language)
+        : [...prev.languages, language];
+      return { ...prev, languages };
+    });
   };
 
   const handleFileUpload = (files, type) => {
@@ -102,7 +142,7 @@ const MentorRegister = () => {
     }
   };
 
-  const nextStep = () => {
+  const nextStep = async () => {
     if (currentStep === 2) {
       // Validate required fields before going to payment
       if (
@@ -111,18 +151,68 @@ const MentorRegister = () => {
         !formData.expertise ||
         !formData.cv
       ) {
-        alert(
+        message.error(
           "Vui lòng điền đầy đủ thông tin và tải lên CV trước khi tiếp tục."
         );
         return;
       }
 
-      // Chuyển đến trang thanh toán với CV file (sẽ upload sau khi thanh toán thành công)
-      navigate("/payment", {
-        state: {
-          registrationData: formData,
-        },
-      });
+      // Validate ngôn ngữ dạy
+      if (formData.languages.length === 0) {
+        message.error("Vui lòng chọn ít nhất một ngôn ngữ dạy.");
+        return;
+      }
+
+      // Validate lĩnh vực tự nhập nếu chọn "Khác"
+      if (formData.expertise === "other" && !formData.customExpertise) {
+        message.error("Vui lòng nhập lĩnh vực chuyên môn của bạn.");
+        return;
+      }
+
+      try {
+        setLoading(true);
+
+        // Chuẩn bị data để gửi API
+        const updateData = {
+          ...currentUserData, // Giữ nguyên các field khác
+          username: currentUserData?.username, // Giữ nguyên username
+          fullName: formData.fullName,
+          email: formData.email,
+          phone: formData.phone,
+          languageNames: formData.languages,
+          domainNames: [
+            formData.expertise === "other"
+              ? formData.customExpertise
+              : formData.expertise,
+          ],
+          // KHÔNG gửi password nếu không thay đổi
+        };
+
+        // Gọi API update user
+        await userService.updateCurrentUser(updateData);
+
+        // Upload CV nếu có
+        if (formData.cv) {
+          await userService.uploadCV(formData.cv);
+        }
+
+        message.success("Cập nhật thông tin thành công!");
+
+        // Chuyển đến trang thanh toán
+        navigate("/payment", {
+          state: {
+            registrationData: formData,
+          },
+        });
+      } catch (error) {
+        console.error("Error updating user:", error);
+        message.error(
+          error.response?.data?.message ||
+            "Có lỗi xảy ra khi cập nhật thông tin. Vui lòng thử lại."
+        );
+      } finally {
+        setLoading(false);
+      }
     } else if (currentStep < 2) {
       setCurrentStep(currentStep + 1);
     }
@@ -304,25 +394,61 @@ const MentorRegister = () => {
                       <option value="marketing">Marketing</option>
                       <option value="finance">Tài chính</option>
                       <option value="education">Giáo dục</option>
+                      <option value="other">Khác (Tự nhập)</option>
                     </select>
+
+                    {/* Input field xuất hiện khi chọn "Khác" */}
+                    {formData.expertise === "other" && (
+                      <input
+                        type="text"
+                        name="customExpertise"
+                        value={formData.customExpertise}
+                        onChange={handleInputChange}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all mt-3"
+                        placeholder="Nhập lĩnh vực chuyên môn của bạn"
+                      />
+                    )}
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Số năm kinh nghiệm *
+                    <label className="block text-sm font-medium text-gray-700 mb-3">
+                      Ngôn ngữ dạy * (Có thể chọn nhiều)
                     </label>
-                    <select
-                      name="experience"
-                      value={formData.experience}
-                      onChange={handleInputChange}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
-                    >
-                      <option value="">Chọn kinh nghiệm</option>
-                      <option value="1-2">1-2 năm</option>
-                      <option value="3-5">3-5 năm</option>
-                      <option value="5-10">5-10 năm</option>
-                      <option value="10+">Trên 10 năm</option>
-                    </select>
+                    <div className="flex gap-6">
+                      <label className="flex items-center space-x-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={formData.languages.includes("chinese")}
+                          onChange={() => handleLanguageChange("chinese")}
+                          className="w-5 h-5 text-orange-500 border-gray-300 rounded focus:ring-orange-500"
+                        />
+                        <span className="text-gray-700 font-medium">
+                          Tiếng Trung
+                        </span>
+                      </label>
+
+                      <label className="flex items-center space-x-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={formData.languages.includes("english")}
+                          onChange={() => handleLanguageChange("english")}
+                          className="w-5 h-5 text-orange-500 border-gray-300 rounded focus:ring-orange-500"
+                        />
+                        <span className="text-gray-700 font-medium">
+                          Tiếng Anh
+                        </span>
+                      </label>
+                    </div>
+                    {formData.languages.length > 0 && (
+                      <p className="text-sm text-green-600 mt-2">
+                        Đã chọn:{" "}
+                        {formData.languages
+                          .map((lang) =>
+                            lang === "chinese" ? "Tiếng Trung" : "Tiếng Anh"
+                          )
+                          .join(", ")}
+                      </p>
+                    )}
                   </div>
                 </div>
               </motion.div>
@@ -488,13 +614,27 @@ const MentorRegister = () => {
             </button>
 
             <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
+              whileHover={{ scale: loading ? 1 : 1.05 }}
+              whileTap={{ scale: loading ? 1 : 0.95 }}
               onClick={nextStep}
-              className="flex items-center px-8 py-3 bg-orange-500 hover:bg-orange-600 text-white font-medium rounded-lg hover:shadow-lg transition-all"
+              disabled={loading}
+              className={`flex items-center px-8 py-3 font-medium rounded-lg transition-all ${
+                loading
+                  ? "bg-gray-400 cursor-not-allowed"
+                  : "bg-orange-500 hover:bg-orange-600 hover:shadow-lg"
+              } text-white`}
             >
-              {currentStep === 2 ? "Tiếp tục thanh toán" : "Tiếp tục"}
-              <FiArrowRight className="ml-2" />
+              {loading ? (
+                <>
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                  Đang xử lý...
+                </>
+              ) : (
+                <>
+                  {currentStep === 2 ? "Tiếp tục thanh toán" : "Tiếp tục"}
+                  <FiArrowRight className="ml-2" />
+                </>
+              )}
             </motion.button>
           </div>
         </motion.div>
