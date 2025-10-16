@@ -917,7 +917,7 @@ const FindingMentor = () => {
                   </div>
                   <div>
                     <h3 className="text-lg font-semibold text-purple-900">
-                      AI Assistant
+                      GS Assistant
                     </h3>
                     <p className="text-xs text-gray-500">
                       Luôn sẵn sàng hỗ trợ
