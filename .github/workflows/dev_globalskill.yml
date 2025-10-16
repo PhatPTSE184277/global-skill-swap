@@ -51,5 +51,5 @@ jobs:
         with:
           app-name: 'globalskill'
           slot-name: 'Production'
-          package: dist
+          package: ./dist
           publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH }}
