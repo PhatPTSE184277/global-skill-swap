@@ -4,7 +4,8 @@ export default {
     theme: {
         extend: {
             fontFamily: {
-                sans: ['Be Vietnam Pro', 'sans-serif']
+                sans: ['Noto Sans', 'sans-serif'],
+                noto: ['Noto Sans', 'sans-serif']
             }
         }
     },
