@@ -1,5 +1,8 @@
 import axios from 'axios';
-const baseUrl = import.meta.env.VITE_ROOM_API_URL;
+const baseUrl = import.meta.env.PROD
+  ? import.meta.env.VITE_ROOM_SERVICE_URL + '/api'
+  : import.meta.env.VITE_ROOM_API_URL;
+
 
 const config = {
      baseURL: baseUrl

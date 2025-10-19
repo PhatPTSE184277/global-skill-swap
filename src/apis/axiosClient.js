@@ -1,6 +1,10 @@
 import axios from 'axios';
+const baseUrl = import.meta.env.PROD
+    ? import.meta.env.VITE_GATEWAY_SERVICE_URL + '/api'
+    : '/api';
+
 const api = axios.create({
-    baseURL: '/api'
+    baseURL: baseUrl
 });
 
 const handleBefore = (config) => {
