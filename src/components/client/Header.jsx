@@ -1,8 +1,16 @@
 import { useSelector, useDispatch } from "react-redux";
 import { authSelector, removeAuth } from "../../reduxs/reducers/AuthReducer";
 import { useState, useRef, useEffect } from "react";
-import { LogOut, User, ChevronDown, Pencil, KeyRound } from "lucide-react";
+import {
+  LogOut,
+  User,
+  ChevronDown,
+  Pencil,
+  KeyRound,
+  MessageSquare,
+} from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
+import FeedbackPopup from "./FeedbackPopup";
 
 const handleLogoClick = (navigate) => {
   if (window.location.pathname === "/") {
@@ -18,6 +26,7 @@ const Header = () => {
   const dispatch = useDispatch();
   const [showDropdown, setShowDropdown] = useState(false);
   const [showServicesDropdown, setShowServicesDropdown] = useState(false);
+  const [showFeedbackPopup, setShowFeedbackPopup] = useState(false);
   const dropdownRef = useRef(null);
   const servicesDropdownRef = useRef(null);
 
@@ -38,7 +47,7 @@ const Header = () => {
   }, []);
 
   const handleLogout = () => {
-    localStorage.removeItem('authData');
+    localStorage.removeItem("authData");
     dispatch(removeAuth());
     setShowDropdown(false);
     navigate("/");
@@ -54,7 +63,9 @@ const Header = () => {
       <nav className="w-full font-['Noto Sans'] bg-[#fdf8ee] shadow sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-6 flex items-center justify-between h-16">
           <div className="flex items-center gap-2 cursor-pointer">
-            <span className="text-lg font-bold text-purple-950">GlobalSkill</span>
+            <span className="text-lg font-bold text-purple-950">
+              GlobalSkill
+            </span>
           </div>
           <div className="animate-pulse bg-gray-300 h-8 w-24 rounded-full"></div>
         </div>
@@ -91,8 +102,9 @@ const Header = () => {
             >
               Dịch Vụ
               <ChevronDown
-                className={`w-4 h-4 transition-transform ${showServicesDropdown ? "rotate-180" : ""
-                  }`}
+                className={`w-4 h-4 transition-transform ${
+                  showServicesDropdown ? "rotate-180" : ""
+                }`}
               />
             </div>
             {showServicesDropdown && (
@@ -109,6 +121,16 @@ const Header = () => {
                 >
                   FAQ
                 </button>
+                <button
+                  className="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-purple-50 hover:text-purple-700 transition"
+                  onClick={() => {
+                    setShowServicesDropdown(false);
+                    setShowFeedbackPopup(true);
+                  }}
+                >
+                  Feedback
+                </button>
+
                 <button
                   className="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-purple-50 hover:text-purple-700 transition rounded-b-lg"
                   onClick={() => handleServicesClick("/contact")}
@@ -142,8 +164,9 @@ const Header = () => {
                 </span>
               </div>
               <ChevronDown
-                className={`w-4 h-4 ml-1 text-purple-700 transition-transform ${showDropdown ? "rotate-180" : ""
-                  }`}
+                className={`w-4 h-4 ml-1 text-purple-700 transition-transform ${
+                  showDropdown ? "rotate-180" : ""
+                }`}
               />
             </div>
             {showDropdown && (
@@ -203,8 +226,18 @@ const Header = () => {
                       navigate("/admin/dashboard");
                     }}
                   >
-                    <svg className="w-4 h-4 text-amber-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l9-9 9 9M4 10v10a1 1 0 001 1h6m8-11v10a1 1 0 01-1 1h-6" />
+                    <svg
+                      className="w-4 h-4 text-amber-700"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M3 12l9-9 9 9M4 10v10a1 1 0 001 1h6m8-11v10a1 1 0 01-1 1h-6"
+                      />
                     </svg>
                     Bảng điều khiển
                   </button>
@@ -228,6 +261,12 @@ const Header = () => {
           </button>
         )}
       </div>
+
+      <FeedbackPopup
+        isOpen={showFeedbackPopup}
+        onClose={() => setShowFeedbackPopup(false)}
+        userId={user?.id || user?.userId}
+      />
     </nav>
   );
 };
