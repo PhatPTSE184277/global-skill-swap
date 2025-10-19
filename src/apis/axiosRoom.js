@@ -1,11 +1,12 @@
 import axios from 'axios';
-const baseUrl = import.meta.env.VITE_ROOM_API_URL;
 
-const config = {
-     baseURL: baseUrl
-};
+const baseUrl = import.meta.env.PROD
+    ? import.meta.env.VITE_ROOM_SERVICE_URL + '/api'
+    : '/api/room';
 
-const apiRoom = axios.create(config);
+const apiRoom = axios.create({
+    baseURL: baseUrl
+});
 
 const handleBefore = (config) => {
     const authData = localStorage.getItem('authData');
