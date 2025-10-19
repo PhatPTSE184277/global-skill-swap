@@ -90,11 +90,6 @@ const FloatingChatAI = () => {
         response = await chatAIService.translate(userMessage, sourceLang);
 
         if (response.success) {
-          const langNames = {
-            en: "Tiếng Anh",
-            zh: "Tiếng Trung",
-            auto: "Tự động",
-          };
           aiMessageContent = (
             <div className="space-y-2">
               <div className="flex items-center gap-2 text-xs text-purple-900">
