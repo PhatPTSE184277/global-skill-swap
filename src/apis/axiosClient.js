@@ -3,6 +3,9 @@ const baseUrl = import.meta.env.PROD
     ? import.meta.env.VITE_GATEWAY_SERVICE_URL + '/api'
     : '/api';
 
+console.log('🔍 axiosClient baseURL:', baseUrl); // Debug log
+console.log('🔍 PROD mode:', import.meta.env.PROD); // Debug log
+
 const api = axios.create({
     baseURL: baseUrl
 });
