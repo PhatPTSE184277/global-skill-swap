@@ -1,5 +1,12 @@
 import { io } from 'socket.io-client';
 
+const DEFAULT_SOCKET_URL = import.meta.env.PROD
+  ? import.meta.env.VITE_SOCKET_URL || 'https://gss-room-service.onrender.com'
+  : import.meta.env.VITE_SOCKET_URL || 'http://localhost:3000';
+
+console.log('🔍 socketService - PROD mode:', import.meta.env.PROD);
+console.log('🔍 socketService - DEFAULT_SOCKET_URL:', DEFAULT_SOCKET_URL);
+
 class SocketService {
   constructor() {
     this.socket = null;
@@ -7,7 +14,7 @@ class SocketService {
     this.eventListeners = new Map();
   }
 
-  connect(serverUrl = import.meta.env.VITE_SOCKET_URL) {
+  connect(serverUrl = DEFAULT_SOCKET_URL) {
     try {
       if (this.socket && this.socket.connected) {
         console.log("🔌 Reusing existing socket connection:", this.socket.id);
