@@ -1,15 +1,8 @@
 import axios from 'axios';
 
 // Use the same ROOM service URL as chatAIService (fallback to localhost)
-const ROOM_SERVICE_URL = import.meta.env.PROD
-  ? import.meta.env.VITE_ROOM_SERVICE_URL || 'https://gss-room-service.onrender.com'
-  : import.meta.env.VITE_ROOM_SERVICE_URL || 'http://localhost:3000';
-
+const ROOM_SERVICE_URL = import.meta.env.VITE_ROOM_SERVICE_URL;
 const BASE_URL = `${ROOM_SERVICE_URL}/api/feedbacks`;
-
-console.log('🔍 feedbackService - PROD mode:', import.meta.env.PROD);
-console.log('🔍 feedbackService - ROOM_SERVICE_URL:', ROOM_SERVICE_URL);
-console.log('🔍 feedbackService - BASE_URL:', BASE_URL);
 
 // Create axios instance
 const feedbackClient = axios.create({

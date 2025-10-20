@@ -1,16 +1,10 @@
 import axios from 'axios';
 
-const ROOM_SERVICE_URL = import.meta.env.PROD
-  ? import.meta.env.VITE_ROOM_SERVICE_URL || 'https://gss-room-service.onrender.com'
-  : import.meta.env.VITE_ROOM_SERVICE_URL || 'http://localhost:3000';
-
-console.log('🔍 chatAIService - PROD mode:', import.meta.env.PROD);
-console.log('🔍 chatAIService - ROOM_SERVICE_URL:', ROOM_SERVICE_URL);
+const ROOM_SERVICE_URL = import.meta.env.VITE_ROOM_SERVICE_URL;
 
 class ChatAIService {
   constructor() {
     this.baseURL = `${ROOM_SERVICE_URL}/api/chat`;
-    console.log('🔍 chatAIService - baseURL:', this.baseURL);
     this.conversationHistory = [];
   }
 
