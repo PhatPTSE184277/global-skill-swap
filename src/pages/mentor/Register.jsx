@@ -242,7 +242,7 @@ const MentorRegister = () => {
         </motion.div>
 
         {/* Progress Steps */}
-        <div className="mb-12">
+        <div className="">
           <div className="flex justify-center items-center max-w-lg mx-auto">
             {steps.map((step, index) => (
               <div key={step.id} className="flex items-center">

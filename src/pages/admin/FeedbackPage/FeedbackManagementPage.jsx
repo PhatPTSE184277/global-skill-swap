@@ -6,11 +6,14 @@ import {
   CheckCircle,
   Clock,
   Send,
-  X,
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
+import { Modal, Input, message } from "antd";
 import feedbackService from "../../../services/feedbackService";
+import userService from "../../../services/userService";
+
+const { TextArea } = Input;
 
 const FeedbackManagementPage = () => {
   const [feedbacks, setFeedbacks] = useState([]);
@@ -23,6 +26,7 @@ const FeedbackManagementPage = () => {
   const [selectedFeedback, setSelectedFeedback] = useState(null);
   const [adminResponse, setAdminResponse] = useState("");
   const [showModal, setShowModal] = useState(false);
+  const [currentUser, setCurrentUser] = useState(null);
 
   const modules = [
     { value: "all", label: "Tất cả" },
@@ -36,14 +40,35 @@ const FeedbackManagementPage = () => {
 
   const statuses = [
     { value: "all", label: "Tất cả" },
-    { value: "pending", label: "Chờ" },
+    { value: "pending", label: "Chờ xử lý" },
     { value: "responded", label: "Đã phản hồi" },
   ];
 
   useEffect(() => {
+    fetchCurrentUser();
     fetchData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentPage, filterModule, filterStatus]);
+
+  const fetchCurrentUser = async () => {
+    try {
+      const response = await userService.getCurrentUser();
+      console.log("📌 User response:", response);
+
+      // Xử lý cả 2 trường hợp: response.data hoặc trực tiếp response
+      const userData = response?.data || response;
+
+      if (userData) {
+        console.log("✅ Current user loaded:", userData);
+        setCurrentUser(userData);
+      } else {
+        console.warn("⚠️ No user data found");
+      }
+    } catch (error) {
+      console.error("❌ Error fetching current user:", error);
+      message.error("Không thể lấy thông tin admin!");
+    }
+  };
 
   const fetchData = async () => {
     setLoading(true);
@@ -77,27 +102,52 @@ const FeedbackManagementPage = () => {
   };
 
   const submitResponse = async () => {
-    if (!adminResponse.trim()) return;
-    try {
-      const res = await feedbackService.respondToFeedback(selectedFeedback.id, {
-        admin_response: adminResponse,
-        admin_id: "admin01",
-      });
-      if (res.success) {
-        setShowModal(false);
-        fetchData();
-      }
-    } catch {
-      alert("Có lỗi xảy ra");
+    if (!adminResponse.trim()) {
+      message.warning("Vui lòng nhập phản hồi!");
+      return;
     }
-  };
 
-  const handleArchive = async (id) => {
+    console.log("📌 Current user state:", currentUser);
+
+    // Kiểm tra các trường có thể chứa ID
+    const userId =
+      currentUser?.id || currentUser?.user_id || currentUser?.userId;
+
+    if (!userId) {
+      message.error("Không tìm thấy thông tin admin! Vui lòng đăng nhập lại.");
+      console.error("❌ No user ID found. Current user:", currentUser);
+      return;
+    }
+
+    console.log("✅ Sending response with user ID:", userId);
+
     try {
-      await feedbackService.updateFeedback(id, { status: "archived" });
-      fetchData();
-    } catch {
-      // Handle error
+      const payload = {
+        admin_response: adminResponse,
+        responded_by: userId,
+        status: "responded",
+      };
+
+      console.log("📤 Payload:", payload);
+
+      const res = await feedbackService.respondToFeedback(
+        selectedFeedback.id,
+        payload
+      );
+
+      console.log("📥 Response:", res);
+
+      if (res.success) {
+        message.success("Phản hồi thành công!");
+        setShowModal(false);
+        setAdminResponse("");
+        fetchData();
+      } else {
+        message.error(res.message || "Không thể gửi phản hồi!");
+      }
+    } catch (error) {
+      message.error("Có lỗi xảy ra khi gửi phản hồi!");
+      console.error("❌ Error responding to feedback:", error);
     }
   };
 
@@ -117,8 +167,7 @@ const FeedbackManagementPage = () => {
   const getStatusBadge = (status) => {
     const config = {
       pending: { label: "Chờ", color: "bg-orange-100 text-orange-800" },
-      responded: { label: "Đã phản hồi", color: "bg-green-100 text-green-800" },
-      archived: { label: "Lưu trữ", color: "bg-gray-100 text-gray-800" },
+      responded: { label: "Đã phản hồi", color: "bg-blue-100 text-blue-800" },
     };
     const { label, color } = config[status] || config.pending;
     return (
@@ -204,7 +253,7 @@ const FeedbackManagementPage = () => {
                     Đã Phản Hồi
                   </p>
                   <p className="text-2xl font-bold text-green-600">
-                    {statistics.responded}
+                    {(statistics.responded || 0) + (statistics.resolved || 0)}
                   </p>
                 </div>
                 <div className="bg-green-100 p-3 rounded-lg">
@@ -336,14 +385,6 @@ const FeedbackManagementPage = () => {
                           Phản hồi
                         </button>
                       )}
-                      {fb.status !== "archived" && (
-                        <button
-                          onClick={() => handleArchive(fb.id)}
-                          className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-sm font-medium"
-                        >
-                          Lưu trữ
-                        </button>
-                      )}
                     </div>
                   </div>
                 </div>
@@ -383,23 +424,42 @@ const FeedbackManagementPage = () => {
         </div>
       </div>
 
-      {/* Modal */}
-      {showModal && selectedFeedback && (
-        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center p-4 z-50 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl max-w-2xl w-full p-6 shadow-2xl transform transition-all">
-            <div className="flex items-center justify-between mb-5">
-              <h3 className="text-xl font-bold text-purple-900">
-                Phản Hồi Feedback
-              </h3>
-              <button
-                onClick={() => setShowModal(false)}
-                className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-              >
-                <X className="w-5 h-5 text-gray-500" />
-              </button>
-            </div>
-
-            <div className="bg-purple-50 rounded-xl p-4 mb-5 border border-purple-100">
+      {/* Ant Design Modal */}
+      <Modal
+        title={
+          <div className="flex items-center gap-2">
+            <MessageSquare className="w-5 h-5 text-purple-600" />
+            <span className="text-lg font-bold text-purple-900">
+              Phản Hồi Feedback
+            </span>
+          </div>
+        }
+        open={showModal}
+        onOk={submitResponse}
+        onCancel={() => {
+          setShowModal(false);
+          setAdminResponse("");
+        }}
+        width={700}
+        okText={
+          <span className="flex items-center gap-2">
+            <Send className="w-4 h-4" />
+            Gửi Phản Hồi
+          </span>
+        }
+        cancelText="Hủy"
+        okButtonProps={{
+          className: "bg-purple-900 hover:bg-purple-800",
+          style: { height: "40px" },
+        }}
+        cancelButtonProps={{
+          style: { height: "40px" },
+        }}
+      >
+        {selectedFeedback && (
+          <div className="space-y-4">
+            {/* Feedback Info */}
+            <div className="bg-purple-50 rounded-xl p-4 border border-purple-100">
               <div className="flex items-center justify-between mb-3">
                 <span className="px-3 py-1 bg-purple-200 text-purple-900 rounded-full text-sm font-semibold">
                   {selectedFeedback.module_type}
@@ -411,61 +471,57 @@ const FeedbackManagementPage = () => {
                   </span>
                 </div>
               </div>
-              <p className="text-gray-700 leading-relaxed">
-                {selectedFeedback.comment}
-              </p>
-              <div className="mt-3 pt-3 border-t border-purple-200 flex items-center gap-4 text-xs text-gray-600">
-                <span>
-                  User:{" "}
-                  <span className="font-medium">
-                    {selectedFeedback.user_id}
+              <p className="text-gray-700 leading-relaxed mb-3">
+                {selectedFeedback.comment || (
+                  <span className="italic text-gray-400">
+                    Không có nhận xét
                   </span>
+                )}
+              </p>
+              <div className="pt-3 border-t border-purple-200 flex items-center gap-4 text-xs text-gray-600">
+                <span>
+                  <span className="font-medium">User:</span>{" "}
+                  {selectedFeedback.user_id}
                 </span>
                 <span>
-                  ID:{" "}
-                  <span className="font-medium">
-                    {selectedFeedback.module_id}
-                  </span>
+                  <span className="font-medium">ID:</span>{" "}
+                  {selectedFeedback.module_id}
                 </span>
                 <span>
                   {new Date(selectedFeedback.created_at).toLocaleDateString(
-                    "vi-VN"
+                    "vi-VN",
+                    {
+                      day: "2-digit",
+                      month: "2-digit",
+                      year: "numeric",
+                    }
                   )}
                 </span>
               </div>
             </div>
 
-            <div className="mb-5">
+            {/* Response Input */}
+            <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
                 Phản hồi của bạn
               </label>
-              <textarea
+              <TextArea
                 value={adminResponse}
                 onChange={(e) => setAdminResponse(e.target.value)}
                 placeholder="Nhập phản hồi cho người dùng..."
-                rows={4}
-                className="w-full px-4 py-3 text-sm border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none"
+                rows={5}
+                className="rounded-lg"
+                style={{
+                  fontSize: "14px",
+                }}
               />
-            </div>
-
-            <div className="flex gap-3 justify-end">
-              <button
-                onClick={() => setShowModal(false)}
-                className="px-6 py-2.5 border-2 border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
-              >
-                Hủy
-              </button>
-              <button
-                onClick={submitResponse}
-                className="px-6 py-2.5 bg-purple-900 text-white rounded-lg hover:bg-purple-800 transition-colors flex items-center gap-2 font-medium shadow-sm"
-              >
-                <Send className="w-4 h-4" />
-                Gửi Phản Hồi
-              </button>
+              <p className="text-xs text-gray-500 mt-1">
+                {adminResponse.length} ký tự
+              </p>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </Modal>
     </div>
   );
 };
