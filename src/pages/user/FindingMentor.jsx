@@ -263,12 +263,22 @@ const FindingMentor = () => {
   const [sortBy, setSortBy] = useState("rating");
   const [showFilters, setShowFilters] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [showSearchModal, setShowSearchModal] = useState(false);
 
   // Minimal setup
   useEffect(() => {
     // Simulate loading
     setTimeout(() => setIsLoading(false), 800);
     document.title = "Find Your Perfect Mentor";
+
+    // ESC to close modal
+    const handleEsc = (e) => {
+      if (e.key === "Escape") {
+        setShowSearchModal(false);
+      }
+    };
+    window.addEventListener("keydown", handleEsc);
+    return () => window.removeEventListener("keydown", handleEsc);
   }, []);
 
   // Tất cả specialties từ data
@@ -428,113 +438,250 @@ const FindingMentor = () => {
       transition={{ duration: 0.8 }}
       className="min-h-screen bg-gray-50"
     >
-      {/* Hero Section */}
+      {/* Hero Section & Filters Row */}
       <motion.div
-        className="  pt-16 pb-12"
+        className="pt-8 pb-6"
         initial={{ y: -20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.8, delay: 0.2 }}
       >
-        <div className="max-w-7xl mx-auto px-6 text-center">
-          <span className="block mb-6 text-5xl font-bold bg-clip-text  mt-2">
-            Mentor <span className="text-orange-600">phù hợp</span> với bạn
-          </span>
-          <span></span>
-          <p className="text-lg text-gray-400 max-w-2xl mx-auto pb-8">
-            Kết nối với các chuyên gia giảng dạy ngôn ngữ
-          </p>
-        </div>
-      </motion.div>
-
-      <div className="max-w-7xl mx-auto px-6 -mt-8">
-        {/* Search & Filter Section - Clean Minimalist Design */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 mb-8">
-          {/* Main Search Row */}
-          <div className="flex flex-col lg:flex-row gap-4 items-center">
-            {/* Search Input */}
-            <div className="flex-1 relative">
-              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Tìm kiếm mentor theo tên, chuyên môn..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all"
-              />
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="flex items-center justify-between gap-4">
+            {/* Left: Hero Text */}
+            <div>
+              <h1 className="text-2xl font-semibold text-gray-800 mb-2">
+                Tìm kiếm mentor <span className="text-orange-600">phù hợp</span>
+              </h1>
+              <p className="text-sm text-gray-500">
+                Kết nối với các chuyên gia giảng dạy ngôn ngữ
+              </p>
             </div>
 
-            {/* Filter Pills */}
-            <motion.div
-              initial={{ y: 20, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ delay: 0.2 }}
-              className="flex gap-2 flex-wrap"
-            >
-              {/* Language Filter */}
+            {/* Right: Search & Filters */}
+            <div className="flex gap-2 items-center flex-shrink-0">
+              {/* Compact Search Button */}
+              <button
+                onClick={() => setShowSearchModal(true)}
+                className="px-4 py-2 border border-gray-200 rounded-lg text-sm bg-white hover:border-gray-300 focus:outline-none focus:ring-1 focus:ring-orange-400 transition-all flex items-center gap-2 min-w-[180px]"
+              >
+                <Search className="w-4 h-4 text-gray-400" />
+                <span className="text-gray-500">Tìm kiếm...</span>
+              </button>
+
               <CustomDropdown
                 value={selectedLanguage}
                 onChange={setSelectedLanguage}
                 options={languageOptions}
-                placeholder="Chọn ngôn ngữ"
-                className="min-w-[160px]"
+                placeholder="Tất cả ngôn ngữ"
+                className="min-w-[140px]"
               />
 
-              {/* Experience Filter */}
               <CustomDropdown
                 value={selectedExperience}
                 onChange={setSelectedExperience}
                 options={experienceOptions}
-                placeholder="Chọn kinh nghiệm"
-                className="min-w-[160px]"
+                placeholder="Mọi kinh nghiệm"
+                className="min-w-[140px]"
               />
 
-              {/* Sort Filter */}
               <CustomDropdown
                 value={sortBy}
                 onChange={setSortBy}
                 options={sortOptions}
-                placeholder="Sắp xếp theo"
-                className="min-w-[160px]"
+                placeholder="Đánh giá cao nhất"
+                className="min-w-[150px]"
               />
 
-              {/* More Filters Toggle */}
               <button
                 onClick={() => setShowFilters(!showFilters)}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${
+                className={`px-3 py-2 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 whitespace-nowrap ${
                   showFilters ||
                   selectedSpecialty !== "all" ||
                   selectedAvailability !== "all"
-                    ? "bg-purple-900 text-white shadow-sm"
-                    : "border border-gray-200 text-gray-600 hover:border-gray-300 hover:text-gray-700"
+                    ? "bg-orange-500 text-white shadow-sm"
+                    : "border border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50"
                 }`}
               >
-                <Filter className="w-4 h-4" />
-                Thêm bộ lọc
+                <Filter className="w-3.5 h-3.5" />
+                Bộ lọc
                 {(selectedSpecialty !== "all" ||
                   selectedAvailability !== "all") && (
-                  <span className="w-2 h-2 bg-white rounded-full"></span>
+                  <span className="w-1.5 h-1.5 bg-white rounded-full"></span>
                 )}
               </button>
-            </motion.div>
+            </div>
           </div>
+        </div>
+      </motion.div>
 
-          {/* Advanced Filters */}
+      {/* Search Modal */}
+      <AnimatePresence>
+        {showSearchModal && (
+          <>
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowSearchModal(false)}
+              className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50"
+            />
+
+            {/* Modal */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: -20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: -20 }}
+              transition={{ duration: 0.2 }}
+              className="fixed top-24 left-1/2 -translate-x-1/2 w-full max-w-2xl z-50 px-4"
+            >
+              <div className="bg-white rounded-2xl shadow-2xl overflow-hidden">
+                {/* Search Input */}
+                <div className="relative p-6 border-b border-gray-100">
+                  <Search className="absolute left-9 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="Tìm kiếm mentor theo tên, kỹ năng, chuyên môn..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    autoFocus
+                    className="w-full pl-12 pr-12 py-3.5 text-base focus:outline-none placeholder:text-gray-400"
+                  />
+                  <button
+                    onClick={() => setShowSearchModal(false)}
+                    className="absolute right-9 top-1/2 -translate-y-1/2 p-1.5 hover:bg-gray-100 rounded-full transition-colors"
+                  >
+                    <X className="w-5 h-5 text-gray-400" />
+                  </button>
+                </div>
+
+                {/* Search Results / Suggestions */}
+                <div className="p-6 max-h-96 overflow-y-auto">
+                  {searchTerm ? (
+                    // Show filtered results
+                    <div className="space-y-3">
+                      <p className="text-xs text-gray-500 font-medium mb-4">
+                        Kết quả tìm kiếm cho "{searchTerm}"
+                      </p>
+                      {filteredMentors.slice(0, 5).map((mentor) => (
+                        <motion.div
+                          key={mentor.id}
+                          initial={{ opacity: 0, x: -10 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          className="flex items-center gap-4 p-3 hover:bg-gray-50 rounded-lg cursor-pointer transition-colors"
+                          onClick={() => {
+                            setShowSearchModal(false);
+                            // Navigate to mentor detail
+                          }}
+                        >
+                          <img
+                            src={mentor.avatar}
+                            alt={mentor.name}
+                            className="w-12 h-12 rounded-full object-cover"
+                          />
+                          <div className="flex-1">
+                            <h4 className="font-medium text-gray-900 text-sm">
+                              {mentor.name}
+                            </h4>
+                            <p className="text-xs text-gray-500">
+                              {mentor.title}
+                            </p>
+                            <div className="flex gap-1 mt-1">
+                              {mentor.specialties.slice(0, 2).map((spec) => (
+                                <span
+                                  key={spec}
+                                  className="text-xs text-orange-600 bg-orange-50 px-2 py-0.5 rounded"
+                                >
+                                  {spec}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
+                            <span className="text-sm font-medium">
+                              {mentor.rating}
+                            </span>
+                          </div>
+                        </motion.div>
+                      ))}
+                      {filteredMentors.length === 0 && (
+                        <div className="text-center py-8">
+                          <p className="text-gray-500 text-sm">
+                            Không tìm thấy kết quả phù hợp
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    // Show suggestions
+                    <div className="space-y-4">
+                      <p className="text-xs text-gray-500 font-medium">
+                        Gợi ý tìm kiếm
+                      </p>
+                      <div className="space-y-2">
+                        {[
+                          "IELTS",
+                          "Tiếng Anh giao tiếp",
+                          "HSK",
+                          "Tiếng Trung kinh doanh",
+                        ].map((suggestion) => (
+                          <button
+                            key={suggestion}
+                            onClick={() => {
+                              setSearchTerm(suggestion);
+                            }}
+                            className="w-full text-left px-4 py-2.5 hover:bg-gray-50 rounded-lg transition-colors text-sm text-gray-700"
+                          >
+                            <Search className="w-4 h-4 inline mr-2 text-gray-400" />
+                            {suggestion}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Footer */}
+                <div className="p-4 bg-gray-50 border-t border-gray-100 flex items-center justify-between">
+                  <div className="flex gap-2 text-xs text-gray-500">
+                    <kbd className="px-2 py-1 bg-white border border-gray-200 rounded">
+                      ESC
+                    </kbd>
+                    <span>để đóng</span>
+                  </div>
+                  <button
+                    onClick={() => setShowSearchModal(false)}
+                    className="px-4 py-2 bg-orange-500 text-white text-sm font-medium rounded-lg hover:bg-orange-600 transition-colors"
+                  >
+                    Xem tất cả kết quả
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      <div className="max-w-7xl mx-auto px-6">
+        {/* Extended Filters Panel */}
+        <AnimatePresence>
           {showFilters && (
             <motion.div
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: "auto" }}
               exit={{ opacity: 0, height: 0 }}
               transition={{ duration: 0.3 }}
-              className="mt-6 pt-6 border-t border-gray-100"
+              className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 mb-6"
             >
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {/* Specialty */}
                 <motion.div
                   initial={{ x: -20, opacity: 0 }}
                   animate={{ x: 0, opacity: 1 }}
                   transition={{ delay: 0.1 }}
                 >
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-xs font-medium text-gray-600 mb-1.5">
                     Chuyên môn
                   </label>
                   <CustomDropdown
@@ -551,7 +698,7 @@ const FindingMentor = () => {
                   animate={{ x: 0, opacity: 1 }}
                   transition={{ delay: 0.2 }}
                 >
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-xs font-medium text-gray-600 mb-1.5">
                     Thời gian rảnh
                   </label>
                   <CustomDropdown
@@ -564,156 +711,156 @@ const FindingMentor = () => {
               </div>
             </motion.div>
           )}
+        </AnimatePresence>
 
-          {/* Active Filters Display */}
-          <AnimatePresence>
-            {(searchTerm ||
-              selectedLanguage !== "all" ||
-              selectedExperience !== "all" ||
-              selectedSpecialty !== "all" ||
-              selectedAvailability !== "all" ||
-              sortBy !== "rating") && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: "auto" }}
-                exit={{ opacity: 0, height: 0 }}
-                transition={{ duration: 0.3 }}
-                className="mt-4 pt-4 border-t border-gray-100"
-              >
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-sm text-gray-500">Đang lọc:</span>
+        {/* Active Filters Display */}
+        <AnimatePresence>
+          {(searchTerm ||
+            selectedLanguage !== "all" ||
+            selectedExperience !== "all" ||
+            selectedSpecialty !== "all" ||
+            selectedAvailability !== "all" ||
+            sortBy !== "rating") && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.3 }}
+              className="bg-white rounded-xl shadow-sm border border-gray-100 p-3 mb-6"
+            >
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-xs text-gray-500">Đang lọc:</span>
 
-                  <AnimatePresence>
-                    {searchTerm && (
-                      <motion.span
-                        initial={{ scale: 0, opacity: 0 }}
-                        animate={{ scale: 1, opacity: 1 }}
-                        exit={{ scale: 0, opacity: 0 }}
-                        transition={{ duration: 0.2 }}
-                        className="inline-flex items-center gap-1 px-2 py-1 bg-orange-100 text-orange-700 text-xs rounded-md"
+                <AnimatePresence>
+                  {searchTerm && (
+                    <motion.span
+                      initial={{ scale: 0, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      exit={{ scale: 0, opacity: 0 }}
+                      transition={{ duration: 0.2 }}
+                      className="inline-flex items-center gap-1 px-2 py-1 bg-orange-100 text-orange-700 text-xs rounded-md"
+                    >
+                      "{searchTerm}"
+                      <button
+                        onClick={() => setSearchTerm("")}
+                        className="hover:text-orange-900 transition-colors"
                       >
-                        "{searchTerm}"
-                        <button
-                          onClick={() => setSearchTerm("")}
-                          className="hover:text-orange-900 transition-colors"
-                        >
-                          <X className="w-3 h-3" />
-                        </button>
-                      </motion.span>
-                    )}
+                        <X className="w-3 h-3" />
+                      </button>
+                    </motion.span>
+                  )}
 
-                    {selectedLanguage !== "all" && (
-                      <motion.span
-                        initial={{ scale: 0, opacity: 0 }}
-                        animate={{ scale: 1, opacity: 1 }}
-                        exit={{ scale: 0, opacity: 0 }}
-                        transition={{ duration: 0.2 }}
-                        className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded-md"
+                  {selectedLanguage !== "all" && (
+                    <motion.span
+                      initial={{ scale: 0, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      exit={{ scale: 0, opacity: 0 }}
+                      transition={{ duration: 0.2 }}
+                      className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded-md"
+                    >
+                      {
+                        languageOptions.find(
+                          (opt) => opt.value === selectedLanguage
+                        )?.label
+                      }
+                      <button
+                        onClick={() => setSelectedLanguage("all")}
+                        className="hover:text-blue-900 transition-colors"
                       >
-                        {
-                          languageOptions.find(
-                            (opt) => opt.value === selectedLanguage
-                          )?.label
-                        }
-                        <button
-                          onClick={() => setSelectedLanguage("all")}
-                          className="hover:text-blue-900 transition-colors"
-                        >
-                          <X className="w-3 h-3" />
-                        </button>
-                      </motion.span>
-                    )}
+                        <X className="w-3 h-3" />
+                      </button>
+                    </motion.span>
+                  )}
 
-                    {selectedExperience !== "all" && (
-                      <motion.span
-                        initial={{ scale: 0, opacity: 0 }}
-                        animate={{ scale: 1, opacity: 1 }}
-                        exit={{ scale: 0, opacity: 0 }}
-                        transition={{ duration: 0.2 }}
-                        className="inline-flex items-center gap-1 px-2 py-1 bg-purple-100 text-purple-700 text-xs rounded-md"
+                  {selectedExperience !== "all" && (
+                    <motion.span
+                      initial={{ scale: 0, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      exit={{ scale: 0, opacity: 0 }}
+                      transition={{ duration: 0.2 }}
+                      className="inline-flex items-center gap-1 px-2 py-1 bg-purple-100 text-purple-700 text-xs rounded-md"
+                    >
+                      {
+                        experienceOptions.find(
+                          (opt) => opt.value === selectedExperience
+                        )?.label
+                      }
+                      <button
+                        onClick={() => setSelectedExperience("all")}
+                        className="hover:text-purple-900 transition-colors"
                       >
-                        {
-                          experienceOptions.find(
-                            (opt) => opt.value === selectedExperience
-                          )?.label
-                        }
-                        <button
-                          onClick={() => setSelectedExperience("all")}
-                          className="hover:text-purple-900 transition-colors"
-                        >
-                          <X className="w-3 h-3" />
-                        </button>
-                      </motion.span>
-                    )}
+                        <X className="w-3 h-3" />
+                      </button>
+                    </motion.span>
+                  )}
 
-                    {selectedSpecialty !== "all" && (
-                      <motion.span
-                        initial={{ scale: 0, opacity: 0 }}
-                        animate={{ scale: 1, opacity: 1 }}
-                        exit={{ scale: 0, opacity: 0 }}
-                        transition={{ duration: 0.2 }}
-                        className="inline-flex items-center gap-1 px-2 py-1 bg-green-100 text-green-700 text-xs rounded-md"
+                  {selectedSpecialty !== "all" && (
+                    <motion.span
+                      initial={{ scale: 0, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      exit={{ scale: 0, opacity: 0 }}
+                      transition={{ duration: 0.2 }}
+                      className="inline-flex items-center gap-1 px-2 py-1 bg-green-100 text-green-700 text-xs rounded-md"
+                    >
+                      {selectedSpecialty}
+                      <button
+                        onClick={() => setSelectedSpecialty("all")}
+                        className="hover:text-green-900 transition-colors"
                       >
-                        {selectedSpecialty}
-                        <button
-                          onClick={() => setSelectedSpecialty("all")}
-                          className="hover:text-green-900 transition-colors"
-                        >
-                          <X className="w-3 h-3" />
-                        </button>
-                      </motion.span>
-                    )}
+                        <X className="w-3 h-3" />
+                      </button>
+                    </motion.span>
+                  )}
 
-                    {selectedAvailability !== "all" && (
-                      <motion.span
-                        initial={{ scale: 0, opacity: 0 }}
-                        animate={{ scale: 1, opacity: 1 }}
-                        exit={{ scale: 0, opacity: 0 }}
-                        transition={{ duration: 0.2 }}
-                        className="inline-flex items-center gap-1 px-2 py-1 bg-yellow-100 text-yellow-700 text-xs rounded-md"
+                  {selectedAvailability !== "all" && (
+                    <motion.span
+                      initial={{ scale: 0, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      exit={{ scale: 0, opacity: 0 }}
+                      transition={{ duration: 0.2 }}
+                      className="inline-flex items-center gap-1 px-2 py-1 bg-yellow-100 text-yellow-700 text-xs rounded-md"
+                    >
+                      {
+                        availabilityOptions.find(
+                          (opt) => opt.value === selectedAvailability
+                        )?.label
+                      }
+                      <button
+                        onClick={() => setSelectedAvailability("all")}
+                        className="hover:text-yellow-900 transition-colors"
                       >
-                        {
-                          availabilityOptions.find(
-                            (opt) => opt.value === selectedAvailability
-                          )?.label
-                        }
-                        <button
-                          onClick={() => setSelectedAvailability("all")}
-                          className="hover:text-yellow-900 transition-colors"
-                        >
-                          <X className="w-3 h-3" />
-                        </button>
-                      </motion.span>
-                    )}
-                  </AnimatePresence>
+                        <X className="w-3 h-3" />
+                      </button>
+                    </motion.span>
+                  )}
+                </AnimatePresence>
 
-                  <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={resetFilters}
-                    className="text-xs text-gray-500 hover:text-gray-700 underline transition-colors"
-                  >
-                    Xóa tất cả
-                  </motion.button>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={resetFilters}
+                  className="text-xs text-gray-500 hover:text-gray-700 underline transition-colors"
+                >
+                  Xóa tất cả
+                </motion.button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Main Content Grid */}
         <section className="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-6">
           {/* Main Content */}
           <div>
-            {/* Results */}
+            {/* Results Count */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3 }}
-              className="mb-6"
+              className="mb-5"
             >
-              <p className="text-gray-500 text-sm font-medium">
-                Tìm thấy {filteredMentors.length} mentor
+              <p className="text-gray-500 text-xs font-medium">
+                Hiện thị {filteredMentors.length} / 12 mentor
               </p>
             </motion.div>
 

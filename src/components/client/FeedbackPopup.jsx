@@ -186,7 +186,6 @@ const FeedbackPopup = ({ isOpen, onClose }) => {
     <Modal
       title={
         <div className="flex items-center gap-2">
-          <MessageSquare className="w-5 h-5 text-purple-900" />
           <span className="text-lg font-semibold text-purple-900">
             Đánh Giá Dịch Vụ
           </span>
