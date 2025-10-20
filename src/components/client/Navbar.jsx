@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from "react";
 import axiosClient from "../../apis/axiosClient";
 import { Link } from "react-router-dom";
+import FeedbackPopup from "./FeedbackPopup";
 
 const Navbar = () => {
   const [user, setUser] = useState(null);
   const [scrolled, setScrolled] = useState(false);
+  const [showFeedbackPopup, setShowFeedbackPopup] = useState(false);
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -47,7 +49,12 @@ const Navbar = () => {
             <Link to="/meeting">Phòng học</Link>
           </li>
           <li className="hover:text-purple-700 cursor-pointer">Mentor</li>
-          <li className="hover:text-purple-700 cursor-pointer">Dịch Vụ</li>
+          <li
+            className="hover:text-purple-700 cursor-pointer"
+            onClick={() => setShowFeedbackPopup(true)}
+          >
+            Feedback
+          </li>
         </ul>
         {user ? (
           <div className="flex items-center gap-2 cursor-pointer">
@@ -64,6 +71,11 @@ const Navbar = () => {
           <div className="text-sm text-gray-500">Đang tải...</div>
         )}
       </div>
+
+      <FeedbackPopup
+        isOpen={showFeedbackPopup}
+        onClose={() => setShowFeedbackPopup(false)}
+      />
     </nav>
   );
 };

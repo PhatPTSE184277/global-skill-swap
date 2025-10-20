@@ -5,6 +5,7 @@ import AdminProtectedRoute from "./AdminProtectedRoute";
 import { UserProvider } from "../../contexts/admin/UserContext";
 import { MentorProvider } from "../../contexts/admin/MentorContext";
 import AdminMentorPage from "../../pages/admin/MentorPage/AdminMentorPage";
+import FeedbackManagementPage from "../../pages/admin/FeedbackPage/FeedbackManagementPage";
 
 const AdminPageRoutes = [
   {
@@ -21,12 +22,24 @@ const AdminPageRoutes = [
       },
       {
         path: "accounts",
-        element: <UserProvider><AdminAccountPage /></UserProvider>,
+        element: (
+          <UserProvider>
+            <AdminAccountPage />
+          </UserProvider>
+        ),
       },
-       {
+      {
         path: "mentorcv",
-        element: <MentorProvider><AdminMentorPage /></MentorProvider>,
-      }
+        element: (
+          <MentorProvider>
+            <AdminMentorPage />
+          </MentorProvider>
+        ),
+      },
+      {
+        path: "feedbacks",
+        element: <FeedbackManagementPage />,
+      },
     ],
   },
 ];

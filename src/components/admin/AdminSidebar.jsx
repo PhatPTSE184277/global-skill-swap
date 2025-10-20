@@ -1,10 +1,23 @@
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
-  FaTachometerAlt, FaUser, FaChalkboardTeacher, FaComments, FaMoneyCheckAlt, FaCalendarAlt,
-  FaBook, FaFolderOpen, FaDoorOpen, FaHistory, FaRegFileAlt, FaClipboardList,
-  FaChevronDown, FaListUl, FaPlus
-} from 'react-icons/fa';
-import { useState } from 'react';
+  FaTachometerAlt,
+  FaUser,
+  FaChalkboardTeacher,
+  FaComments,
+  FaMoneyCheckAlt,
+  FaCalendarAlt,
+  FaBook,
+  FaFolderOpen,
+  FaDoorOpen,
+  FaHistory,
+  FaRegFileAlt,
+  FaClipboardList,
+  FaChevronDown,
+  FaListUl,
+  FaPlus,
+  FaStar,
+} from "react-icons/fa";
+import { useState } from "react";
 
 export default function AdminSidebar() {
   const location = useLocation();
@@ -13,25 +26,32 @@ export default function AdminSidebar() {
 
   const menu = [
     {
-      label: 'Bảng điều khiển',
-      path: '/admin/dashboard',
+      label: "Bảng điều khiển",
+      path: "/admin/dashboard",
       icon: <FaTachometerAlt className="w-5 h-5 mr-3 text-cyan-500" />,
-      color: 'cyan',
-      desc: 'Tổng quan & thống kê',
+      color: "cyan",
+      desc: "Tổng quan & thống kê",
     },
     {
-      label: 'Tài khoản',
-      path: '/admin/accounts',
+      label: "Tài khoản",
+      path: "/admin/accounts",
       icon: <FaUser className="w-5 h-5 mr-3 text-blue-500" />,
-      color: 'blue',
-      desc: 'Quản lý tài khoản người dùng',
+      color: "blue",
+      desc: "Quản lý tài khoản người dùng",
     },
     {
-      label: 'Hồ sơ Mentor',
-      path: '/admin/mentorcv',
+      label: "Hồ sơ Mentor",
+      path: "/admin/mentorcv",
       icon: <FaChalkboardTeacher className="w-5 h-5 mr-3 text-purple-500" />,
-      color: 'purple',
-      desc: 'Quản lý hồ sơ mentor',
+      color: "purple",
+      desc: "Quản lý hồ sơ mentor",
+    },
+    {
+      label: "Quản lý Feedback",
+      path: "/admin/feedbacks",
+      icon: <FaStar className="w-5 h-5 mr-3 text-orange-500" />,
+      color: "orange",
+      desc: "Xem và phản hồi feedback",
     },
     // {
     //   label: 'Diễn đàn',
@@ -101,19 +121,34 @@ export default function AdminSidebar() {
 
   const getMenuClass = (item) => {
     const isActive = location.pathname.startsWith(item.path);
-    let activeClass = '';
+    let activeClass = "";
     if (isActive) {
-      if (item.color === 'cyan') activeClass = 'bg-cyan-50 text-cyan-600 border-r-4 border-cyan-600';
-      if (item.color === 'blue') activeClass = 'bg-blue-50 text-blue-600 border-r-4 border-blue-600';
-      if (item.color === 'purple') activeClass = 'bg-purple-50 text-purple-600 border-r-4 border-purple-600';
-      if (item.color === 'green') activeClass = 'bg-green-50 text-green-600 border-r-4 border-green-600';
-      if (item.color === 'yellow') activeClass = 'bg-yellow-50 text-yellow-600 border-r-4 border-yellow-600';
-      if (item.color === 'pink') activeClass = 'bg-pink-50 text-pink-600 border-r-4 border-pink-600';
-      if (item.color === 'indigo') activeClass = 'bg-indigo-50 text-indigo-600 border-r-4 border-indigo-600';
-      if (item.color === 'orange') activeClass = 'bg-orange-50 text-orange-600 border-r-4 border-orange-600';
-      if (item.color === 'teal') activeClass = 'bg-teal-50 text-teal-600 border-r-4 border-teal-600';
-      if (item.color === 'red') activeClass = 'bg-red-50 text-red-600 border-r-4 border-red-600';
-      if (item.color === 'gray') activeClass = 'bg-gray-50 text-gray-600 border-r-4 border-gray-600';
+      if (item.color === "cyan")
+        activeClass = "bg-cyan-50 text-cyan-600 border-r-4 border-cyan-600";
+      if (item.color === "blue")
+        activeClass = "bg-blue-50 text-blue-600 border-r-4 border-blue-600";
+      if (item.color === "purple")
+        activeClass =
+          "bg-purple-50 text-purple-600 border-r-4 border-purple-600";
+      if (item.color === "green")
+        activeClass = "bg-green-50 text-green-600 border-r-4 border-green-600";
+      if (item.color === "yellow")
+        activeClass =
+          "bg-yellow-50 text-yellow-600 border-r-4 border-yellow-600";
+      if (item.color === "pink")
+        activeClass = "bg-pink-50 text-pink-600 border-r-4 border-pink-600";
+      if (item.color === "indigo")
+        activeClass =
+          "bg-indigo-50 text-indigo-600 border-r-4 border-indigo-600";
+      if (item.color === "orange")
+        activeClass =
+          "bg-orange-50 text-orange-600 border-r-4 border-orange-600";
+      if (item.color === "teal")
+        activeClass = "bg-teal-50 text-teal-600 border-r-4 border-teal-600";
+      if (item.color === "red")
+        activeClass = "bg-red-50 text-red-600 border-r-4 border-red-600";
+      if (item.color === "gray")
+        activeClass = "bg-gray-50 text-gray-600 border-r-4 border-gray-600";
     }
     return `admin-nav-item flex items-center px-4 py-3 rounded-lg text-gray-700 transition-all duration-200 group ${activeClass}`;
   };
@@ -121,10 +156,12 @@ export default function AdminSidebar() {
   return (
     <aside className="fixed left-0 top-0 h-screen w-64 bg-white shadow-lg border-r border-gray-200 z-40 overflow-y-auto sidebar-scroll pt-20">
       <div className="p-6">
-        {menu.map(item => (
+        {menu.map((item) => (
           <div key={item.path}>
             <div
-              className={getMenuClass(item) + (item.children ? ' cursor-pointer' : '')}
+              className={
+                getMenuClass(item) + (item.children ? " cursor-pointer" : "")
+              }
               onClick={() => {
                 if (item.children) {
                   setOpenMenu(openMenu === item.path ? null : item.path);
@@ -139,26 +176,26 @@ export default function AdminSidebar() {
                   {item.label}
                   {item.children && (
                     <FaChevronDown
-                      className={`ml-2 transition-transform ${openMenu === item.path ? 'rotate-180' : ''}`}
+                      className={`ml-2 transition-transform ${
+                        openMenu === item.path ? "rotate-180" : ""
+                      }`}
                       size={14}
                     />
                   )}
                 </div>
-                <div className="text-xs text-gray-500">
-                  {item.desc}
-                </div>
+                <div className="text-xs text-gray-500">{item.desc}</div>
               </div>
             </div>
             {item.children && openMenu === item.path && (
               <div className="ml-8 mt-1 space-y-1">
-                {item.children.map(sub => (
+                {item.children.map((sub) => (
                   <Link
                     to={sub.path}
                     key={sub.path}
                     className={`flex items-center px-3 py-2 rounded text-sm ${
                       location.pathname === sub.path
-                        ? 'bg-blue-100 text-blue-700 font-semibold'
-                        : 'text-gray-600 hover:bg-gray-100'
+                        ? "bg-blue-100 text-blue-700 font-semibold"
+                        : "text-gray-600 hover:bg-gray-100"
                     }`}
                   >
                     {sub.icon}
