@@ -27,6 +27,8 @@ const FeedbackManagementPage = () => {
   const [adminResponse, setAdminResponse] = useState("");
   const [showModal, setShowModal] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
+  const [showRatingChart, setShowRatingChart] = useState(false);
+  const [ratingDistribution, setRatingDistribution] = useState(null);
 
   const modules = [
     { value: "all", label: "Tất cả" },
@@ -87,7 +89,13 @@ const FeedbackManagementPage = () => {
       const stats = await feedbackService.getStatistics(
         filterModule !== "all" ? filterModule : null
       );
-      if (stats.success) setStatistics(stats.data);
+      if (stats.success) {
+        setStatistics(stats.data);
+        // Sử dụng ratingCounts từ API statistics
+        if (stats.data.ratingCounts) {
+          setRatingDistribution(stats.data.ratingCounts);
+        }
+      }
     } catch {
       // Handle error silently
     } finally {
@@ -216,7 +224,10 @@ const FeedbackManagementPage = () => {
                 </div>
               </div>
             </div>
-            <div className="bg-white rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow border-l-4 border-orange-500">
+            <div
+              onClick={() => setShowRatingChart(true)}
+              className="bg-white rounded-xl p-4 shadow-sm hover:shadow-lg transition-all border-l-4 border-orange-500 cursor-pointer transform hover:scale-105"
+            >
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-xs font-medium text-gray-600 uppercase tracking-wide mb-1">
@@ -518,6 +529,123 @@ const FeedbackManagementPage = () => {
               <p className="text-xs text-gray-500 mt-1">
                 {adminResponse.length} ký tự
               </p>
+            </div>
+          </div>
+        )}
+      </Modal>
+
+      {/* Rating Chart Modal */}
+      <Modal
+        title={
+          <div className="flex items-center gap-2">
+            <TrendingUp className="w-5 h-5 text-orange-600" />
+            <span className="text-lg font-bold text-orange-900">
+              Biểu Đồ Đánh Giá
+            </span>
+          </div>
+        }
+        open={showRatingChart}
+        onCancel={() => setShowRatingChart(false)}
+        footer={null}
+        width={600}
+      >
+        {!statistics || !ratingDistribution ? (
+          <div className="flex items-center justify-center py-12">
+            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-orange-600"></div>
+          </div>
+        ) : (
+          <div className="space-y-6">
+            {/* Average Rating Display */}
+            <div className="text-center py-4 bg-gradient-to-r from-orange-50 to-yellow-50 rounded-xl">
+              <p className="text-sm text-gray-600 mb-2">Điểm trung bình</p>
+              <div className="flex items-center justify-center gap-2">
+                <p className="text-5xl font-bold text-orange-600">
+                  {statistics.averageRating.toFixed(1)}
+                </p>
+                <div className="flex flex-col items-start">
+                  <div className="flex">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <Star
+                        key={star}
+                        className={`w-5 h-5 ${
+                          star <= Math.round(statistics.averageRating)
+                            ? "fill-orange-400 text-orange-400"
+                            : "text-gray-300"
+                        }`}
+                      />
+                    ))}
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">
+                    {statistics.total} đánh giá
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Rating Distribution */}
+            <div className="space-y-3">
+              <h3 className="text-sm font-semibold text-gray-700 mb-3">
+                Phân bố đánh giá
+              </h3>
+              {[5, 4, 3, 2, 1].map((rating) => {
+                const count = ratingDistribution[`${rating}_star`] || 0;
+                const percentage =
+                  statistics.total > 0 ? (count / statistics.total) * 100 : 0;
+
+                return (
+                  <div key={rating} className="flex items-center gap-3">
+                    <div className="flex items-center gap-1 w-16">
+                      <span className="text-sm font-medium text-gray-700">
+                        {rating}
+                      </span>
+                      <Star className="w-3 h-3 fill-orange-400 text-orange-400" />
+                    </div>
+
+                    <div className="flex-1 bg-gray-200 rounded-full h-3 overflow-hidden">
+                      <div
+                        className="h-full bg-gradient-to-r from-orange-400 to-orange-500 rounded-full transition-all duration-500"
+                        style={{ width: `${percentage}%` }}
+                      />
+                    </div>
+
+                    <div className="flex items-center gap-2 w-24 justify-end">
+                      <span className="text-sm font-semibold text-gray-700">
+                        {count}
+                      </span>
+                      <span className="text-xs text-gray-500">
+                        ({percentage.toFixed(0)}%)
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Quick Stats */}
+            <div className="grid grid-cols-3 gap-3 pt-4 border-t">
+              <div className="text-center p-3 bg-green-50 rounded-lg">
+                <p className="text-xs text-gray-600 mb-1">Tích cực</p>
+                <p className="text-lg font-bold text-green-600">
+                  {(ratingDistribution["5_star"] || 0) +
+                    (ratingDistribution["4_star"] || 0)}
+                </p>
+                <p className="text-xs text-gray-500">≥ 4 sao</p>
+              </div>
+              <div className="text-center p-3 bg-yellow-50 rounded-lg">
+                <p className="text-xs text-gray-600 mb-1">Trung bình</p>
+                <p className="text-lg font-bold text-yellow-600">
+                  {ratingDistribution["3_star"] || 0}
+                </p>
+                <p className="text-xs text-gray-500">3 sao</p>
+              </div>
+              <div className="text-center p-3 bg-red-50 rounded-lg">
+                <p className="text-xs text-gray-600 mb-1">Tiêu cực</p>
+                <p className="text-lg font-bold text-red-600">
+                  {(ratingDistribution["2_star"] || 0) +
+                    (ratingDistribution["1_star"] || 0)}
+                </p>
+                <p className="text-xs text-gray-500">≤ 2 sao</p>
+              </div>
             </div>
           </div>
         )}
