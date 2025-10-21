@@ -2,6 +2,7 @@ import { PostProvider } from "../contexts/PostContext";
 import UserDetail from "../pages/user/UserDetail";
 import UserEditPage from "../pages/user/UserEditPage";
 import UserPageLayout from "../layouts/user/UserPageLayout";
+import { CommentProvider } from "../contexts/CommentContext";
 
 const UserPageRoutes = [
   {
@@ -12,7 +13,9 @@ const UserPageRoutes = [
         path: "",
         element: (
           <PostProvider>
+            <CommentProvider>
             <UserDetail />
+            </CommentProvider>
           </PostProvider>
         ),
       },

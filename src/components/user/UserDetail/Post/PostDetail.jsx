@@ -212,7 +212,7 @@ const PostDetail = ({
                                             </div>
                                         </div>
 
-                                        <CommentSection comments={mockComments} />
+                                        <CommentSection postId={currentPost.id} />
                                     </div>
                                 </article>
                             </div>
