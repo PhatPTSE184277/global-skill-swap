@@ -199,7 +199,7 @@ const MentorRegister = () => {
         message.success("Cập nhật thông tin thành công!");
 
         // Chuyển đến trang thanh toán
-        navigate("/payment", {
+        navigate("/mentor/package", {
           state: {
             registrationData: formData,
           },

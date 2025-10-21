@@ -84,4 +84,24 @@ input:-webkit-autofill:active {
     overflow: hidden;
 }
 
+/* Form controls: dùng lặp cho input/select/textarea */
+.form-input,
+.form-select,
+.form-textarea {
+  @apply w-full px-4 py-2.5 border border-gray-300 rounded-lg transition-all;
+}
+
+/* Không để viền mặc định của trình duyệt hiện cùng ring của Tailwind */
+.form-input:focus,
+.form-select:focus,
+.form-textarea:focus {
+  outline: none;
+  @apply ring-2 ring-teal-500 border-transparent;
+}
+
+/* Loại bỏ spinner số trên webkit + firefox */
+input[type='number']::-webkit-inner-spin-button,
+input[type='number']::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+input[type='number'] { -moz-appearance: textfield; }
+
 @import 'tailwindcss';

@@ -24,8 +24,8 @@ const Pagination = ({ page, totalPages, onPageChange }) => {
       <button
         className={`w-7 h-7 rounded-full bg-white border flex items-center justify-center text-gray-500 text-xs hover:bg-gray-100 transition ${page === 0 ? 'cursor-default opacity-50' : 'cursor-pointer'}`}
         disabled={page === 0}
-        onClick={() => onPageChange(0)}
-        title="Trang đầu"
+        onClick={() => onPageChange(page - 1)}
+        title="Trang trước"
       >
         <FiChevronLeft size={16} />
       </button>
@@ -35,11 +35,10 @@ const Pagination = ({ page, totalPages, onPageChange }) => {
         ) : (
           <button
             key={p}
-            className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition ${
-              page === p
+            className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition ${page === p
                 ? 'bg-blue-500 text-white'
                 : 'bg-white border text-gray-700 hover:bg-gray-100 cursor-pointer'
-            }`}
+              }`}
             onClick={() => onPageChange(p)}
             disabled={page === p}
           >
@@ -50,8 +49,8 @@ const Pagination = ({ page, totalPages, onPageChange }) => {
       <button
         className={`w-7 h-7 rounded-full bg-white border flex items-center justify-center text-gray-500 text-xs hover:bg-gray-100 transition ${page === totalPages - 1 ? 'cursor-default opacity-50' : 'cursor-pointer'}`}
         disabled={page === totalPages - 1}
-        onClick={() => onPageChange(totalPages - 1)}
-        title="Trang cuối"
+        onClick={() => onPageChange(page + 1)}
+        title="Trang sau"
       >
         <FiChevronRight size={16} />
       </button>

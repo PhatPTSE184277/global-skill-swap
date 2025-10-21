@@ -67,7 +67,6 @@ const AdminAccountPage = () => {
         </div>
       </div>
 
-      {/* Members Table */}
       <div className="admin-card rounded-xl p-6 bg-white shadow">
         {loading ? (
           <AdminAccountListSkeleton />
