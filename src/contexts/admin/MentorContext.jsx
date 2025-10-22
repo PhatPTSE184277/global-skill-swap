@@ -11,12 +11,15 @@ export const MentorProvider = ({ children }) => {
 
     const fetchMentors = useCallback(async (params) => {
         setLoading(true);
-        try {
-            const response = await fetchAllMentorCVs(params);
-            const data = response.data || {};
-            setMentors(data.content || []);
-            setTotalPages(data.totalPages || 1);
-            setTotalElements(data.totalElements || 0);
+       try {
+        const response = await fetchAllMentorCVs(params);
+        const data = response.data || {};
+        console.log("Fetched Mentors Data:", data);
+
+        const teachers = (data.content || []).filter(m => m.accountRole === "TEACHER");
+        setMentors(teachers);
+        setTotalPages(data.totalPages || 1);
+        setTotalElements(teachers.length);
         } catch (error) {
             console.log(error);
         } finally {

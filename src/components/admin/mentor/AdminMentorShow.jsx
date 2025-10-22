@@ -57,7 +57,7 @@ const AdminMentorShow = ({ mentor, isSelected, onToggleSelect }) => {
         <div className="flex items-center justify-end gap-2">
           {mentor.profileCvUrl && (
             <button
-              className="w-8 h-8 rounded-full bg-blue-100 hover:bg-blue-200 flex items-center justify-center text-blue-600 transition-colors cursor-pointer"
+               className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-600 transition-colors cursor-pointer"
               title="Xem CV"
               onClick={() => setShowPdfModal(true)}
             >

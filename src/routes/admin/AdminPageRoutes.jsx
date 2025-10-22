@@ -9,6 +9,8 @@ import FeedbackManagementPage from "../../pages/admin/FeedbackPage/FeedbackManag
 import AdminProductPage from "../../pages/admin/ProductPage/AdminProductPage";
 import { ProductProvider } from "../../contexts/admin/ProductContext";
 import { DashboardProvider } from "../../contexts/admin/DashboardContext";
+import AdminInvoicePage from "../../pages/admin/InvoicePage/AdminInvoicePage";
+import { InvoiceProvider } from "../../contexts/admin/InvoiceContext";
 
 const AdminPageRoutes = [
   {
@@ -49,6 +51,14 @@ const AdminPageRoutes = [
           <ProductProvider>
             <AdminProductPage />
           </ProductProvider>
+        ),
+      },
+       {
+        path: "invoices",
+        element: (
+          <InvoiceProvider>
+            <AdminInvoicePage/>
+          </InvoiceProvider>
         ),
       },
       {
