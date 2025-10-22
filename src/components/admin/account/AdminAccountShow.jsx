@@ -1,21 +1,20 @@
 import { Pencil, Trash2, RotateCcw } from 'lucide-react';
-import { useContext, useState } from 'react';
+import {  useState } from 'react';
 import UserContext from '../../../contexts/admin/UserContext';
 import ConfirmModal from '../ConfirmModal';
 
-const AdminAccountShow = ({ account }) => {
-  const { deleteUser, restoreUser } = useContext(UserContext);
+const AdminAccountShow = ({ account, onDelete, onRestore }) => {
   const [showModal, setShowModal] = useState(false);
 
   const isDeleted = account.isActive === false;
 
   const handleAction = () => setShowModal(true);
 
-  const handleConfirm = () => {
+   const handleConfirm = () => {
     if (isDeleted) {
-      restoreUser && restoreUser(account._id || account.id);
+      onRestore && onRestore(account._id || account.id);
     } else {
-      deleteUser(account._id || account.id);
+      onDelete && onDelete(account._id || account.id);
     }
     setShowModal(false);
   };

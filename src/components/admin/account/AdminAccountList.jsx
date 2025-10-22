@@ -1,7 +1,7 @@
 import React from 'react';
 import AdminAccountShow from './AdminAccountShow';
 
-const AdminAccountList = ({ accounts = [] }) => {
+const AdminAccountList = ({ accounts = [], onDelete, onRestore }) => {
   if (!accounts || accounts.length === 0) {
     return (
       <div className="text-center py-12">
@@ -32,7 +32,11 @@ const AdminAccountList = ({ accounts = [] }) => {
                   key={account._id || index}
                   className={`border-b border-gray-100 ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}
                 >
-                  <AdminAccountShow account={account} />
+                  <AdminAccountShow
+                    account={account}
+                    onDelete={onDelete}
+                    onRestore={onRestore}
+                  />
                 </tr>
               ))}
             </tbody>
