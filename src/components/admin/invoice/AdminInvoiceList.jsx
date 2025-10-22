@@ -16,14 +16,15 @@ const AdminInvoiceList = ({ invoices = [] }) => {
       <div className="max-w-7xl mx-auto">
         <div className="bg-white rounded-lg border border-gray-200">
           <table className="min-w-full">
-            <thead className="bg-gray-100 border-b border-gray-200 top-0 z-20">
+            <thead className="bg-gray-100 border-b border-gray-300">
               <tr>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">ID</th>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Mã giao dịch</th>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Tổng tiền</th>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Trạng thái</th>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Ngày tạo</th>
-                <th className="px-6 py-4"></th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">ID</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Mã giao dịch</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Người tạo</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Tổng tiền</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Trạng thái</th>
+                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Ngày tạo</th>
+                <th className="px-6 py-4 text-right text-xs font-semibold text-gray-700 uppercase tracking-wider">Hành động</th>
               </tr>
             </thead>
             <tbody className="bg-white">

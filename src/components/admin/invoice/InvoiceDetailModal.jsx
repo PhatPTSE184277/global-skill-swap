@@ -17,6 +17,19 @@ const InvoiceDetailModal = ({ open, invoice, onClose }) => {
     }
   };
 
+  const getStatusText = (status) => {
+    switch (status) {
+      case 'PAID':
+        return 'Đã thanh toán';
+      case 'PENDING':
+        return 'Chờ thanh toán';
+      case 'CANCELLED':
+        return 'Đã hủy';
+      default:
+        return status;
+    }
+  };
+
   return (
     <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={onClose}>
       <div className="bg-white rounded-2xl shadow-2xl p-6 w-[90vw] max-w-2xl" onClick={e => e.stopPropagation()}>
@@ -45,41 +58,49 @@ const InvoiceDetailModal = ({ open, invoice, onClose }) => {
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <p className="text-sm text-gray-500 mb-1">Tổng tiền</p>
-              <p className="font-semibold text-gray-900">
-                {invoice.totalAmount ? `${invoice.totalAmount.toLocaleString()} ${invoice.currency.toUpperCase()}` : 'N/A'}
-              </p>
+              <p className="text-sm text-gray-500 mb-1">Người tạo</p>
+              <p className="font-semibold text-gray-900">{invoice.accountDto?.fullName || 'N/A'}</p>
+              <p className="text-xs text-gray-500">@{invoice.accountDto?.username || 'N/A'}</p>
             </div>
             <div>
-              <p className="text-sm text-gray-500 mb-1">Trạng thái</p>
-              <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(invoice.invoiceStatus)}`}>
-                {invoice.invoiceStatus}
-              </span>
+              <p className="text-sm text-gray-500 mb-1">Tổng tiền</p>
+              <p className="font-semibold text-gray-900">
+                {invoice.amount ? `${invoice.amount.toLocaleString()} ${invoice.currency.toUpperCase()}` : 'N/A'}
+              </p>
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
+            <div>
+              <p className="text-sm text-gray-500 mb-1">Trạng thái</p>
+              <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(invoice.invoiceStatus)}`}>
+                {getStatusText(invoice.invoiceStatus)}
+              </span>
+            </div>
             <div>
               <p className="text-sm text-gray-500 mb-1">Ngày tạo</p>
               <p className="font-semibold text-gray-900">
                 {invoice.createdAt ? new Date(invoice.createdAt).toLocaleDateString('vi-VN') : 'N/A'}
               </p>
             </div>
+          </div>
+
+          {invoice.updatedAt && (
             <div>
               <p className="text-sm text-gray-500 mb-1">Ngày cập nhật</p>
               <p className="font-semibold text-gray-900">
-                {invoice.updatedAt ? new Date(invoice.updatedAt).toLocaleDateString('vi-VN') : 'N/A'}
+                {new Date(invoice.updatedAt).toLocaleDateString('vi-VN')}
               </p>
             </div>
-          </div>
+          )}
 
           {invoice.transactionResponses && invoice.transactionResponses.length > 0 && (
             <div>
               <p className="text-sm text-gray-500 mb-2">Giao dịch liên quan</p>
-              <div className="border rounded-lg p-3 bg-gray-50">
+              <div className="border rounded-lg p-3 bg-gray-50 max-h-40 overflow-y-auto">
                 {invoice.transactionResponses.map((trans, idx) => (
-                  <div key={idx} className="text-sm text-gray-700">
-                    {JSON.stringify(trans)}
+                  <div key={idx} className="text-sm text-gray-700 mb-2">
+                    {JSON.stringify(trans, null, 2)}
                   </div>
                 ))}
               </div>

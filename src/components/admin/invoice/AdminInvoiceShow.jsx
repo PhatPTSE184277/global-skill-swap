@@ -41,8 +41,12 @@ const AdminInvoiceShow = ({ invoice }) => {
 
       <td className="px-6 py-5 text-sm text-gray-500 font-medium">#{invoice.id}</td>
       <td className="px-6 py-5 text-sm text-gray-600 font-mono">{invoice.transactionNumber}</td>
+      <td className="px-6 py-5 text-sm text-gray-900">
+        <div className="font-semibold">{invoice.accountDto?.fullName || 'N/A'}</div>
+        <div className="text-xs text-gray-500">@{invoice.accountDto?.username || 'N/A'}</div>
+      </td>
       <td className="px-6 py-5 text-sm font-medium text-gray-900">
-        {invoice.totalAmount ? `${invoice.totalAmount.toLocaleString()} ${invoice.currency.toUpperCase()}` : 'N/A'}
+        {invoice.amount ? `${invoice.amount.toLocaleString()} ${invoice.currency?.toUpperCase() || 'VND'}` : 'N/A'}
       </td>
       <td className="px-6 py-5">
         <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(invoice.invoiceStatus)}`}>
@@ -55,7 +59,7 @@ const AdminInvoiceShow = ({ invoice }) => {
       <td className="px-6 py-5">
         <div className="flex items-center justify-end gap-2">
           <button
-              className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-600 transition-colors cursor-pointer"
+            className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-600 transition-colors cursor-pointer"
             title="Xem chi tiết"
             onClick={() => setShowDetailModal(true)}
           >
