@@ -24,7 +24,7 @@ const MentorRegister = () => {
     fullName: "",
     email: "",
     phone: "",
-    location: "",
+    dateOfBirth: "",
     password: "", // Thêm field password
 
     // Professional Info
@@ -72,7 +72,7 @@ const MentorRegister = () => {
             fullName: userData.fullName || "",
             email: userData.email || "",
             phone: userData.phone || "",
-            location: userData.location || "", // Backend không có field này trong response
+            dateOfBirth: userData.dateOfBirth || "",
 
             // Professional Info
             expertise: userData.domainNames?.[0] || "",
@@ -216,11 +216,11 @@ const MentorRegister = () => {
           username: currentUserData.username, // Giữ nguyên username
           password: formData.password, // Password plain text mà user vừa nhập
           fullName: formData.fullName,
-          dateOfBirth: currentUserData.dateOfBirth, // Giữ nguyên dateOfBirth
+          dateOfBirth: formData.dateOfBirth,
           phone: formData.phone,
           email: formData.email,
-          avatarUrl: currentUserData.avatarUrl, // Giữ nguyên avatarUrl
-          accountRole: currentUserData.accountRole, // Giữ nguyên accountRole
+          avatarUrl: currentUserData.avatarUrl || null, // Giữ nguyên avatarUrl
+          accountRole: "USER", // Set accountRole là USER
           languageNames: formData.languages,
           domainNames: [
             formData.expertise === "other"
@@ -423,15 +423,15 @@ const MentorRegister = () => {
 
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Địa chỉ *
+                          Ngày sinh *
                         </label>
                         <input
-                          type="text"
-                          name="location"
-                          value={formData.location}
+                          type="date"
+                          name="dateOfBirth"
+                          value={formData.dateOfBirth}
                           onChange={handleInputChange}
                           className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
-                          placeholder="TP. Hồ Chí Minh"
+                          placeholder="dd/mm/yyyy"
                         />
                       </div>
 

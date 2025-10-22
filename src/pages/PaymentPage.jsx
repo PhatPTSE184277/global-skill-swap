@@ -192,9 +192,18 @@ const PaymentPage = () => {
   ]);
 
   const formatTime = (seconds) => {
-    if (!seconds) return "00:00";
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
+    if (!seconds || seconds <= 0) return "00:00:00";
+
+    const hours = Math.floor(seconds / 3600);
+    const mins = Math.floor((seconds % 3600) / 60);
+    const secs = Math.floor(seconds % 60);
+
+    if (hours > 0) {
+      return `${hours.toString().padStart(2, "0")}:${mins
+        .toString()
+        .padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
+    }
+
     return `${mins.toString().padStart(2, "0")}:${secs
       .toString()
       .padStart(2, "0")}`;
@@ -285,7 +294,7 @@ const PaymentPage = () => {
                   )}
 
                   {/* Instructions */}
-                  <div className="bg-blue-50 border border-blue-200 rounded-xl p-6">
+                  <div className="bg-blue-50 border border-blue-200 rounded-xl p-6 mb-6">
                     <h4 className="font-bold text-blue-900 mb-3 flex items-center text-lg">
                       <FiAlertCircle className="w-5 h-5 mr-2" />
                       Hướng dẫn thanh toán
@@ -297,6 +306,117 @@ const PaymentPage = () => {
                       <li>Xác nhận thanh toán</li>
                     </ol>
                   </div>
+
+                  {/* Manual Payment Instructions */}
+                  {invoiceData && (
+                    <div className="bg-gradient-to-br from-purple-50 to-indigo-50 border-2 border-purple-200 rounded-xl p-6">
+                      <h4 className="font-bold text-purple-900 mb-4 flex items-center text-lg">
+                        <FiAlertCircle className="w-5 h-5 mr-2" />
+                        Hoặc chuyển khoản thủ công
+                      </h4>
+                      <div className="space-y-4">
+                        {/* Bank Name */}
+                        <div className="bg-white rounded-lg p-4">
+                          <p className="text-xs text-gray-500 mb-1">
+                            Ngân hàng
+                          </p>
+                          <p className="font-bold text-gray-900 text-lg">
+                            {invoiceData.sePayResponse?.bankName ||
+                              "Ngân hàng TMCP Á Châu (ACB)"}
+                          </p>
+                        </div>
+
+                        {/* Account Number */}
+                        <div className="bg-white rounded-lg p-4">
+                          <p className="text-xs text-gray-500 mb-1">
+                            Số tài khoản
+                          </p>
+                          <div className="flex items-center justify-between">
+                            <p className="font-mono font-bold text-gray-900 text-xl">
+                              {invoiceData.sePayResponse?.accountNumber ||
+                                "123456789"}
+                            </p>
+                            <button
+                              onClick={() => {
+                                navigator.clipboard.writeText(
+                                  invoiceData.sePayResponse?.accountNumber ||
+                                    "123456789"
+                                );
+                                message.success("Đã sao chép số tài khoản");
+                              }}
+                              className="text-purple-600 hover:text-purple-700 text-sm font-semibold"
+                            >
+                              Sao chép
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Account Holder */}
+                        <div className="bg-white rounded-lg p-4">
+                          <p className="text-xs text-gray-500 mb-1">
+                            Chủ tài khoản
+                          </p>
+                          <p className="font-bold text-gray-900">
+                            {invoiceData.sePayResponse?.accountHolder ||
+                              "CONG TY TNHH GLOBAL SKILL SWAP"}
+                          </p>
+                        </div>
+
+                        {/* Amount */}
+                        <div className="bg-white rounded-lg p-4">
+                          <p className="text-xs text-gray-500 mb-1">Số tiền</p>
+                          <div className="flex items-center justify-between">
+                            <p className="font-bold text-orange-600 text-2xl">
+                              {paymentData.amount.toLocaleString("vi-VN")} đ
+                            </p>
+                            <button
+                              onClick={() => {
+                                navigator.clipboard.writeText(
+                                  paymentData.amount.toString()
+                                );
+                                message.success("Đã sao chép số tiền");
+                              }}
+                              className="text-purple-600 hover:text-purple-700 text-sm font-semibold"
+                            >
+                              Sao chép
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Transfer Content */}
+                        <div className="bg-white rounded-lg p-4">
+                          <p className="text-xs text-gray-500 mb-1">
+                            Nội dung chuyển khoản
+                          </p>
+                          <div className="flex items-center justify-between">
+                            <p className="font-mono font-bold text-gray-900 break-all pr-2">
+                              {invoiceData.transactionNumber}
+                            </p>
+                            <button
+                              onClick={() => {
+                                navigator.clipboard.writeText(
+                                  invoiceData.transactionNumber
+                                );
+                                message.success("Đã sao chép nội dung");
+                              }}
+                              className="text-purple-600 hover:text-purple-700 text-sm font-semibold flex-shrink-0"
+                            >
+                              Sao chép
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Warning */}
+                        <div className="bg-yellow-50 border border-yellow-300 rounded-lg p-4">
+                          <p className="text-xs text-yellow-800 font-medium">
+                            ⚠️ <strong>Lưu ý quan trọng:</strong> Vui lòng nhập
+                            chính xác nội dung chuyển khoản để hệ thống tự động
+                            xác nhận thanh toán của bạn.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               ) : (
                 /* Error */
