@@ -14,7 +14,7 @@ const statusOptions = [
 ];
 
 const AdminAccountPage = () => {
-  const { users, loading, fetchUsers, totalPages } = useContext(UserContext);
+  const { users, loading, fetchUsers, totalPages, deleteUser, restoreUser } = useContext(UserContext);
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(0);
   const [isActive, setIsActive] = useState('all');
@@ -28,6 +28,12 @@ const AdminAccountPage = () => {
     });
   }, [fetchUsers, page, size, isActive]);
 
+  const currentParams = {
+    page,
+    size,
+    ...(isActive !== 'all' ? { isActive: isActive === 'true' } : {})
+  };
+
   const filteredAccounts = users.filter(member =>
     (member.username || '').toLowerCase().includes(search.toLowerCase()) ||
     (member.email || '').toLowerCase().includes(search.toLowerCase())
@@ -35,7 +41,7 @@ const AdminAccountPage = () => {
 
   return (
     <div className="max-w-7xl mx-auto mt-8">
-      {/* Header */}
+
       <div className="mb-8 flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-gray-800 flex items-center">
@@ -48,7 +54,7 @@ const AdminAccountPage = () => {
         </div>
       </div>
 
-      {/* Search & Filter */}
+
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
         <div className="w-full md:w-48">
           <AdminSelect
@@ -67,13 +73,16 @@ const AdminAccountPage = () => {
         </div>
       </div>
 
-      {/* Members Table */}
       <div className="admin-card rounded-xl p-6 bg-white shadow">
         {loading ? (
           <AdminAccountListSkeleton />
         ) : (
           <>
-            <AdminAccountList accounts={filteredAccounts} />
+            <AdminAccountList
+              accounts={filteredAccounts}
+              onDelete={userId => deleteUser(userId, currentParams)}
+              onRestore={userId => restoreUser(userId, currentParams)}
+            />
             <Pagination
               page={page}
               totalPages={totalPages}

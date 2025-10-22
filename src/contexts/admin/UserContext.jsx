@@ -24,29 +24,35 @@ export const UserProvider = ({ children }) => {
         }
     }, []);
 
-    const deleteUser = useCallback(async (userId) => {
+    const deleteUser = useCallback(
+    async (userId, params) => {
         setLoading(true);
         try {
             await deleteUserById(userId);
-            await fetchUsers();
+            await fetchUsers(params);   
         } catch (error) {
             console.log(error);
         } finally {
             setLoading(false);
         }
-    }, [fetchUsers]);
+    },
+    [fetchUsers]
+);
 
-    const restoreUser = useCallback(async (userId) => {
+const restoreUser = useCallback(
+    async (userId, params) => {
         setLoading(true);
         try {
             await restoreUserById(userId);
-            await fetchUsers();
+            await fetchUsers(params);
         } catch (error) {
             console.log(error);
         } finally {
             setLoading(false);
         }
-    }, [fetchUsers]);
+    },
+    [fetchUsers]
+);
 
     const value = {
         users,

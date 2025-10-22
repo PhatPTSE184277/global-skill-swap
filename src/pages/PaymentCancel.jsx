@@ -8,7 +8,7 @@ import {
   FiArrowLeft,
   FiAlertTriangle,
 } from "react-icons/fi";
-
+  
 const PaymentCancel = () => {
   const navigate = useNavigate();
   const location = useLocation();

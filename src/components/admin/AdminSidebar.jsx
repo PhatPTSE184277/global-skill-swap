@@ -3,19 +3,10 @@ import {
   FaTachometerAlt,
   FaUser,
   FaChalkboardTeacher,
-  FaComments,
-  FaMoneyCheckAlt,
-  FaCalendarAlt,
-  FaBook,
-  FaFolderOpen,
-  FaDoorOpen,
-  FaHistory,
-  FaRegFileAlt,
-  FaClipboardList,
   FaChevronDown,
-  FaListUl,
-  FaPlus,
   FaStar,
+  FaBoxOpen,
+  FaExchangeAlt
 } from "react-icons/fa";
 import { useState } from "react";
 
@@ -45,6 +36,20 @@ export default function AdminSidebar() {
       icon: <FaChalkboardTeacher className="w-5 h-5 mr-3 text-purple-500" />,
       color: "purple",
       desc: "Quản lý hồ sơ mentor",
+    },
+    {
+      label: "Gói Mentor",
+      path: "/admin/products",
+      icon: <FaBoxOpen className="w-5 h-5 mr-3 text-teal-500" />,
+      color: "teal",
+      desc: "Quản lý các gói mentor",
+    },
+     {
+      label: "Quản lý giao dịch",
+      path: "/admin/transactions",
+      icon: <FaExchangeAlt className="w-5 h-5 mr-3 text-pink-500" />,
+      color: "pink",
+      desc: "Kiểm tra & quản lý giao dịch",
     },
     {
       label: "Quản lý Feedback",
@@ -176,9 +181,8 @@ export default function AdminSidebar() {
                   {item.label}
                   {item.children && (
                     <FaChevronDown
-                      className={`ml-2 transition-transform ${
-                        openMenu === item.path ? "rotate-180" : ""
-                      }`}
+                      className={`ml-2 transition-transform ${openMenu === item.path ? "rotate-180" : ""
+                        }`}
                       size={14}
                     />
                   )}
@@ -192,11 +196,10 @@ export default function AdminSidebar() {
                   <Link
                     to={sub.path}
                     key={sub.path}
-                    className={`flex items-center px-3 py-2 rounded text-sm ${
-                      location.pathname === sub.path
+                    className={`flex items-center px-3 py-2 rounded text-sm ${location.pathname === sub.path
                         ? "bg-blue-100 text-blue-700 font-semibold"
                         : "text-gray-600 hover:bg-gray-100"
-                    }`}
+                      }`}
                   >
                     {sub.icon}
                     <span className="font-semibold">{sub.label}</span>
