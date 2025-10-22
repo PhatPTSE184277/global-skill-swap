@@ -298,6 +298,39 @@ const PaymentSuccess = () => {
                     {finalTransactionId}
                   </span>
                 </div>
+                {/* Buyer Info */}
+                <div className="space-y-3">
+                  <h3 className="text-sm font-semibold text-gray-700 mb-2">
+                    Thông tin người mua
+                  </h3>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Người mua:</span>
+                    <span className="font-medium">
+                      {paymentData?.buyer?.fullName ||
+                        registrationData?.fullName ||
+                        bookingData?.buyerName ||
+                        "-"}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Email:</span>
+                    <span className="font-medium">
+                      {paymentData?.buyer?.email ||
+                        registrationData?.email ||
+                        bookingData?.buyerEmail ||
+                        "-"}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">SĐT:</span>
+                    <span className="font-medium">
+                      {paymentData?.buyer?.phone ||
+                        registrationData?.phone ||
+                        bookingData?.buyerPhone ||
+                        "-"}
+                    </span>
+                  </div>
+                </div>
                 {vnpTransactionNo && (
                   <div className="flex justify-between">
                     <span className="text-gray-600">Mã GD VNPay:</span>

@@ -18,12 +18,14 @@ const MentorRegister = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const [currentUserData, setCurrentUserData] = useState(null); // Lưu data user hiện tại
   const [loading, setLoading] = useState(false);
+  const [isLoadingUserData, setIsLoadingUserData] = useState(true); // Loading state cho việc load user data
   const [formData, setFormData] = useState({
     // Personal Info
     fullName: "",
     email: "",
     phone: "",
-    location: "",
+    dateOfBirth: "",
+    password: "", // Thêm field password
 
     // Professional Info
     expertise: "",
@@ -52,22 +54,49 @@ const MentorRegister = () => {
   useEffect(() => {
     const loadCurrentUser = async () => {
       try {
-        const userData = await userService.getCurrentUser();
+        setIsLoadingUserData(true);
+        const response = await userService.getCurrentUser();
+        console.log("=== RAW API RESPONSE ===");
+        console.log("Full response:", JSON.stringify(response, null, 2));
+
+        // API trả về { success, message, data: {...} }
+        const userData = response?.data || response;
+
         if (userData) {
+          // Lưu toàn bộ data từ API để giữ nguyên các field khác
           setCurrentUserData(userData);
-          // Tự động điền các field đã có
-          setFormData((prev) => ({
-            ...prev,
+
+          // Tự động điền các field đã có vào form
+          setFormData({
+            // Personal Info
             fullName: userData.fullName || "",
             email: userData.email || "",
             phone: userData.phone || "",
-            // Không tự động điền password vì bảo mật
-            languages: userData.languageNames || [],
+            dateOfBirth: userData.dateOfBirth || "",
+
+            // Professional Info
             expertise: userData.domainNames?.[0] || "",
-          }));
+            customExpertise: "",
+            languages: userData.languageNames || [],
+            bio: userData.bio || "",
+            hourlyRate: "",
+
+            // Documents
+            cv: null,
+            certificates: [],
+
+            // Payment
+            paymentMethod: "zalopay",
+            cardNumber: "",
+            expiryDate: "",
+            cvv: "",
+            cardName: "",
+          });
         }
       } catch (error) {
         console.error("Error loading user data:", error);
+      } finally {
+        setIsLoadingUserData(false);
       }
     };
     loadCurrentUser();
@@ -148,11 +177,12 @@ const MentorRegister = () => {
       if (
         !formData.fullName ||
         !formData.email ||
+        !formData.password ||
         !formData.expertise ||
         !formData.cv
       ) {
         message.error(
-          "Vui lòng điền đầy đủ thông tin và tải lên CV trước khi tiếp tục."
+          "Vui lòng điền đầy đủ thông tin (bao gồm mật khẩu) và tải lên CV trước khi tiếp tục."
         );
         return;
       }
@@ -172,27 +202,44 @@ const MentorRegister = () => {
       try {
         setLoading(true);
 
-        // Chuẩn bị data để gửi API
+        // Kiểm tra có dữ liệu user chưa
+        if (!currentUserData) {
+          message.error(
+            "Chưa tải được thông tin người dùng. Vui lòng thử lại."
+          );
+          setLoading(false);
+          return;
+        }
+
+        // Chuẩn bị data để gửi API theo đúng schema PUT /user/me
         const updateData = {
-          ...currentUserData, // Giữ nguyên các field khác
-          username: currentUserData?.username, // Giữ nguyên username
+          username: currentUserData.username, // Giữ nguyên username
+          password: formData.password, // Password plain text mà user vừa nhập
           fullName: formData.fullName,
-          email: formData.email,
+          dateOfBirth: formData.dateOfBirth,
           phone: formData.phone,
+          email: formData.email,
+          avatarUrl: currentUserData.avatarUrl || null, // Giữ nguyên avatarUrl
+          accountRole: "USER", // Set accountRole là USER
           languageNames: formData.languages,
           domainNames: [
             formData.expertise === "other"
               ? formData.customExpertise
               : formData.expertise,
           ],
-          // KHÔNG gửi password nếu không thay đổi
         };
+
+        console.log(
+          "Sending update data:",
+          JSON.stringify(updateData, null, 2)
+        );
 
         // Gọi API update user
         await userService.updateCurrentUser(updateData);
 
         // Upload CV nếu có
         if (formData.cv) {
+          console.log("Uploading CV:", formData.cv.name);
           await userService.uploadCV(formData.cv);
         }
 
@@ -206,6 +253,7 @@ const MentorRegister = () => {
         });
       } catch (error) {
         console.error("Error updating user:", error);
+        console.error("Error response:", error.response?.data);
         message.error(
           error.response?.data?.message ||
             "Có lỗi xảy ra khi cập nhật thông tin. Vui lòng thử lại."
@@ -306,337 +354,369 @@ const MentorRegister = () => {
           exit={{ opacity: 0, x: -50 }}
           className="bg-white rounded-2xl shadow-xl p-8"
         >
-          <AnimatePresence mode="wait">
-            {/* Step 1: Personal Information */}
-            {currentStep === 1 && (
-              <motion.div
-                key="step1"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-              >
-                <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center">
-                  <FiUser className="mr-3 text-orange-500" />
-                  Thông tin cá nhân
-                </h2>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Họ và tên *
-                    </label>
-                    <input
-                      type="text"
-                      name="fullName"
-                      value={formData.fullName}
-                      onChange={handleInputChange}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
-                      placeholder="Nguyễn Văn A"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Email *
-                    </label>
-                    <input
-                      type="email"
-                      name="email"
-                      value={formData.email}
-                      onChange={handleInputChange}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
-                      placeholder="example@email.com"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Số điện thoại *
-                    </label>
-                    <input
-                      type="tel"
-                      name="phone"
-                      value={formData.phone}
-                      onChange={handleInputChange}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
-                      placeholder="0123456789"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Địa chỉ *
-                    </label>
-                    <input
-                      type="text"
-                      name="location"
-                      value={formData.location}
-                      onChange={handleInputChange}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
-                      placeholder="TP. Hồ Chí Minh"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Lĩnh vực chuyên môn *
-                    </label>
-                    <select
-                      name="expertise"
-                      value={formData.expertise}
-                      onChange={handleInputChange}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
-                    >
-                      <option value="">Chọn lĩnh vực</option>
-                      <option value="technology">Công nghệ thông tin</option>
-                      <option value="business">Kinh doanh</option>
-                      <option value="design">Thiết kế</option>
-                      <option value="marketing">Marketing</option>
-                      <option value="finance">Tài chính</option>
-                      <option value="education">Giáo dục</option>
-                      <option value="other">Khác (Tự nhập)</option>
-                    </select>
-
-                    {/* Input field xuất hiện khi chọn "Khác" */}
-                    {formData.expertise === "other" && (
-                      <input
-                        type="text"
-                        name="customExpertise"
-                        value={formData.customExpertise}
-                        onChange={handleInputChange}
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all mt-3"
-                        placeholder="Nhập lĩnh vực chuyên môn của bạn"
-                      />
-                    )}
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-3">
-                      Ngôn ngữ dạy * (Có thể chọn nhiều)
-                    </label>
-                    <div className="flex gap-6">
-                      <label className="flex items-center space-x-2 cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={formData.languages.includes("chinese")}
-                          onChange={() => handleLanguageChange("chinese")}
-                          className="w-5 h-5 text-orange-500 border-gray-300 rounded focus:ring-orange-500"
-                        />
-                        <span className="text-gray-700 font-medium">
-                          Tiếng Trung
-                        </span>
-                      </label>
-
-                      <label className="flex items-center space-x-2 cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={formData.languages.includes("english")}
-                          onChange={() => handleLanguageChange("english")}
-                          className="w-5 h-5 text-orange-500 border-gray-300 rounded focus:ring-orange-500"
-                        />
-                        <span className="text-gray-700 font-medium">
-                          Tiếng Anh
-                        </span>
-                      </label>
-                    </div>
-                    {formData.languages.length > 0 && (
-                      <p className="text-sm text-green-600 mt-2">
-                        Đã chọn:{" "}
-                        {formData.languages
-                          .map((lang) =>
-                            lang === "chinese" ? "Tiếng Trung" : "Tiếng Anh"
-                          )
-                          .join(", ")}
-                      </p>
-                    )}
-                  </div>
-                </div>
-              </motion.div>
-            )}
-
-            {/* Step 2: Documents Upload */}
-            {currentStep === 2 && (
-              <motion.div
-                key="step2"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-              >
-                <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center">
-                  <FiFileText className="mr-3 text-purple-700" />
-                  Tài liệu & CV
-                </h2>
-
-                {/* CV Upload */}
-                <div className="mb-8">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    CV/Resume (PDF) *
-                  </label>
-                  <div
-                    className={`relative border-2 border-dashed rounded-xl p-8 text-center transition-all ${
-                      dragActive
-                        ? "border-orange-500 bg-orange-50"
-                        : "border-gray-300 hover:border-orange-400"
-                    }`}
-                    onDragEnter={handleDrag}
-                    onDragLeave={handleDrag}
-                    onDragOver={handleDrag}
-                    onDrop={handleDrop}
+          {/* Loading User Data Indicator */}
+          {isLoadingUserData ? (
+            <div className="flex items-center justify-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500 mr-3"></div>
+              <span className="text-gray-600">
+                Đang tải thông tin của bạn...
+              </span>
+            </div>
+          ) : (
+            <>
+              <AnimatePresence mode="wait">
+                {/* Step 1: Personal Information */}
+                {currentStep === 1 && (
+                  <motion.div
+                    key="step1"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
                   >
-                    {isUploading ? (
-                      <div className="space-y-4">
-                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto"></div>
-                        <div className="w-full bg-gray-200 rounded-full h-2">
-                          <motion.div
-                            className="bg-orange-500 h-2 rounded-full"
-                            initial={{ width: 0 }}
-                            animate={{ width: `${uploadProgress}%` }}
+                    <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+                      <FiUser className="mr-3 text-orange-500" />
+                      Thông tin cá nhân
+                    </h2>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Họ và tên *
+                        </label>
+                        <input
+                          type="text"
+                          name="fullName"
+                          value={formData.fullName}
+                          onChange={handleInputChange}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
+                          placeholder="Nguyễn Văn A"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Email *
+                        </label>
+                        <input
+                          type="email"
+                          name="email"
+                          value={formData.email}
+                          onChange={handleInputChange}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
+                          placeholder="example@email.com"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Số điện thoại *
+                        </label>
+                        <input
+                          type="tel"
+                          name="phone"
+                          value={formData.phone}
+                          onChange={handleInputChange}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
+                          placeholder="0123456789"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Ngày sinh *
+                        </label>
+                        <input
+                          type="date"
+                          name="dateOfBirth"
+                          value={formData.dateOfBirth}
+                          onChange={handleInputChange}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
+                          placeholder="dd/mm/yyyy"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Mật khẩu hiện tại *
+                        </label>
+                        <input
+                          type="password"
+                          name="password"
+                          value={formData.password}
+                          onChange={handleInputChange}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
+                          placeholder="Nhập mật khẩu để xác nhận"
+                          autoComplete="current-password"
+                        />
+                        <p className="text-xs text-gray-500 mt-1">
+                          Vui lòng nhập mật khẩu hiện tại để cập nhật thông tin
+                        </p>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Lĩnh vực chuyên môn *
+                        </label>
+                        <select
+                          name="expertise"
+                          value={formData.expertise}
+                          onChange={handleInputChange}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
+                        >
+                          <option value="">Chọn lĩnh vực</option>
+                          <option value="technology">
+                            Công nghệ thông tin
+                          </option>
+                          <option value="business">Kinh doanh</option>
+                          <option value="design">Thiết kế</option>
+                          <option value="marketing">Marketing</option>
+                          <option value="finance">Tài chính</option>
+                          <option value="education">Giáo dục</option>
+                          <option value="other">Khác (Tự nhập)</option>
+                        </select>
+
+                        {/* Input field xuất hiện khi chọn "Khác" */}
+                        {formData.expertise === "other" && (
+                          <input
+                            type="text"
+                            name="customExpertise"
+                            value={formData.customExpertise}
+                            onChange={handleInputChange}
+                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all mt-3"
+                            placeholder="Nhập lĩnh vực chuyên môn của bạn"
                           />
-                        </div>
-                        <p className="text-sm text-gray-600">
-                          Đang tải lên... {uploadProgress}%
-                        </p>
+                        )}
                       </div>
-                    ) : formData.cv ? (
-                      <div className="space-y-2">
-                        <FiCheck className="w-12 h-12 text-green-500 mx-auto" />
-                        <p className="text-green-600 font-medium">
-                          {formData.cv.name}
-                        </p>
-                        <button
-                          onClick={() =>
-                            setFormData((prev) => ({ ...prev, cv: null }))
-                          }
-                          className="text-red-500 text-sm hover:underline"
-                        >
-                          Xóa file
-                        </button>
-                      </div>
-                    ) : (
-                      <div className="space-y-4">
-                        <FiUpload className="w-12 h-12 text-gray-400 mx-auto" />
-                        <div>
-                          <p className="text-lg font-medium text-gray-700">
-                            Kéo thả file CV của bạn vào đây
-                          </p>
-                          <p className="text-sm text-gray-500 mt-1">
-                            hoặc{" "}
-                            <label className="text-orange-500 hover:text-orange-600 cursor-pointer font-medium">
-                              chọn file
-                              <input
-                                type="file"
-                                accept=".pdf"
-                                className="hidden"
-                                onChange={(e) =>
-                                  handleFileUpload(e.target.files, "cv")
-                                }
-                              />
-                            </label>
-                          </p>
-                          <p className="text-xs text-gray-400 mt-2">
-                            Chỉ hỗ trợ file PDF (tối đa 10MB)
-                          </p>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
 
-                {/* Certificates Upload */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Chứng chỉ/Bằng cấp (tùy chọn)
-                  </label>
-                  <div className="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:border-purple-400 transition-all">
-                    <FiUpload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-                    <p className="text-sm text-gray-600 mb-2">
-                      Tải lên chứng chỉ, bằng cấp
-                    </p>
-                    <label className="text-purple-700 hover:text-purple-800 cursor-pointer font-medium text-sm">
-                      Chọn files
-                      <input
-                        type="file"
-                        accept=".pdf,.jpg,.jpeg,.png"
-                        multiple
-                        className="hidden"
-                        onChange={(e) =>
-                          handleFileUpload(e.target.files, "certificates")
-                        }
-                      />
-                    </label>
-                  </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-3">
+                          Ngôn ngữ dạy * (Có thể chọn nhiều)
+                        </label>
+                        <div className="flex gap-6">
+                          <label className="flex items-center space-x-2 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={formData.languages.includes("chinese")}
+                              onChange={() => handleLanguageChange("chinese")}
+                              className="w-5 h-5 text-orange-500 border-gray-300 rounded focus:ring-orange-500"
+                            />
+                            <span className="text-gray-700 font-medium">
+                              Tiếng Trung
+                            </span>
+                          </label>
 
-                  {formData.certificates.length > 0 && (
-                    <div className="mt-4 space-y-2">
-                      {formData.certificates.map((file, index) => (
-                        <div
-                          key={index}
-                          className="flex items-center justify-between bg-gray-50 p-3 rounded-lg"
-                        >
-                          <span className="text-sm text-gray-700">
-                            {file.name}
-                          </span>
-                          <button
-                            onClick={() => {
-                              setFormData((prev) => ({
-                                ...prev,
-                                certificates: prev.certificates.filter(
-                                  (_, i) => i !== index
-                                ),
-                              }));
-                            }}
-                            className="text-red-500 hover:text-red-700"
-                          >
-                            <span className="text-sm">Xóa</span>
-                          </button>
+                          <label className="flex items-center space-x-2 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={formData.languages.includes("english")}
+                              onChange={() => handleLanguageChange("english")}
+                              className="w-5 h-5 text-orange-500 border-gray-300 rounded focus:ring-orange-500"
+                            />
+                            <span className="text-gray-700 font-medium">
+                              Tiếng Anh
+                            </span>
+                          </label>
                         </div>
-                      ))}
+                        {formData.languages.length > 0 && (
+                          <p className="text-sm text-green-600 mt-2">
+                            Đã chọn:{" "}
+                            {formData.languages
+                              .map((lang) =>
+                                lang === "chinese" ? "Tiếng Trung" : "Tiếng Anh"
+                              )
+                              .join(", ")}
+                          </p>
+                        )}
+                      </div>
                     </div>
+                  </motion.div>
+                )}
+
+                {/* Step 2: Documents Upload */}
+                {currentStep === 2 && (
+                  <motion.div
+                    key="step2"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                  >
+                    <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+                      <FiFileText className="mr-3 text-purple-700" />
+                      Tài liệu & CV
+                    </h2>
+
+                    {/* CV Upload */}
+                    <div className="mb-8">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        CV/Resume (PDF) *
+                      </label>
+                      <div
+                        className={`relative border-2 border-dashed rounded-xl p-8 text-center transition-all ${
+                          dragActive
+                            ? "border-orange-500 bg-orange-50"
+                            : "border-gray-300 hover:border-orange-400"
+                        }`}
+                        onDragEnter={handleDrag}
+                        onDragLeave={handleDrag}
+                        onDragOver={handleDrag}
+                        onDrop={handleDrop}
+                      >
+                        {isUploading ? (
+                          <div className="space-y-4">
+                            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto"></div>
+                            <div className="w-full bg-gray-200 rounded-full h-2">
+                              <motion.div
+                                className="bg-orange-500 h-2 rounded-full"
+                                initial={{ width: 0 }}
+                                animate={{ width: `${uploadProgress}%` }}
+                              />
+                            </div>
+                            <p className="text-sm text-gray-600">
+                              Đang tải lên... {uploadProgress}%
+                            </p>
+                          </div>
+                        ) : formData.cv ? (
+                          <div className="space-y-2">
+                            <FiCheck className="w-12 h-12 text-green-500 mx-auto" />
+                            <p className="text-green-600 font-medium">
+                              {formData.cv.name}
+                            </p>
+                            <button
+                              onClick={() =>
+                                setFormData((prev) => ({ ...prev, cv: null }))
+                              }
+                              className="text-red-500 text-sm hover:underline"
+                            >
+                              Xóa file
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="space-y-4">
+                            <FiUpload className="w-12 h-12 text-gray-400 mx-auto" />
+                            <div>
+                              <p className="text-lg font-medium text-gray-700">
+                                Kéo thả file CV của bạn vào đây
+                              </p>
+                              <p className="text-sm text-gray-500 mt-1">
+                                hoặc{" "}
+                                <label className="text-orange-500 hover:text-orange-600 cursor-pointer font-medium">
+                                  chọn file
+                                  <input
+                                    type="file"
+                                    accept=".pdf"
+                                    className="hidden"
+                                    onChange={(e) =>
+                                      handleFileUpload(e.target.files, "cv")
+                                    }
+                                  />
+                                </label>
+                              </p>
+                              <p className="text-xs text-gray-400 mt-2">
+                                Chỉ hỗ trợ file PDF (tối đa 10MB)
+                              </p>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Certificates Upload */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Chứng chỉ/Bằng cấp (tùy chọn)
+                      </label>
+                      <div className="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:border-purple-400 transition-all">
+                        <FiUpload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                        <p className="text-sm text-gray-600 mb-2">
+                          Tải lên chứng chỉ, bằng cấp
+                        </p>
+                        <label className="text-purple-700 hover:text-purple-800 cursor-pointer font-medium text-sm">
+                          Chọn files
+                          <input
+                            type="file"
+                            accept=".pdf,.jpg,.jpeg,.png"
+                            multiple
+                            className="hidden"
+                            onChange={(e) =>
+                              handleFileUpload(e.target.files, "certificates")
+                            }
+                          />
+                        </label>
+                      </div>
+
+                      {formData.certificates.length > 0 && (
+                        <div className="mt-4 space-y-2">
+                          {formData.certificates.map((file, index) => (
+                            <div
+                              key={index}
+                              className="flex items-center justify-between bg-gray-50 p-3 rounded-lg"
+                            >
+                              <span className="text-sm text-gray-700">
+                                {file.name}
+                              </span>
+                              <button
+                                onClick={() => {
+                                  setFormData((prev) => ({
+                                    ...prev,
+                                    certificates: prev.certificates.filter(
+                                      (_, i) => i !== index
+                                    ),
+                                  }));
+                                }}
+                                className="text-red-500 hover:text-red-700"
+                              >
+                                <span className="text-sm">Xóa</span>
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              {/* Navigation Buttons */}
+              <div className="flex justify-between mt-8 pt-6 border-t">
+                <button
+                  onClick={prevStep}
+                  disabled={currentStep === 1}
+                  className={`flex items-center px-6 py-3 rounded-lg font-medium transition-all ${
+                    currentStep === 1
+                      ? "text-gray-400 cursor-not-allowed"
+                      : "text-gray-700 hover:bg-gray-100"
+                  }`}
+                >
+                  <FiArrowLeft className="mr-2" />
+                  Quay lại
+                </button>
+
+                <motion.button
+                  whileHover={{ scale: loading ? 1 : 1.05 }}
+                  whileTap={{ scale: loading ? 1 : 0.95 }}
+                  onClick={nextStep}
+                  disabled={loading}
+                  className={`flex items-center px-8 py-3 font-medium rounded-lg transition-all ${
+                    loading
+                      ? "bg-gray-400 cursor-not-allowed"
+                      : "bg-orange-500 hover:bg-orange-600 hover:shadow-lg"
+                  } text-white`}
+                >
+                  {loading ? (
+                    <>
+                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                      Đang xử lý...
+                    </>
+                  ) : (
+                    <>
+                      {currentStep === 2 ? "Tiếp tục thanh toán" : "Tiếp tục"}
+                      <FiArrowRight className="ml-2" />
+                    </>
                   )}
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          {/* Navigation Buttons */}
-          <div className="flex justify-between mt-8 pt-6 border-t">
-            <button
-              onClick={prevStep}
-              disabled={currentStep === 1}
-              className={`flex items-center px-6 py-3 rounded-lg font-medium transition-all ${
-                currentStep === 1
-                  ? "text-gray-400 cursor-not-allowed"
-                  : "text-gray-700 hover:bg-gray-100"
-              }`}
-            >
-              <FiArrowLeft className="mr-2" />
-              Quay lại
-            </button>
-
-            <motion.button
-              whileHover={{ scale: loading ? 1 : 1.05 }}
-              whileTap={{ scale: loading ? 1 : 0.95 }}
-              onClick={nextStep}
-              disabled={loading}
-              className={`flex items-center px-8 py-3 font-medium rounded-lg transition-all ${
-                loading
-                  ? "bg-gray-400 cursor-not-allowed"
-                  : "bg-orange-500 hover:bg-orange-600 hover:shadow-lg"
-              } text-white`}
-            >
-              {loading ? (
-                <>
-                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                  Đang xử lý...
-                </>
-              ) : (
-                <>
-                  {currentStep === 2 ? "Tiếp tục thanh toán" : "Tiếp tục"}
-                  <FiArrowRight className="ml-2" />
-                </>
-              )}
-            </motion.button>
-          </div>
+                </motion.button>
+              </div>
+            </>
+          )}
         </motion.div>
       </div>
     </div>
