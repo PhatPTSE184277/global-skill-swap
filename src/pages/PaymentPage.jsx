@@ -11,6 +11,7 @@ import {
 } from "react-icons/fi";
 import { message } from "antd";
 import paymentService from "../services/paymentService";
+import userService from "../services/userService";
 
 const PaymentPage = () => {
   const navigate = useNavigate();
@@ -119,6 +120,35 @@ const PaymentPage = () => {
 
     initPayment();
   }, [paymentType, config.amount]);
+
+  // Fetch current user (buyer) to include in payment state
+  useEffect(() => {
+    let mounted = true;
+    const loadBuyer = async () => {
+      try {
+        const res = await userService.getCurrentUser();
+        const user = res?.data || res;
+        if (mounted && user) {
+          setPaymentData((prev) => ({
+            ...prev,
+            buyer: {
+              fullName: user.fullName || user.name || "",
+              email: user.email || "",
+              phone: user.phone || "",
+            },
+          }));
+        }
+      } catch (err) {
+        console.warn("Could not load current user for payment summary", err);
+      }
+    };
+
+    loadBuyer();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   useEffect(() => {
     if (!invoiceData || !invoiceData.sePayResponse) return;
@@ -322,7 +352,7 @@ const PaymentPage = () => {
                           </p>
                           <p className="font-bold text-gray-900 text-lg">
                             {invoiceData.sePayResponse?.bankName ||
-                              "Ngân hàng TMCP Á Châu (ACB)"}
+                              "Vietinbank"}
                           </p>
                         </div>
 
@@ -334,13 +364,13 @@ const PaymentPage = () => {
                           <div className="flex items-center justify-between">
                             <p className="font-mono font-bold text-gray-900 text-xl">
                               {invoiceData.sePayResponse?.accountNumber ||
-                                "123456789"}
+                                "104877830765"}
                             </p>
                             <button
                               onClick={() => {
                                 navigator.clipboard.writeText(
                                   invoiceData.sePayResponse?.accountNumber ||
-                                    "123456789"
+                                    "104877830765"
                                 );
                                 message.success("Đã sao chép số tài khoản");
                               }}
@@ -358,7 +388,7 @@ const PaymentPage = () => {
                           </p>
                           <p className="font-bold text-gray-900">
                             {invoiceData.sePayResponse?.accountHolder ||
-                              "CONG TY TNHH GLOBAL SKILL SWAP"}
+                              "DONG MINH QUAN"}
                           </p>
                         </div>
 
@@ -466,6 +496,42 @@ const PaymentPage = () => {
                     </span>
                   </div>
                 )}
+              </div>
+
+              {/* Buyer Info */}
+              <div className="mb-6 pb-6 border-b border-gray-200">
+                <h4 className="text-sm font-semibold text-gray-700 mb-3">
+                  Thông tin người mua
+                </h4>
+                <div className="text-sm text-gray-600 space-y-2">
+                  <div className="flex justify-between">
+                    <span>Người mua</span>
+                    <span className="font-medium text-gray-900">
+                      {paymentData?.buyer?.fullName ||
+                        registrationData?.fullName ||
+                        bookingData?.buyerName ||
+                        "-"}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Email</span>
+                    <span className="font-medium text-gray-900">
+                      {paymentData?.buyer?.email ||
+                        registrationData?.email ||
+                        bookingData?.buyerEmail ||
+                        "-"}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>SĐT</span>
+                    <span className="font-medium text-gray-900">
+                      {paymentData?.buyer?.phone ||
+                        registrationData?.phone ||
+                        bookingData?.buyerPhone ||
+                        "-"}
+                    </span>
+                  </div>
+                </div>
               </div>
 
               {/* Total */}

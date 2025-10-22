@@ -12,6 +12,7 @@ import {
 import { Modal, Input, message } from "antd";
 import feedbackService from "../../../services/feedbackService";
 import userService from "../../../services/userService";
+import { getUserById } from "../../../services/admin/userService";
 
 const { TextArea } = Input;
 
@@ -20,7 +21,10 @@ const FeedbackManagementPage = () => {
   const [statistics, setStatistics] = useState(null);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
+  const [pageSize] = useState(8);
+  const [hasMore, setHasMore] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const sentinelRef = React.useRef(null);
   const [filterModule, setFilterModule] = useState("all");
   const [filterStatus, setFilterStatus] = useState("all");
   const [selectedFeedback, setSelectedFeedback] = useState(null);
@@ -48,9 +52,46 @@ const FeedbackManagementPage = () => {
 
   useEffect(() => {
     fetchCurrentUser();
-    fetchData();
+    // load first page or reset when filters change
+    setFeedbacks([]);
+    setCurrentPage(1);
+    setHasMore(true);
+    fetchData(1, false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentPage, filterModule, filterStatus]);
+  }, [filterModule, filterStatus]);
+
+  // IntersectionObserver for infinite scroll
+  useEffect(() => {
+    if (!sentinelRef.current) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          // debug log when sentinel intersects
+          console.log(
+            "IntersectionObserver entry:",
+            entry.isIntersecting,
+            "hasMore=",
+            hasMore,
+            "loadingMore=",
+            loadingMore,
+            "currentPage=",
+            currentPage
+          );
+          if (entry.isIntersecting && hasMore && !loadingMore) {
+            const nextPage = currentPage + 1;
+            console.log("Loading next page", nextPage);
+            setCurrentPage(nextPage);
+            fetchData(nextPage, true);
+          }
+        });
+      },
+      { root: null, rootMargin: "200px", threshold: 0.1 }
+    );
+
+    observer.observe(sentinelRef.current);
+    return () => observer.disconnect();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sentinelRef.current, hasMore, loadingMore, currentPage]);
 
   const fetchCurrentUser = async () => {
     try {
@@ -72,18 +113,50 @@ const FeedbackManagementPage = () => {
     }
   };
 
-  const fetchData = async () => {
-    setLoading(true);
+  /**
+   * fetchData(page, append = false)
+   * - page: page number to fetch
+   * - append: whether to append results to existing feedbacks (true for infinite scroll)
+   */
+  const fetchData = async (page = 1, append = false) => {
+    if (!append) setLoading(true);
+    else setLoadingMore(true);
     try {
-      const res = await feedbackService.getAllFeedbacks(currentPage, 8);
+      const res = await feedbackService.getAllFeedbacks(page, pageSize);
       if (res.success) {
-        let filtered = res.data.feedbacks;
+        let items = res.data.feedbacks || [];
         if (filterModule !== "all")
-          filtered = filtered.filter((f) => f.module_type === filterModule);
+          items = items.filter((f) => f.module_type === filterModule);
         if (filterStatus !== "all")
-          filtered = filtered.filter((f) => f.status === filterStatus);
-        setFeedbacks(filtered);
-        setTotalPages(res.data.pagination.totalPages);
+          items = items.filter((f) => f.status === filterStatus);
+
+        // Fetch user emails for each new feedback
+        const feedbacksWithEmails = await Promise.all(
+          items.map(async (feedback) => {
+            try {
+              const userResponse = await getUserById(feedback.user_id);
+              const userData = userResponse?.data || userResponse;
+              return {
+                ...feedback,
+                userEmail: userData?.email || `User ${feedback.user_id}`,
+              };
+            } catch (error) {
+              console.error(`Error fetching user ${feedback.user_id}:`, error);
+              return {
+                ...feedback,
+                userEmail: `User ${feedback.user_id}`,
+              };
+            }
+          })
+        );
+
+        if (append) {
+          setFeedbacks((prev) => [...prev, ...feedbacksWithEmails]);
+        } else {
+          setFeedbacks(feedbacksWithEmails);
+        }
+
+        setHasMore(page < (res.data.pagination?.totalPages || 1));
       }
 
       const stats = await feedbackService.getStatistics(
@@ -91,15 +164,16 @@ const FeedbackManagementPage = () => {
       );
       if (stats.success) {
         setStatistics(stats.data);
-        // Sử dụng ratingCounts từ API statistics
         if (stats.data.ratingCounts) {
           setRatingDistribution(stats.data.ratingCounts);
         }
       }
-    } catch {
+    } catch (err) {
+      console.error("Error fetching feedbacks:", err);
       // Handle error silently
     } finally {
-      setLoading(false);
+      if (!append) setLoading(false);
+      else setLoadingMore(false);
     }
   };
 
@@ -366,11 +440,11 @@ const FeedbackManagementPage = () => {
 
                       <div className="flex items-center gap-4 text-xs text-gray-500">
                         <span className="flex items-center gap-1">
-                          <span className="font-medium">User:</span>{" "}
-                          {fb.user_id}
+                          <span className="font-medium">Email:</span>{" "}
+                          {fb.userEmail || `User ${fb.user_id}`}
                         </span>
                         <span className="flex items-center gap-1">
-                          <span className="font-medium">ID:</span>{" "}
+                          <span className="font-medium">Module ID:</span>{" "}
                           {fb.module_id}
                         </span>
                       </div>
@@ -404,34 +478,29 @@ const FeedbackManagementPage = () => {
           )}
 
           {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="bg-white rounded-xl p-4 shadow-sm">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-700">
-                  Trang <span className="font-semibold">{currentPage}</span> /{" "}
-                  {totalPages}
-                </span>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                    disabled={currentPage === 1}
-                    className="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                  >
-                    <ChevronLeft className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={() =>
-                      setCurrentPage(Math.min(totalPages, currentPage + 1))
-                    }
-                    disabled={currentPage === totalPages}
-                    className="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                  >
-                    <ChevronRight className="w-4 h-4" />
-                  </button>
-                </div>
+          {/* Infinite scroll sentinel and loading indicator */}
+          <div className="py-4 flex items-center justify-center">
+            {loadingMore && (
+              <div className="flex items-center gap-2 text-sm text-gray-600">
+                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-purple-900"></div>
+                <span>Đang tải thêm...</span>
               </div>
-            </div>
-          )}
+            )}
+            {/* Manual load more fallback */}
+            {!loadingMore && hasMore && (
+              <button
+                onClick={() => {
+                  const nextPage = currentPage + 1;
+                  setCurrentPage(nextPage);
+                  fetchData(nextPage, true);
+                }}
+                className="px-4 py-2 bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200"
+              >
+                Tải thêm
+              </button>
+            )}
+          </div>
+          <div ref={sentinelRef} className="w-full h-6" />
         </div>
       </div>
 
@@ -491,11 +560,12 @@ const FeedbackManagementPage = () => {
               </p>
               <div className="pt-3 border-t border-purple-200 flex items-center gap-4 text-xs text-gray-600">
                 <span>
-                  <span className="font-medium">User:</span>{" "}
-                  {selectedFeedback.user_id}
+                  <span className="font-medium">Email:</span>{" "}
+                  {selectedFeedback.userEmail ||
+                    `User ${selectedFeedback.user_id}`}
                 </span>
                 <span>
-                  <span className="font-medium">ID:</span>{" "}
+                  <span className="font-medium">Module ID:</span>{" "}
                   {selectedFeedback.module_id}
                 </span>
                 <span>

@@ -13,6 +13,11 @@ export const fetchAllUsers = async ({
   return response?.data;
 };
 
+export const getUserById = async (userId) => {
+  const response = await axiosClient.get(`/user/${userId}`);
+  return response?.data;
+};
+
 export const deleteUserById = async (userId) => {
   const response = await axiosClient.delete(`/user/${userId}`);
   return response?.data;
