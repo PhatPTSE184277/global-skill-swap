@@ -1,11 +1,11 @@
 import React, { useEffect, useContext, useState } from "react";
-import { Heart, Navigation, Bookmark, ImagePlus, SendHorizontal, ChevronRight, ChevronLeft, X } from "lucide-react";
+import { Heart, ChevronRight, ChevronLeft, X } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { motion, AnimatePresence } from "framer-motion";
 import PostContext from "../../../../contexts/PostContext";
 import { toast } from "react-toastify";
 import PostDetailSkeleton from "./PostDetailSkeleton";
-import CommentSection from "../Comment/CommentSection";
+import CommentSection from "../Comment/CommentSection"; 
 
 const fadeInUp = {
     initial: { opacity: 0, y: 60 },
@@ -19,8 +19,6 @@ const mockPost = {
     title: "Life In Japan: The Good, The Weird, And The Beautiful",
     author: "Joanna Wellick",
     date: "02 December 2022",
-    readTime: "3 Min. To Read",
-    views: "1.2K views",
     image: `https://picsum.photos/seed/2/800/400`,
     tags: ["Japan", "Life"],
     content: `
@@ -37,23 +35,6 @@ const mockPost = {
   Living in Japan has taught me to slow down and pay attention—to savor tastes, to respect rituals, and to find joy in small things.
   `,
 };
-
-const mockComments = [
-    {
-        id: 1,
-        author: "Brian Jackson",
-        date: "December 14, 2017 at 5:13 pm",
-        content: "I think you forgot to mention a very good one: Thrive architect from themeforest. This thing is pretty powerful.",
-        replies: [
-            {
-                id: 2,
-                author: "Joanna Wellick",
-                date: "December 14, 2017 at 5:15 pm",
-                content: "Thanks Brian! We have updated the above post. You are correct, their page builder has both a free and a premium version.",
-            },
-        ],
-    },
-];
 
 const PostDetail = ({
     open,
@@ -181,10 +162,6 @@ const PostDetail = ({
                                                 </h3>
                                                 <div className="flex items-center text-xs text-gray-500 gap-2">
                                                     <span>{currentPost.date}</span>
-                                                    <span>•</span>
-                                                    <span>{currentPost.readTime}</span>
-                                                    <span>•</span>
-                                                    <span>{currentPost.views}</span>
                                                 </div>
                                             </div>
                                         </div>
@@ -206,10 +183,6 @@ const PostDetail = ({
                                                     cursor="pointer"
                                                 />
                                             </button>
-                                            <div className="flex gap-6">
-                                                <Navigation size={23} color="#4D2C5E" strokeWidth={2.5} cursor="pointer" />
-                                                <Bookmark size={23} color="#4D2C5E" strokeWidth={2.5} cursor="pointer" />
-                                            </div>
                                         </div>
 
                                         <CommentSection postId={currentPost.id} />

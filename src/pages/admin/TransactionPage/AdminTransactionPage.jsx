@@ -1,11 +1,11 @@
 import React, { useContext, useEffect, useState } from 'react';
 import { FaFileInvoiceDollar } from "react-icons/fa";
-import AdminInvoiceList from '../../../components/admin/invoice/AdminInvoiceList';
-import InvoiceContext from '../../../contexts/admin/InvoiceContext';
+import AdminTransactionList from '../../../components/admin/transaction/AdminTransactionList';
+import TransactionContext from '../../../contexts/admin/TransactionContext';
 import Pagination from '../../../components/admin/Pagination';
 import AdminSelect from '../../../components/admin/AdminSelect';
 import AdminSearchInput from '../../../components/admin/AdminSearchInput';
-import AdminInvoiceListSkereton from './AdminInvoiceListSkereton';
+import AdminTransactionListSkereton from './AdminTransactionListSkereton';
 
 const statusOptions = [
   { value: 'all', label: 'Tất cả trạng thái' },
@@ -14,22 +14,22 @@ const statusOptions = [
   { value: 'CANCELLED', label: 'Đã hủy' },
 ];
 
-const AdminInvoicePage = () => {
-  const { invoices, loading, fetchInvoices, totalPages } = useContext(InvoiceContext);
+const AdminTransactionPage = () => {
+  const { transactions, loading, fetchTransactions, totalPages } = useContext(TransactionContext);
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(0);
   const [status, setStatus] = useState('all');
   const size = 10;
 
   useEffect(() => {
-    fetchInvoices({ page, size });
-  }, [fetchInvoices, page, size]);
+    fetchTransactions({ page, size });
+  }, [fetchTransactions, page, size]);
 
-  const filteredInvoices = invoices.filter(invoice => {
-    const matchSearch = (invoice.transactionNumber || '').toLowerCase().includes(search.toLowerCase()) ||
-      (invoice.id?.toString() || '').includes(search);
+  const filteredTransactions = transactions.filter(transaction => {
+    const matchSearch = (transaction.transactionNumber || '').toLowerCase().includes(search.toLowerCase()) ||
+      (transaction.id?.toString() || '').includes(search);
 
-    const matchStatus = status === 'all' || invoice.invoiceStatus === status;
+    const matchStatus = status === 'all' || transaction.transactionStatus === status;
 
     return matchSearch && matchStatus;
   });
@@ -68,10 +68,10 @@ const AdminInvoicePage = () => {
 
       <div className="admin-card rounded-xl p-6 bg-white shadow">
         {loading ? (
-          <AdminInvoiceListSkereton />
+          <AdminTransactionListSkereton />
         ) : (
           <>
-            <AdminInvoiceList invoices={filteredInvoices} />
+            <AdminTransactionList transactions={filteredTransactions} />
             <Pagination
               page={page}
               totalPages={totalPages}
@@ -84,4 +84,4 @@ const AdminInvoicePage = () => {
   );
 };
 
-export default AdminInvoicePage;
+export default AdminTransactionPage;

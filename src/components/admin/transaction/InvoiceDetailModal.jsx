@@ -1,8 +1,8 @@
 import React from "react";
 import { X } from "lucide-react";
 
-const InvoiceDetailModal = ({ open, invoice, onClose }) => {
-  if (!open || !invoice) return null;
+const TransactionDetailModal = ({ open, transaction, onClose }) => {
+  if (!open || !transaction) return null;
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -47,25 +47,25 @@ const InvoiceDetailModal = ({ open, invoice, onClose }) => {
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <p className="text-sm text-gray-500 mb-1">ID Hóa đơn</p>
-              <p className="font-semibold text-gray-900">#{invoice.id}</p>
+              <p className="text-sm text-gray-500 mb-1">ID giao dịch</p>
+              <p className="font-semibold text-gray-900">#{transaction.id}</p>
             </div>
             <div>
               <p className="text-sm text-gray-500 mb-1">Mã giao dịch</p>
-              <p className="font-mono text-sm text-gray-900">{invoice.transactionNumber}</p>
+              <p className="font-mono text-sm text-gray-900">{transaction.transactionNumber}</p>
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
               <p className="text-sm text-gray-500 mb-1">Người tạo</p>
-              <p className="font-semibold text-gray-900">{invoice.accountDto?.fullName || 'N/A'}</p>
-              <p className="text-xs text-gray-500">@{invoice.accountDto?.username || 'N/A'}</p>
+              <p className="font-semibold text-gray-900">{transaction.accountDto?.fullName || 'N/A'}</p>
+              <p className="text-xs text-gray-500">@{transaction.accountDto?.username || 'N/A'}</p>
             </div>
             <div>
               <p className="text-sm text-gray-500 mb-1">Tổng tiền</p>
               <p className="font-semibold text-gray-900">
-                {invoice.amount ? `${invoice.amount.toLocaleString()} ${invoice.currency.toUpperCase()}` : 'N/A'}
+                {transaction.amount ? `${transaction.amount.toLocaleString()} ${transaction.currency.toUpperCase()}` : 'N/A'}
               </p>
             </div>
           </div>
@@ -73,32 +73,32 @@ const InvoiceDetailModal = ({ open, invoice, onClose }) => {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <p className="text-sm text-gray-500 mb-1">Trạng thái</p>
-              <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(invoice.invoiceStatus)}`}>
-                {getStatusText(invoice.invoiceStatus)}
+              <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(transaction.transactionStatus)}`}>
+                {getStatusText(transaction.transactionStatus)}
               </span>
             </div>
             <div>
               <p className="text-sm text-gray-500 mb-1">Ngày tạo</p>
               <p className="font-semibold text-gray-900">
-                {invoice.createdAt ? new Date(invoice.createdAt).toLocaleDateString('vi-VN') : 'N/A'}
+                {transaction.createdAt ? new Date(transaction.createdAt).toLocaleDateString('vi-VN') : 'N/A'}
               </p>
             </div>
           </div>
 
-          {invoice.updatedAt && (
+          {transaction.updatedAt && (
             <div>
               <p className="text-sm text-gray-500 mb-1">Ngày cập nhật</p>
               <p className="font-semibold text-gray-900">
-                {new Date(invoice.updatedAt).toLocaleDateString('vi-VN')}
+                {new Date(transaction.updatedAt).toLocaleDateString('vi-VN')}
               </p>
             </div>
           )}
 
-          {invoice.transactionResponses && invoice.transactionResponses.length > 0 && (
+          {transaction.transactionResponses && transaction.transactionResponses.length > 0 && (
             <div>
               <p className="text-sm text-gray-500 mb-2">Giao dịch liên quan</p>
               <div className="border rounded-lg p-3 bg-gray-50 max-h-40 overflow-y-auto">
-                {invoice.transactionResponses.map((trans, idx) => (
+                {transaction.transactionResponses.map((trans, idx) => (
                   <div key={idx} className="text-sm text-gray-700 mb-2">
                     {JSON.stringify(trans, null, 2)}
                   </div>
@@ -112,4 +112,4 @@ const InvoiceDetailModal = ({ open, invoice, onClose }) => {
   );
 };
 
-export default InvoiceDetailModal;
+export default TransactionDetailModal;
