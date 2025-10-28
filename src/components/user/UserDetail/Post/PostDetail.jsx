@@ -93,17 +93,37 @@ const PostDetail = ({
         }
     };
 
-    const goPrev = () => {
-        if (currentIndex > 0) {
-            setCurrentIndex(currentIndex - 1);
+    // Format date từ API
+    const formatDate = (dateString) => {
+        if (!dateString) return "";
+        try {
+            return new Date(dateString).toLocaleDateString("vi-VN", {
+                year: "numeric",
+                month: "long", 
+                day: "2-digit"
+            });
+        } catch {
+            return dateString;
         }
     };
 
-    const goNext = () => {
-        if (currentIndex < posts.length - 1) {
-            setCurrentIndex(currentIndex + 1);
+    // Lấy thông tin tác giả từ API
+    const getAuthorInfo = () => {
+        if (currentPost.accountId) {
+            return {
+                name: currentPost.accountId.fullName || currentPost.accountId.username || "Ẩn danh",
+                username: currentPost.accountId.username || "",
+                avatarUrl: currentPost.accountId.avatarUrl
+            };
         }
+        return {
+            name: currentPost.author || "Ẩn danh",
+            username: "",
+            avatarUrl: null
+        };
     };
+
+    const authorInfo = getAuthorInfo();
 
     if (!open) return null;
 
@@ -117,24 +137,6 @@ const PostDetail = ({
                 >
                     <X size={32} />
                 </button>
-                {currentIndex > 0 && (
-                    <button
-                        onClick={goPrev}
-                        className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/60 hover:bg-black/80 text-white p-2 rounded-full z-40 cursor-pointer"
-                        aria-label="Bài trước"
-                    >
-                        <ChevronLeft size={36} />
-                    </button>
-                )}
-                {currentIndex < posts.length - 1 && (
-                    <button
-                        onClick={goNext}
-                        className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/60 hover:bg-black/80 text-white p-2 rounded-full z-40 cursor-pointer"
-                        aria-label="Bài sau"
-                    >
-                        <ChevronRight size={36} />
-                    </button>
-                )}
                 <motion.div
                     {...fadeInUp}
                     className="bg-white rounded-xl shadow-2xl w-full max-w-5xl mx-auto relative overflow-y-auto max-h-[90vh]"
@@ -155,13 +157,31 @@ const PostDetail = ({
                                             {currentPost.title}
                                         </h1>
                                         <div className="flex items-center gap-3 mb-6 pb-6 border-b border-gray-200">
-                                            <div className="w-10 h-10 bg-gray-300 rounded-full"></div>
+                                            {authorInfo.avatarUrl ? (
+                                                <img
+                                                    src={authorInfo.avatarUrl}
+                                                    alt={authorInfo.name}
+                                                    className="w-10 h-10 rounded-full object-cover"
+                                                />
+                                            ) : (
+                                                <div className="w-10 h-10 bg-gray-300 rounded-full flex items-center justify-center">
+                                                    <span className="text-gray-600 font-semibold text-sm">
+                                                        {authorInfo.name.charAt(0).toUpperCase()}
+                                                    </span>
+                                                </div>
+                                            )}
                                             <div>
                                                 <h3 className="font-semibold text-gray-900">
-                                                    {currentPost.author}
+                                                    {authorInfo.name}
                                                 </h3>
                                                 <div className="flex items-center text-xs text-gray-500 gap-2">
-                                                    <span>{currentPost.date}</span>
+                                                    {authorInfo.username && (
+                                                        <span>@{authorInfo.username}</span>
+                                                    )}
+                                                    {authorInfo.username && (
+                                                        <span>•</span>
+                                                    )}
+                                                    <span>{formatDate(currentPost.createdAt) || currentPost.date}</span>
                                                 </div>
                                             </div>
                                         </div>
