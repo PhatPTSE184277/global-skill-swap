@@ -44,3 +44,10 @@ export const checkPostLiked = async (postId) => {
     const response = await axiosClient.get(`/post-interaction/forum-post/${postId}/is-react`);
     return response?.data;
 };
+
+export const fetchTrendingPosts = async ({ page = 0, size = 10, sortBy = "id", sortDir = "desc" } = {}) => {
+    const response = await axiosClient.get("/forum-post/trending-post", {
+        params: { page, size, sortBy, sortDir }
+    });
+    return response?.data;
+}

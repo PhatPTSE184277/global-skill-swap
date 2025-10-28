@@ -92,10 +92,13 @@ const LoginPage = () => {
                 transition={{ duration: 0.8, ease: "easeOut" }}
               >
                 <div className="absolute top-8 left-1/2 transform -translate-x-1/2 flex items-center gap-2">
-                  <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center">
-                    <span className="text-[#4D2C5E] font-bold text-sm">{ }</span>
-                  </div>
-                  <span className="text-white text-xl font-medium">Global Skill</span>
+                  <span className="inline-block bg-purple-900 rounded-lg p-2">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+                      <rect width="24" height="24" rx="6" fill="#6D28D9" />
+                      <text x="7" y="18" fontSize="14" fill="#fff" fontWeight="bold">G</text>
+                    </svg>
+                  </span>
+                  <span className="text-white text-xl font-bold">GlobalSkill</span>
                 </div>
                 <div className="text-center relative z-10">
                   <motion.img

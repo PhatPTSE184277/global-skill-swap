@@ -149,23 +149,6 @@ const RightSidebar = () => {
         </svg>
       </div>
 
-      {/* Tag Cloud */}
-      <div className="bg-white rounded-2xl ">
-        <h3 className="text-lg font-semibold text-gray-600 mb-4">
-          Có thể bạn sẽ thích...
-        </h3>
-        <div className="flex flex-wrap gap-2">
-          {tags.map((tag, idx) => (
-            <span
-              key={idx}
-              className="px-3 py-1 text-xs font-medium bg-gray-100 text-gray-600 rounded-full cursor-pointer hover:bg-orange-500 hover:text-white transition-colors"
-            >
-              {tag}
-            </span>
-          ))}
-        </div>
-      </div>
-
       {/* Top Tác Giả Nổi Bật */}
       <div className="bg-white rounded-2xl shadow p-6">
         <h3 className="text-lg font-bold text-gray-900 mb-4">
