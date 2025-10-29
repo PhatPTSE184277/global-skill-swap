@@ -245,10 +245,11 @@ const MentorRegister = () => {
 
         message.success("Cập nhật thông tin thành công!");
 
-        // Chuyển đến trang thanh toán
-        navigate("/mentor/package", {
+        // Chuyển thẳng đến trang thanh toán với QR code (bỏ qua trang chọn gói)
+        navigate("/payment", {
           state: {
             registrationData: formData,
+            productId: "1", // ID mặc định cho gói mentor
           },
         });
       } catch (error) {
