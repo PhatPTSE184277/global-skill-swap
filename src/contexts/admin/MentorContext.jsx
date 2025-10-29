@@ -16,7 +16,7 @@ export const MentorProvider = ({ children }) => {
         const data = response.data || {};
         console.log("Fetched Mentors Data:", data);
 
-        const teachers = (data.content || []).filter(m => m.accountRole === "TEACHER");
+        const teachers = (data.content || []).filter(m => m.accountRole !== "TEACHER");
         setMentors(teachers);
         setTotalPages(data.totalPages || 1);
         setTotalElements(teachers.length);
