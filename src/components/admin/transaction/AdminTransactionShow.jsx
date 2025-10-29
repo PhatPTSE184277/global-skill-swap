@@ -40,10 +40,14 @@ const AdminTransactionShow = ({ transaction }) => {
       />
 
       <td className="px-6 py-5 text-sm text-gray-500 font-medium">#{transaction.id}</td>
-      <td className="px-6 py-5 text-sm text-gray-600 font-mono">{transaction.transactionNumber}</td>
+      <td className="px-6 py-5 text-sm text-gray-600 font-mono">{transaction.gatewayTransactionId}</td>
       <td className="px-6 py-5 text-sm text-gray-900">
-        <div className="font-semibold">{transaction.accountDto?.fullName || 'N/A'}</div>
-        <div className="text-xs text-gray-500">@{transaction.accountDto?.username || 'N/A'}</div>
+        <div className="font-semibold">
+          {transaction.fromUser?.fullName || 'N/A'}
+        </div>
+        <div className="text-xs text-gray-500">
+          @{transaction.fromUser?.username || 'N/A'}
+        </div>
       </td>
       <td className="px-6 py-5 text-sm font-medium text-gray-900">
         {transaction.amount ? `${transaction.amount.toLocaleString()} ${transaction.currency?.toUpperCase() || 'VND'}` : 'N/A'}
