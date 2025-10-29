@@ -1,12 +1,12 @@
 import React from 'react';
-import AdminInvoiceShow from './AdminInvoiceShow';
+import AdminTransactionShow from './AdminTransactionShow';
 
-const AdminInvoiceList = ({ invoices = [] }) => {
-  if (!invoices || invoices.length === 0) {
+const AdminTransactionList = ({ transactions = [] }) => {
+  if (!transactions || transactions.length === 0) {
     return (
       <div className="text-center py-12">
         <h3 className="text-xl font-semibold text-gray-600 mb-2">Không tìm thấy dữ liệu</h3>
-        <p className="text-gray-500">Chưa có hóa đơn nào.</p>
+        <p className="text-gray-500">Chưa có giao dịch nào.</p>
       </div>
     );
   }
@@ -28,12 +28,12 @@ const AdminInvoiceList = ({ invoices = [] }) => {
               </tr>
             </thead>
             <tbody className="bg-white">
-              {invoices.map((invoice, index) => (
+              {transactions.map((transaction, index) => (
                 <tr
-                  key={invoice.id || index}
+                  key={transaction.id || index}
                   className={`border-b border-gray-100 ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}
                 >
-                  <AdminInvoiceShow invoice={invoice} />
+                  <AdminTransactionShow transaction={transaction} />
                 </tr>
               ))}
             </tbody>
@@ -44,4 +44,4 @@ const AdminInvoiceList = ({ invoices = [] }) => {
   );
 };
 
-export default AdminInvoiceList;
+export default AdminTransactionList;

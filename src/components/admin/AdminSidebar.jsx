@@ -46,7 +46,7 @@ export default function AdminSidebar() {
     },
      {
       label: "Quản lý giao dịch",
-      path: "/admin/invoices",
+      path: "/admin/transactions",
       icon: <FaExchangeAlt className="w-5 h-5 mr-3 text-pink-500" />,
       color: "pink",
       desc: "Kiểm tra & quản lý giao dịch",

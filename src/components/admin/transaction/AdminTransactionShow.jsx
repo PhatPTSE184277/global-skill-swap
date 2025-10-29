@@ -2,12 +2,12 @@ import { Eye } from 'lucide-react';
 import { useState } from 'react';
 import InvoiceDetailModal from './InvoiceDetailModal';
 
-const AdminInvoiceShow = ({ invoice }) => {
+const AdminTransactionShow = ({ transaction }) => {
   const [showDetailModal, setShowDetailModal] = useState(false);
 
   const getStatusColor = (status) => {
     switch (status) {
-      case 'PAID':
+      case 'SUCCESS':
         return 'bg-green-100 text-green-700';
       case 'PENDING':
         return 'bg-yellow-100 text-yellow-700';
@@ -20,7 +20,7 @@ const AdminInvoiceShow = ({ invoice }) => {
 
   const getStatusText = (status) => {
     switch (status) {
-      case 'PAID':
+      case 'SUCCESS':
         return 'Đã thanh toán';
       case 'PENDING':
         return 'Chờ thanh toán';
@@ -35,26 +35,26 @@ const AdminInvoiceShow = ({ invoice }) => {
     <>
       <InvoiceDetailModal
         open={showDetailModal}
-        invoice={invoice}
+        invoice={transaction}
         onClose={() => setShowDetailModal(false)}
       />
 
-      <td className="px-6 py-5 text-sm text-gray-500 font-medium">#{invoice.id}</td>
-      <td className="px-6 py-5 text-sm text-gray-600 font-mono">{invoice.transactionNumber}</td>
+      <td className="px-6 py-5 text-sm text-gray-500 font-medium">#{transaction.id}</td>
+      <td className="px-6 py-5 text-sm text-gray-600 font-mono">{transaction.transactionNumber}</td>
       <td className="px-6 py-5 text-sm text-gray-900">
-        <div className="font-semibold">{invoice.accountDto?.fullName || 'N/A'}</div>
-        <div className="text-xs text-gray-500">@{invoice.accountDto?.username || 'N/A'}</div>
+        <div className="font-semibold">{transaction.accountDto?.fullName || 'N/A'}</div>
+        <div className="text-xs text-gray-500">@{transaction.accountDto?.username || 'N/A'}</div>
       </td>
       <td className="px-6 py-5 text-sm font-medium text-gray-900">
-        {invoice.amount ? `${invoice.amount.toLocaleString()} ${invoice.currency?.toUpperCase() || 'VND'}` : 'N/A'}
+        {transaction.amount ? `${transaction.amount.toLocaleString()} ${transaction.currency?.toUpperCase() || 'VND'}` : 'N/A'}
       </td>
       <td className="px-6 py-5">
-        <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(invoice.invoiceStatus)}`}>
-          {getStatusText(invoice.invoiceStatus)}
+        <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(transaction.transactionStatus)}`}>
+          {getStatusText(transaction.transactionStatus)}
         </span>
       </td>
       <td className="px-6 py-5 text-sm text-gray-600">
-        {invoice.createdAt ? new Date(invoice.createdAt).toLocaleDateString('vi-VN') : ''}
+        {transaction.createdAt ? new Date(transaction.createdAt).toLocaleDateString('vi-VN') : ''}
       </td>
       <td className="px-6 py-5">
         <div className="flex items-center justify-end gap-2">
@@ -71,4 +71,4 @@ const AdminInvoiceShow = ({ invoice }) => {
   );
 };
 
-export default AdminInvoiceShow;
+export default AdminTransactionShow;

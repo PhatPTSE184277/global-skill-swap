@@ -1,6 +1,6 @@
 import React from 'react';
 
-const AdminInvoiceListSkereton = () => (
+const AdminTransactionListSkereton = () => (
   <div className="w-full bg-white">
     <div className="max-w-7xl mx-auto">
       <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
@@ -46,4 +46,4 @@ const AdminInvoiceListSkereton = () => (
   </div>
 );
 
-export default AdminInvoiceListSkereton;
+export default AdminTransactionListSkereton;

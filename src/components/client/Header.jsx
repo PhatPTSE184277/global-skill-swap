@@ -63,6 +63,12 @@ const Header = () => {
       <nav className="w-full font-['Noto Sans'] bg-[#fdf8ee] shadow sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-6 flex items-center justify-between h-16">
           <div className="flex items-center gap-2 cursor-pointer">
+            <span className="inline-block bg-purple-900 rounded-lg p-2">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+                <rect width="24" height="24" rx="6" fill="#6D28D9"/>
+                <text x="7" y="18" fontSize="14" fill="#fff" fontWeight="bold">G</text>
+              </svg>
+            </span>
             <span className="text-lg font-bold text-purple-950">
               GlobalSkill
             </span>
@@ -80,6 +86,12 @@ const Header = () => {
           className="flex items-center gap-2 cursor-pointer"
           onClick={() => handleLogoClick(navigate)}
         >
+          <span className="inline-block bg-purple-900 rounded-lg p-2">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+              <rect width="24" height="24" rx="6" fill="#6D28D9"/>
+              <text x="7" y="18" fontSize="14" fill="#fff" fontWeight="bold">G</text>
+            </svg>
+          </span>
           <span className="text-lg font-bold text-purple-950">GlobalSkill</span>
         </div>
         <ul className="flex items-center gap-8 text-gray-700 text-sm font-medium">

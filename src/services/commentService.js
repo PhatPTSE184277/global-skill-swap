@@ -7,7 +7,20 @@ export const fetchCommentsByForumPost = async ({
   sortBy = "id",
   sortDir = "desc"
 }) => {
-  const response = await axiosClient.get(`/comment/forum-post/${forumPostId}`, {
+  const response = await axiosClient.get(`/comment/parent-comment/forum-post/${forumPostId}`, {
+    params: { page, size, sortBy, sortDir }
+  });
+  return response?.data;
+};
+
+export const fetchRepliesByParentComment = async ({
+  parentCommentId,
+  page = 0,
+  size = 10,
+  sortBy = "id",
+  sortDir = "desc"
+}) => {
+  const response = await axiosClient.get(`/comment/reply/parent-comment/${parentCommentId}`, {
     params: { page, size, sortBy, sortDir }
   });
   return response?.data;
@@ -17,19 +30,6 @@ export const fetchCommentById = async (commentId) => {
   const response = await axiosClient.get(`/comment/${commentId}`);
   return response?.data;
 }
-
-export const fetchRepliesByParentComment = async ({
-  parentCommentId,
-  page = 0,
-  size = 10,
-  sortBy = "id",
-  sortDir = "desc"
-}) => {
-  const response = await axiosClient.get(`/comment/parent/${parentCommentId}`, {
-    params: { page, size, sortBy, sortDir }
-  });
-  return response?.data;
-};
 
 export const createComment = async ({ postId, content, replyCommentId }) => {
   const params = {};

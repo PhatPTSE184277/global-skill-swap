@@ -3,8 +3,8 @@ import { SendHorizontal } from "lucide-react";
 import { toast } from "react-toastify";
 import CommentContext from "../../../../contexts/CommentContext";
 
-const CommentInput = ({ postId, replyCommentId, onCancel, placeholder = "Viết bình luận..." }) => {
-  const { addComment, getCommentsByPost, getRepliesByComment } = useContext(CommentContext);
+const CommentInput = ({ postId, replyCommentId, onCancel, onSuccess, placeholder = "Viết bình luận..." }) => {
+  const { addComment, getCommentsByPost, getRepliesByComment, currentPage } = useContext(CommentContext);
   const [content, setContent] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -23,11 +23,12 @@ const CommentInput = ({ postId, replyCommentId, onCancel, placeholder = "Viết 
       
       // Refresh comments hoặc replies
       if (replyCommentId) {
-        await getRepliesByComment({ parentCommentId: replyCommentId });
+        await getRepliesByComment({ parentCommentId: replyCommentId, page: 0, size: 10 });
       } else {
-        await getCommentsByPost({ forumPostId: postId });
+        await getCommentsByPost({ forumPostId: postId, page: currentPage, size: 10 });
       }
       
+      if (onSuccess) onSuccess();
       if (onCancel) onCancel();
     } catch (err) {
       toast.error("Có lỗi xảy ra khi gửi bình luận");

@@ -1,22 +1,22 @@
 import { createContext, useState, useCallback } from "react";
-import { fetchTotalInvoices } from "../../services/admin/invoiceService";
+import { fetchTotalTransactions } from "../../services/admin/transactionService";
 
-const InvoiceContext = createContext();
+const TransactionContext = createContext();
 
-export const InvoiceProvider = ({ children }) => {
-    const [invoices, setInvoices] = useState([]);
+export const TransactionProvider = ({ children }) => {
+    const [transactions, setTransactions] = useState([]);
     const [loading, setLoading] = useState(false);
     const [totalPages, setTotalPages] = useState(1);
     const [totalElements, setTotalElements] = useState(0);
 
-    const fetchInvoices = useCallback(async (params) => {
+    const fetchTransactions = useCallback(async (params) => {
         setLoading(true);
         try {
-            const response = await fetchTotalInvoices(params);
+            const response = await fetchTotalTransactions(params);
             const data = response.data || {};
-            console.log("Fetched Invoices Data:", data);
+            console.log("Fetched Transactions Data:", data);
 
-            setInvoices(data.content || []);
+            setTransactions(data.content || []);
             setTotalPages(data.totalPages || 1);
             setTotalElements(data.totalElements || 0);
         } catch (error) {
@@ -27,18 +27,18 @@ export const InvoiceProvider = ({ children }) => {
     }, []);
 
     const value = {
-        invoices,
+        transactions,
         loading,
-        fetchInvoices,
+        fetchTransactions,
         totalPages,
         totalElements,
     };
 
     return (
-        <InvoiceContext.Provider value={value}>
+        <TransactionContext.Provider value={value}>
             {children}
-        </InvoiceContext.Provider>
-    );
+        </TransactionContext.Provider>
+    );  
 };
 
-export default InvoiceContext;
+export default TransactionContext;
