@@ -2,11 +2,11 @@ import axiosClient from '../apis/axiosClient';
 
 const paymentService = {
   // Tạo hóa đơn thanh toán
-  createPayment: async () => {
+  createPayment: async (productId = "1") => {
     try {
-      // Sử dụng product ID duy nhất từ hệ thống
+      // Sử dụng product ID từ tham số hoặc mặc định là "1"
       const response = await axiosClient.post('/invoice', {
-        productId: "1"  // ID cho "Upgrade user role" - 100000 VND
+        productId: productId.toString()  // "1" cho "Upgrade user role" - 100000 VND, "2" cho booking lessons
       });
       return response.data;
     } catch (error) {
@@ -15,11 +15,11 @@ const paymentService = {
   },
 
   // Xử lý thanh toán ZaloPay
-  processZaloPayPayment: async () => {
+  processZaloPayPayment: async (productId = "1") => {
     try {
       // Tạo hóa đơn và nhận paymentUrl trực tiếp
       const invoice = await axiosClient.post('/invoice', {
-        productId: "1"  // "Upgrade user role" - 100000 VND
+        productId: productId.toString()  // "1" cho "Upgrade user role", "2" cho booking
       });
 
       // Chuyển hướng đến paymentUrl từ invoice response
@@ -34,11 +34,11 @@ const paymentService = {
   },
 
   // Xử lý thanh toán VNPay
-  processVNPayPayment: async () => {
+  processVNPayPayment: async (productId = "1") => {
     try {
       // Tạo hóa đơn và nhận paymentUrl trực tiếp
       const invoice = await axiosClient.post('/invoice', {
-        productId: "1"  // "Upgrade user role" - 100000 VND
+        productId: productId.toString()  // "1" cho "Upgrade user role", "2" cho booking
       });
 
       // Chuyển hướng đến paymentUrl từ invoice response

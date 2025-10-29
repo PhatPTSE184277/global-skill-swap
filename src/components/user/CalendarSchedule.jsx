@@ -6,6 +6,7 @@ import {
   Clock,
   User,
 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import bookingService from "../../services/bookingService";
 import { message, Modal, Select, DatePicker, TimePicker } from "antd";
 import dayjs from "dayjs";
@@ -17,6 +18,7 @@ const CalendarSchedule = ({
 }) => {
   // userType: "student" hoặc "mentor"
   // isOwner: true nếu đang xem profile của chính mình, false nếu xem người khác
+  const navigate = useNavigate();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(null);
   const [events, setEvents] = useState([]);
@@ -47,8 +49,8 @@ const CalendarSchedule = ({
   // Fetch bookings from API for User
   useEffect(() => {
     const fetchBookings = async () => {
-      // Chỉ fetch cho student role HOẶC khi đang xem profile của chính mình
-      if (userType !== "student" || !isOwner) {
+      // Chỉ fetch cho student role VÀ khi đang xem profile của chính mình
+      if (userType !== "student") {
         return;
       }
 
@@ -338,15 +340,25 @@ const CalendarSchedule = ({
   const getEventsForDate = (date) => {
     if (!date) return [];
 
-    // Nếu đang xem profile người khác (mentor), chỉ hiển thị timeslots
+    // Nếu đang xem profile người khác (mentor), chỉ hiển thị timeslots AVAILABLE (lịch trống)
     if (userType === "mentor" && !isOwner) {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const checkDate = new Date(date);
+      checkDate.setHours(0, 0, 0, 0);
+
       const slotsForDate = timeslots.filter(
         (slot) =>
           slot.date.getDate() === date.getDate() &&
           slot.date.getMonth() === date.getMonth() &&
-          slot.date.getFullYear() === date.getFullYear()
+          slot.date.getFullYear() === date.getFullYear() &&
+          slot.slotStatus === "AVAILABLE" && // CHỈ hiển thị slot có sẵn
+          checkDate >= today // CHỈ hiển thị ngày trong tương lai hoặc hôm nay
       );
-      console.log(`Timeslots for ${date.toDateString()}:`, slotsForDate);
+      console.log(
+        `Available timeslots for ${date.toDateString()}:`,
+        slotsForDate
+      );
       return slotsForDate;
     }
 
@@ -537,31 +549,33 @@ const CalendarSchedule = ({
     try {
       setBookingLoading(true);
 
-      // Call API to create booking
+      // Prepare booking data to pass to payment page
       const bookingData = {
         mentorId: userId, // mentor's userId
         timeslotId: selectedTimeslot.slotData.id, // timeslot ID
+        timeslot: selectedTimeslot.slotData, // full timeslot data
+        mentor: {
+          id: userId,
+          // Add more mentor info if available from props or context
+        },
+        amount: 150000, // Default amount, can be adjusted
       };
 
-      console.log("Creating booking with data:", bookingData);
-      const response = await bookingService.createBooking(bookingData);
-      console.log("Booking response:", response);
+      console.log("Navigating to payment with booking data:", bookingData);
 
-      if (response?.success) {
-        message.success("Đặt lịch thành công!");
-        setIsBookingModalOpen(false);
-        setSelectedTimeslot(null);
+      // Navigate to payment page with productId = 2 (for booking)
+      navigate("/payment", {
+        state: {
+          bookingData: bookingData,
+          productId: 2, // Product ID for booking lessons
+        },
+      });
 
-        // Refresh timeslots to update the calendar
-        console.log("Refreshing timeslots after booking...");
-        await fetchTimeslots();
-        console.log("Timeslots refreshed. New state:", timeslots);
-      }
+      setIsBookingModalOpen(false);
+      setSelectedTimeslot(null);
     } catch (error) {
-      console.error("Error booking timeslot:", error);
-      message.error(
-        error.response?.data?.message || "Không thể đặt lịch. Vui lòng thử lại!"
-      );
+      console.error("Error preparing booking:", error);
+      message.error("Không thể chuẩn bị đặt lịch. Vui lòng thử lại!");
     } finally {
       setBookingLoading(false);
     }
@@ -606,9 +620,9 @@ const CalendarSchedule = ({
     .slice(0, 10);
 
   return (
-    <div className="flex gap-4 bg-white p-4 rounded-lg max-w-7xl mx-auto">
+    <div className="flex gap-4 bg-white rounded-lg max-w-7xl mx-auto h-[calc(100vh-350px)]">
       {/* Calendar Section */}
-      <div className="flex-1 bg-white rounded-lg border border-gray-200 p-4">
+      <div className="flex-1 bg-white rounded-lg border border-gray-200 p-4 overflow-y-auto no-scrollbar">
         {/* Header */}
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-lg font-bold text-gray-800">
@@ -780,8 +794,8 @@ const CalendarSchedule = ({
       </div>
 
       {/* Events Sidebar */}
-      <div className="w-72 bg-white rounded-lg border border-gray-200 p-4">
-        <div className="flex items-center justify-between mb-4">
+      <div className="w-72 bg-white rounded-lg border border-gray-200 p-4 flex flex-col h-full">
+        <div className="flex items-center justify-between mb-4 flex-shrink-0">
           <div className="flex items-center gap-2">
             <CalendarIcon className="w-4 h-4 text-gray-700" />
             <h3 className="text-sm font-bold text-gray-800">
@@ -798,7 +812,7 @@ const CalendarSchedule = ({
 
         {/* Tab buttons for mentor - CHỈ hiển thị khi đang xem profile của chính mình */}
         {userType === "mentor" && isOwner && (
-          <div className="flex gap-2 mb-4">
+          <div className="flex gap-2 mb-4 flex-shrink-0">
             <button
               onClick={() => setMentorTab("upcoming")}
               className={`flex-1 px-3 py-2 rounded text-xs font-medium transition-colors ${
@@ -824,7 +838,7 @@ const CalendarSchedule = ({
 
         {/* Filter by status for mentor when in upcoming tab - CHỈ khi là owner */}
         {userType === "mentor" && isOwner && mentorTab === "upcoming" && (
-          <div className="mb-4">
+          <div className="mb-4 flex-shrink-0">
             <Select
               value={bookingStatus}
               onChange={(value) => setBookingStatus(value)}
@@ -874,7 +888,7 @@ const CalendarSchedule = ({
 
         {/* Filter by status for students */}
         {userType === "student" && (
-          <div className="mb-4">
+          <div className="mb-4 flex-shrink-0">
             <Select
               value={bookingStatus}
               onChange={(value) => setBookingStatus(value)}
@@ -928,82 +942,151 @@ const CalendarSchedule = ({
             <p className="text-xs text-gray-500 mt-2">Đang tải...</p>
           </div>
         ) : (
-          <div className="space-y-2 max-h-[calc(100vh-300px)] overflow-y-auto no-scrollbar">
+          <div className="space-y-2 flex-1 overflow-y-auto no-scrollbar pr-1">
             {/* Display timeslots when viewing mentor profile as a student/visitor */}
-            {!isOwner && userType === "mentor" && timeslots.length > 0 ? (
+            {!isOwner && userType === "mentor" ? (
               (() => {
-                const filteredSlots = timeslots.filter((slot) => {
+                console.log("=== SIDEBAR DEBUG ===");
+                console.log("Total timeslots:", timeslots.length);
+                console.log("Selected date:", selectedDate);
+
+                let filteredSlots = timeslots.filter((slot) => {
                   // Chỉ hiển thị các slot trong tương lai và có status AVAILABLE
                   const today = new Date();
                   today.setHours(0, 0, 0, 0);
                   const slotDate = new Date(slot.date);
                   slotDate.setHours(0, 0, 0, 0);
+
+                  // Kiểm tra điều kiện cơ bản
+                  const isAvailable = slot.slotStatus === "AVAILABLE";
+                  const isFutureOrToday = slotDate >= today;
+
+                  // Nếu có ngày được chọn, chỉ hiển thị slot của ngày đó
+                  let isSelectedDate = true;
+                  if (selectedDate) {
+                    const selectedDateOnly = new Date(selectedDate);
+                    selectedDateOnly.setHours(0, 0, 0, 0);
+                    isSelectedDate =
+                      slotDate.getDate() === selectedDateOnly.getDate() &&
+                      slotDate.getMonth() === selectedDateOnly.getMonth() &&
+                      slotDate.getFullYear() === selectedDateOnly.getFullYear();
+                  }
+
                   const isValid =
-                    slotDate >= today && slot.slotStatus === "AVAILABLE";
+                    isAvailable && isFutureOrToday && isSelectedDate;
+
                   console.log(
-                    `Slot ${slot.id}: status=${slot.slotStatus}, isValid=${isValid}`
+                    `Slot ${
+                      slot.id
+                    }: date=${slot.date.toDateString()}, status=${
+                      slot.slotStatus
+                    }, isValid=${isValid}`
                   );
                   return isValid;
                 });
+
                 console.log(
                   "Filtered available slots for display:",
                   filteredSlots
                 );
-                return filteredSlots
-                  .sort((a, b) => a.date - b.date)
-                  .map((slot) => (
-                    <div
-                      key={slot.id}
-                      className="relative bg-white rounded-lg border border-gray-200 p-3 hover:shadow-md transition-shadow cursor-pointer overflow-hidden"
-                    >
-                      {/* Color indicator dot */}
-                      <div className="absolute top-3 left-3">
-                        <div className="w-2 h-2 rounded-full bg-green-500" />
-                      </div>
 
-                      {/* Content with left padding for dot */}
-                      <div className="pl-4">
-                        {/* Title */}
-                        <h4 className="font-semibold text-gray-900 text-sm mb-2 leading-tight">
-                          {slot.title}
-                        </h4>
-
-                        {/* Date */}
-                        <div className="flex items-center gap-2 mb-1.5">
-                          <CalendarIcon className="w-3.5 h-3.5 text-gray-500 flex-shrink-0" />
-                          <span className="text-xs text-gray-600">
-                            {slot.date.getDate()}/{slot.date.getMonth() + 1}/
-                            {slot.date.getFullYear()}
-                          </span>
-                        </div>
-
-                        {/* Time */}
-                        {slot.time && (
-                          <div className="flex items-center gap-2 mb-1.5">
-                            <Clock className="w-3.5 h-3.5 text-gray-500 flex-shrink-0" />
-                            <span className="text-xs text-gray-600">
-                              {slot.time}
-                            </span>
-                          </div>
-                        )}
-
-                        {/* Tags */}
-                        <div className="flex flex-wrap gap-1.5 mb-2">
-                          <span className="inline-flex items-center text-[10px] font-medium px-2 py-0.5 rounded-full bg-green-100 text-green-700">
-                            Có sẵn
-                          </span>
-                        </div>
-
-                        {/* Book button */}
+                if (filteredSlots.length === 0) {
+                  return (
+                    <div className="text-center py-6 text-gray-500">
+                      <CalendarIcon className="w-10 h-10 mx-auto mb-2 text-gray-300" />
+                      <p className="text-xs">
+                        {selectedDate
+                          ? `Không có lịch trống ngày ${selectedDate.getDate()}/${
+                              selectedDate.getMonth() + 1
+                            }`
+                          : "Mentor chưa có lịch trống"}
+                      </p>
+                      {selectedDate && (
                         <button
-                          onClick={() => handleBookTimeslot(slot)}
-                          className="w-full mt-2 px-3 py-1.5 bg-purple-900 text-white text-xs font-medium rounded hover:bg-purple-800 transition-colors"
+                          onClick={() => setSelectedDate(null)}
+                          className="mt-2 text-xs text-purple-600 hover:text-purple-800 underline"
                         >
-                          Đặt lịch
+                          Xem tất cả lịch trống
+                        </button>
+                      )}
+                    </div>
+                  );
+                }
+
+                return (
+                  <>
+                    {selectedDate && (
+                      <div className="mb-3 flex items-center justify-between bg-purple-50 p-2 rounded">
+                        <span className="text-xs text-purple-900 font-medium">
+                          Ngày {selectedDate.getDate()}/
+                          {selectedDate.getMonth() + 1}/
+                          {selectedDate.getFullYear()}
+                        </span>
+                        <button
+                          onClick={() => setSelectedDate(null)}
+                          className="text-xs text-purple-600 hover:text-purple-800 underline"
+                        >
+                          Xem tất cả
                         </button>
                       </div>
-                    </div>
-                  ));
+                    )}
+                    {filteredSlots
+                      .sort((a, b) => a.date - b.date)
+                      .map((slot) => (
+                        <div
+                          key={slot.id}
+                          className="relative bg-white rounded-lg border border-gray-200 p-3 hover:shadow-md transition-shadow cursor-pointer overflow-hidden"
+                        >
+                          {/* Color indicator dot */}
+                          <div className="absolute top-3 left-3">
+                            <div className="w-2 h-2 rounded-full bg-green-500" />
+                          </div>
+
+                          {/* Content with left padding for dot */}
+                          <div className="pl-4">
+                            {/* Title */}
+                            <h4 className="font-semibold text-gray-900 text-sm mb-2 leading-tight">
+                              {slot.title}
+                            </h4>
+
+                            {/* Date */}
+                            <div className="flex items-center gap-2 mb-1.5">
+                              <CalendarIcon className="w-3.5 h-3.5 text-gray-500 flex-shrink-0" />
+                              <span className="text-xs text-gray-600">
+                                {slot.date.getDate()}/{slot.date.getMonth() + 1}
+                                /{slot.date.getFullYear()}
+                              </span>
+                            </div>
+
+                            {/* Time */}
+                            {slot.time && (
+                              <div className="flex items-center gap-2 mb-1.5">
+                                <Clock className="w-3.5 h-3.5 text-gray-500 flex-shrink-0" />
+                                <span className="text-xs text-gray-600">
+                                  {slot.time}
+                                </span>
+                              </div>
+                            )}
+
+                            {/* Tags */}
+                            <div className="flex flex-wrap gap-1.5 mb-2">
+                              <span className="inline-flex items-center text-[10px] font-medium px-2 py-0.5 rounded-full bg-green-100 text-green-700">
+                                Có sẵn
+                              </span>
+                            </div>
+
+                            {/* Book button */}
+                            <button
+                              onClick={() => handleBookTimeslot(slot)}
+                              className="w-full mt-2 px-3 py-1.5 bg-purple-900 text-white text-xs font-medium rounded hover:bg-purple-800 transition-colors"
+                            >
+                              Đặt lịch
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                  </>
+                );
               })()
             ) : isOwner &&
               (userType === "student" ||
@@ -1448,14 +1531,6 @@ const CalendarSchedule = ({
                   </p>
                 </div>
               </div>
-            </div>
-
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-              <p className="text-xs text-blue-800">
-                <strong>Lưu ý:</strong> Sau khi đặt lịch, mentor sẽ xác nhận và
-                bạn sẽ nhận được thông báo. Vui lòng kiểm tra lịch học của bạn
-                thường xuyên.
-              </p>
             </div>
           </div>
         )}

@@ -4,7 +4,7 @@ import CalendarSchedule from "../../components/user/CalendarSchedule";
 const UserSchedule = ({ userId }) => {
   return (
     <div className="max-w-full mx-auto">
-      <CalendarSchedule userId={userId} userType="student" />
+      <CalendarSchedule userId={userId} userType="student" isOwner={true} />
     </div>
   );
 };

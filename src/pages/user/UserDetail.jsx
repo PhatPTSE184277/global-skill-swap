@@ -83,6 +83,11 @@ const UserDetail = () => {
 
   const tabs = getTabsForUser(displayUser);
 
+  // Debug thêm về tabs và roles
+  console.log("Tabs available:", tabs);
+  console.log("Display User Role:", displayUser?.accountRole);
+  console.log("Is Own Profile:", isOwnProfile);
+
   useEffect(() => {
     if (activeTab === "posts") {
       fetchPosts({ accountId: currentUserId });
