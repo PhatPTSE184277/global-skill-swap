@@ -578,7 +578,7 @@ const CalendarSchedule = ({
         mentor: { id: userId },
         amount: 150000,
       };
-      
+
       console.log("=== BOOKING DEBUG ===");
       console.log("Navigating to payment with booking data:", bookingData);
 
