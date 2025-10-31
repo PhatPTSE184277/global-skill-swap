@@ -777,10 +777,9 @@ const CalendarSchedule = ({
           {userType === "mentor" && isOwner && mentorTab === "upcoming" && (
             <button
               onClick={handleOpenCreateModal}
-              className="flex items-center gap-1.5 px-2 py-1.5 text-xs bg-purple-900 text-white rounded hover:bg-purple-800 transition-colors"
+              className="flex items-center gap-1.5 px-2 py-1.5 text-xs bg-orange-600 text-white rounded hover:bg-orange-700 transition-colors"
             >
               <Plus className="w-3 h-3" />
-              Thêm sự kiện
             </button>
           )}
         </div>
