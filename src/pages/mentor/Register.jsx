@@ -234,31 +234,21 @@ const MentorRegister = () => {
           JSON.stringify(updateData, null, 2)
         );
 
-        // Gọi API update user
+        // Gọi API update user trước khi thanh toán
         await userService.updateCurrentUser(updateData);
-
-        // Upload CV nếu có
-        if (formData.cv) {
-          console.log("Uploading CV:", formData.cv.name);
-          await userService.uploadCV(formData.cv);
-        }
 
         message.success("Cập nhật thông tin thành công!");
 
-        // Chuyển thẳng đến trang thanh toán với QR code (bỏ qua trang chọn gói)
+        // Chuyển thẳng đến trang thanh toán với QR code và CV để upload sau thanh toán
         navigate("/payment", {
           state: {
-            registrationData: formData,
+            registrationData: formData, // Chỉ gửi formData với CV để upload sau
             productId: "1", // ID mặc định cho gói mentor
           },
         });
       } catch (error) {
-        console.error("Error updating user:", error);
-        console.error("Error response:", error.response?.data);
-        message.error(
-          error.response?.data?.message ||
-            "Có lỗi xảy ra khi cập nhật thông tin. Vui lòng thử lại."
-        );
+        console.error("Error preparing registration data:", error);
+        message.error("Có lỗi xảy ra khi chuẩn bị dữ liệu. Vui lòng thử lại.");
       } finally {
         setLoading(false);
       }

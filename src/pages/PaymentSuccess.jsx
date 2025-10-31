@@ -95,7 +95,7 @@ const PaymentSuccess = () => {
     console.log("================================");
 
     // Upload CV sau khi thanh toán thành công (chỉ cho mentor registration)
-    if (finalPaymentType === "mentor_registration" && registrationData?.cv) {
+    if (finalPaymentType === "mentor_registration" && registrationData) {
       uploadCV();
     }
 
@@ -112,23 +112,34 @@ const PaymentSuccess = () => {
   }, [finalTransactionId, navigate, finalPaymentType, paymentStatus]);
 
   const uploadCV = async () => {
-    if (!registrationData?.cv) return;
+    // Upload CV nếu có
+    if (registrationData?.cv) {
+      try {
+        setIsUploadingCV(true);
+        setCvUploadError(null);
 
-    try {
-      setIsUploadingCV(true);
-      setCvUploadError(null);
+        console.log("Uploading CV:", registrationData.cv.name);
+        await userService.uploadCV(registrationData.cv);
 
-      await userService.uploadCV(registrationData.cv);
+        setCvUploadSuccess(true);
+        console.log("CV uploaded successfully after payment");
 
-      setCvUploadSuccess(true);
-      console.log("CV uploaded successfully after payment");
-    } catch (error) {
-      console.error("Lỗi upload CV sau thanh toán:", error);
-      setCvUploadError(
-        "Có lỗi xảy ra khi tải lên CV. CV sẽ được xử lý trong vòng 24h."
-      );
-    } finally {
-      setIsUploadingCV(false);
+        message.success("Tải lên CV thành công!");
+      } catch (error) {
+        console.error("Error uploading CV after payment:", error);
+        console.error("Error response:", error.response?.data);
+
+        const errorMessage =
+          error.response?.data?.message ||
+          "Có lỗi xảy ra khi tải lên CV. Thông tin sẽ được xử lý trong vòng 24h.";
+
+        setCvUploadError(errorMessage);
+        message.error(errorMessage);
+      } finally {
+        setIsUploadingCV(false);
+      }
+    } else {
+      console.log("No CV file to upload");
     }
   };
 
@@ -651,8 +662,16 @@ const PaymentSuccess = () => {
                   </div>
                 </div> */}
 
-          {/* CV Upload Status
-                <div className="mt-4 pt-4 border-t border-gray-200">
+          {/* User Info & CV Upload Status */}
+          {finalPaymentType === "mentor_registration" && (
+            <div className="border-b border-gray-200 pb-6 mb-6">
+              <h3 className="text-lg font-semibold text-gray-800 mb-3 flex items-center">
+                <FiCheck className="mr-2 text-green-500" />
+                Trạng thái tải lên CV
+              </h3>
+              <div className="bg-gray-50 rounded-lg p-4 space-y-4">
+                {/* CV Upload Status */}
+                {registrationData?.cv && (
                   <div className="flex items-center justify-between">
                     <span className="text-gray-600 flex items-center">
                       <FiUpload className="mr-2" />
@@ -680,14 +699,24 @@ const PaymentSuccess = () => {
                       )}
                     </div>
                   </div>
-                  {cvUploadError && (
-                    <p className="mt-2 text-sm text-amber-600 bg-amber-50 p-2 rounded">
-                      {cvUploadError}
+                )}
+
+                {/* Error Messages */}
+                {cvUploadError && (
+                  <div className="mt-3 text-sm text-amber-600 bg-amber-50 p-3 rounded border border-amber-200">
+                    <p className="font-medium mb-1">Lỗi khi tải lên CV:</p>
+                    <p>{cvUploadError}</p>
+                    <p className="mt-2 text-xs">
+                      Vui lòng liên hệ hỗ trợ với mã giao dịch:{" "}
+                      <code className="bg-amber-100 px-1 py-0.5 rounded text-xs font-mono">
+                        {finalTransactionId}
+                      </code>
                     </p>
-                  )}
-                </div>
+                  </div>
+                )}
               </div>
-            )} */}
+            </div>
+          )}
           {/* 
             {finalPaymentType === "lesson_booking" && bookingData && (
               <div className="bg-gray-50 rounded-lg p-4">

@@ -18,6 +18,7 @@ const UserDetail = () => {
   const [activeTab, setActiveTab] = useState("about");
   const [underlineStyle, setUnderlineStyle] = useState({});
   const tabRefs = useRef({});
+  const tabContainerRef = useRef(null); // Ref cho tab container để scroll đến
   const [profileUser, setProfileUser] = useState(null); // User đang được xem
   const [loading, setLoading] = useState(false);
 
@@ -92,6 +93,16 @@ const UserDetail = () => {
     if (activeTab === "posts") {
       fetchPosts({ accountId: currentUserId });
     }
+
+    // Scroll đến vị trí tab bar khi chuyển tab
+    if (tabContainerRef.current) {
+      const headerHeight = 80; // Chiều cao header (có thể điều chỉnh)
+      const tabPosition = tabContainerRef.current.offsetTop - headerHeight;
+      window.scrollTo({
+        top: tabPosition,
+        behavior: "smooth",
+      });
+    }
   }, [activeTab, currentUserId, fetchPosts]);
 
   useEffect(() => {
@@ -102,7 +113,7 @@ const UserDetail = () => {
         left: `${currentTab.offsetLeft}px`,
       });
     }
-  }, [activeTab]);
+  }, [activeTab, tabs]);
 
   // Hiển thị loading khi đang fetch thông tin user
   if (loading) {
@@ -133,25 +144,28 @@ const UserDetail = () => {
       <UserHeader userId={currentUserId} />
 
       <div>
-        <div className="relative flex gap-8 max-w-4xl mx-auto border-b-2 border-gray-200 ml-4">
-          {tabs.map((tab) => (
-            <button
-              key={tab.key}
-              ref={(el) => (tabRefs.current[tab.key] = el)}
-              onClick={() => setActiveTab(tab.key)}
-              className={`pb-3 text-sm font-medium transition-colors cursor-pointer ${
-                activeTab === tab.key
-                  ? "text-purple-900"
-                  : "text-gray-500 hover:text-gray-700"
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
-          <span
-            className="absolute bottom-0 h-0.5 bg-purple-900 transition-all duration-300"
-            style={underlineStyle}
-          />
+        {/* Tab Bar */}
+        <div ref={tabContainerRef} className="bg-white">
+          <div className="relative flex gap-8 max-w-4xl mx-auto border-b-2 border-gray-200 ml-4">
+            {tabs.map((tab) => (
+              <button
+                key={tab.key}
+                ref={(el) => (tabRefs.current[tab.key] = el)}
+                onClick={() => setActiveTab(tab.key)}
+                className={`pb-3 pt-3 text-sm font-medium transition-colors cursor-pointer ${
+                  activeTab === tab.key
+                    ? "text-purple-900"
+                    : "text-gray-500 hover:text-gray-700"
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+            <span
+              className="absolute bottom-0 h-0.5 bg-purple-900 transition-all duration-300"
+              style={underlineStyle}
+            />
+          </div>
         </div>
 
         <div className="max-w-5xl mx-auto gap-10 py-10">
