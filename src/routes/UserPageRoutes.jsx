@@ -14,7 +14,17 @@ const UserPageRoutes = [
         element: (
           <PostProvider>
             <CommentProvider>
-            <UserDetail />
+              <UserDetail />
+            </CommentProvider>
+          </PostProvider>
+        ),
+      },
+      {
+        path: ":userId",
+        element: (
+          <PostProvider>
+            <CommentProvider>
+              <UserDetail />
             </CommentProvider>
           </PostProvider>
         ),

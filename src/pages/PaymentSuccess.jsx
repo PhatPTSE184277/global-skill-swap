@@ -10,7 +10,9 @@ import {
   FiUser,
   FiUpload,
 } from "react-icons/fi";
+import { message } from "antd";
 import userService from "../services/userService";
+import bookingService from "../services/bookingService";
 
 const PaymentSuccess = () => {
   const navigate = useNavigate();
@@ -51,6 +53,9 @@ const PaymentSuccess = () => {
   const [isUploadingCV, setIsUploadingCV] = useState(false);
   const [cvUploadSuccess, setCvUploadSuccess] = useState(false);
   const [cvUploadError, setCvUploadError] = useState(null);
+  const [isCreatingBooking, setIsCreatingBooking] = useState(false);
+  const [bookingCreated, setBookingCreated] = useState(false);
+  const [bookingError, setBookingError] = useState(null);
 
   useEffect(() => {
     // Nếu không có transaction ID từ cả state và URL, chuyển về trang chủ
@@ -78,40 +83,139 @@ const PaymentSuccess = () => {
     }
 
     // Log để debug
-    console.log("PaymentSuccess loaded:", {
-      finalTransactionId,
-      paymentStatus,
-      finalPaymentType,
-      hasRegistrationData: !!registrationData,
-      urlParams: Object.fromEntries(searchParams.entries()),
-      locationState: location.state,
-    });
+    console.log("=== PaymentSuccess Debug Info ===");
+    console.log("Transaction ID:", finalTransactionId);
+    console.log("Payment Status:", paymentStatus);
+    console.log("Payment Type:", finalPaymentType);
+    console.log("Has Registration Data:", !!registrationData);
+    console.log("Has Booking Data:", !!bookingData);
+    console.log("Booking Data:", bookingData);
+    console.log("Location State:", location.state);
+    console.log("URL Params:", Object.fromEntries(searchParams.entries()));
+    console.log("================================");
 
     // Upload CV sau khi thanh toán thành công (chỉ cho mentor registration)
-    if (finalPaymentType === "mentor_registration" && registrationData?.cv) {
+    if (finalPaymentType === "mentor_registration" && registrationData) {
       uploadCV();
+    }
+
+    // Tạo booking sau khi thanh toán thành công (chỉ cho lesson booking)
+    if (finalPaymentType === "lesson_booking" && bookingData) {
+      console.log("Triggering createBooking...");
+      createBooking();
+    } else if (finalPaymentType === "lesson_booking" && !bookingData) {
+      console.error(
+        "Payment type is lesson_booking but bookingData is missing!"
+      );
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [finalTransactionId, navigate, finalPaymentType, paymentStatus]);
 
   const uploadCV = async () => {
-    if (!registrationData?.cv) return;
+    // Upload CV nếu có
+    if (registrationData?.cv) {
+      try {
+        setIsUploadingCV(true);
+        setCvUploadError(null);
+
+        console.log("Uploading CV:", registrationData.cv.name);
+        await userService.uploadCV(registrationData.cv);
+
+        setCvUploadSuccess(true);
+        console.log("CV uploaded successfully after payment");
+
+        message.success("Tải lên CV thành công!");
+      } catch (error) {
+        console.error("Error uploading CV after payment:", error);
+        console.error("Error response:", error.response?.data);
+
+        const errorMessage =
+          error.response?.data?.message ||
+          "Có lỗi xảy ra khi tải lên CV. Thông tin sẽ được xử lý trong vòng 24h.";
+
+        setCvUploadError(errorMessage);
+        message.error(errorMessage);
+      } finally {
+        setIsUploadingCV(false);
+      }
+    } else {
+      console.log("No CV file to upload");
+    }
+  };
+
+  const createBooking = async () => {
+    // Detailed validation
+    console.log("=== Booking Validation ===");
+    console.log("bookingData exists:", !!bookingData);
+    console.log("bookingData.mentorId:", bookingData?.mentorId);
+    console.log("bookingData.timeslotId:", bookingData?.timeslotId);
+    console.log("Full bookingData:", JSON.stringify(bookingData, null, 2));
+
+    if (!bookingData) {
+      console.error("❌ bookingData is null/undefined");
+      setBookingError("Thiếu thông tin đặt lịch");
+      return;
+    }
+
+    if (!bookingData.mentorId) {
+      console.error("❌ mentorId is missing");
+      setBookingError("Thiếu thông tin mentor");
+      return;
+    }
+
+    if (!bookingData.timeslotId) {
+      console.error("❌ timeslotId is missing");
+      setBookingError("Thiếu thông tin timeslot");
+      return;
+    }
 
     try {
-      setIsUploadingCV(true);
-      setCvUploadError(null);
+      setIsCreatingBooking(true);
+      setBookingError(null);
 
-      await userService.uploadCV(registrationData.cv);
+      // Prepare booking data for API
+      const apiBookingData = {
+        mentorId: bookingData.mentorId,
+        timeslotId: bookingData.timeslotId,
+      };
 
-      setCvUploadSuccess(true);
-      console.log("CV uploaded successfully after payment");
+      console.log("=== Creating Booking ===");
+      console.log("API Booking Data:", JSON.stringify(apiBookingData, null, 2));
+      console.log("Full Booking Data:", JSON.stringify(bookingData, null, 2));
+
+      const response = await bookingService.createBooking(apiBookingData);
+
+      console.log("=== Booking Response ===");
+      console.log("Response:", JSON.stringify(response, null, 2));
+
+      if (response?.success) {
+        setBookingCreated(true);
+        message.success("Đặt lịch thành công!");
+      } else {
+        // API trả về nhưng success = false
+        const errorMsg = response?.message || "Không thể tạo booking";
+        console.error("❌ Booking failed:", errorMsg);
+        setBookingError(errorMsg);
+        message.error(errorMsg);
+      }
     } catch (error) {
-      console.error("Lỗi upload CV sau thanh toán:", error);
-      setCvUploadError(
-        "Có lỗi xảy ra khi tải lên CV. CV sẽ được xử lý trong vòng 24h."
-      );
+      console.error("=== Error Creating Booking ===");
+      console.error("Error object:", error);
+      console.error("Error response:", error.response);
+      console.error("Error response data:", error.response?.data);
+      console.error("Error message:", error.message);
+      console.error("Error stack:", error.stack);
+
+      const errorMessage =
+        error.response?.data?.message ||
+        error.response?.data?.error ||
+        error.message ||
+        "Có lỗi xảy ra khi tạo booking. Vui lòng liên hệ hỗ trợ.";
+
+      setBookingError(errorMessage);
+      message.error(errorMessage);
     } finally {
-      setIsUploadingCV(false);
+      setIsCreatingBooking(false);
     }
   };
 
@@ -432,6 +536,92 @@ const PaymentSuccess = () => {
             </div>
           </div>
 
+          {/* Booking Status - for lesson booking */}
+          {finalPaymentType === "lesson_booking" && (
+            <div className="border-b border-gray-200 pb-6 mb-6">
+              <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                <FiCalendar className="mr-2 text-purple-600" />
+                Trạng thái đặt lịch
+              </h3>
+              <div className="bg-gray-50 rounded-lg p-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-600 flex items-center">
+                    Tạo booking:
+                  </span>
+                  <div className="flex items-center">
+                    {isCreatingBooking && (
+                      <div className="flex items-center text-blue-600">
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2"></div>
+                        <span className="text-sm">Đang tạo booking...</span>
+                      </div>
+                    )}
+                    {bookingCreated && !isCreatingBooking && (
+                      <div className="flex items-center text-green-600">
+                        <FiCheck className="mr-1" />
+                        <span className="text-sm font-medium">
+                          Đã tạo booking thành công
+                        </span>
+                      </div>
+                    )}
+                    {bookingError && !isCreatingBooking && (
+                      <div className="flex items-center text-red-600">
+                        <span className="text-sm">Có lỗi xảy ra</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+                {bookingError && (
+                  <div className="mt-3 text-sm text-red-600 bg-red-50 p-3 rounded border border-red-200">
+                    <p className="font-medium mb-1">Lỗi khi tạo booking:</p>
+                    <p>{bookingError}</p>
+                    <p className="mt-2 text-xs">
+                      Vui lòng liên hệ hỗ trợ với mã giao dịch:{" "}
+                      {finalTransactionId}
+                    </p>
+                  </div>
+                )}
+                {bookingData && (
+                  <div className="mt-4 pt-4 border-t border-gray-200">
+                    <p className="text-sm text-gray-600 mb-2">
+                      Thông tin đặt lịch:
+                    </p>
+                    <div className="grid grid-cols-2 gap-3 text-sm">
+                      <div>
+                        <span className="text-gray-500">Mentor ID:</span>
+                        <span className="ml-2 font-medium">
+                          {bookingData.mentorId || "N/A"}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-gray-500">Timeslot ID:</span>
+                        <span className="ml-2 font-medium">
+                          {bookingData.timeslotId || "N/A"}
+                        </span>
+                      </div>
+                      {bookingData.timeslot && (
+                        <>
+                          <div>
+                            <span className="text-gray-500">Ngày học:</span>
+                            <span className="ml-2 font-medium">
+                              {bookingData.timeslot.slotDate || "N/A"}
+                            </span>
+                          </div>
+                          <div>
+                            <span className="text-gray-500">Giờ học:</span>
+                            <span className="ml-2 font-medium">
+                              {bookingData.timeslot.startTime?.slice(0, 5)} -{" "}
+                              {bookingData.timeslot.endTime?.slice(0, 5)}
+                            </span>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
           {/* Payment Summary
           <div className="border-b border-gray-200 pb-6 mb-6">
             <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
@@ -472,8 +662,16 @@ const PaymentSuccess = () => {
                   </div>
                 </div> */}
 
-          {/* CV Upload Status
-                <div className="mt-4 pt-4 border-t border-gray-200">
+          {/* User Info & CV Upload Status */}
+          {finalPaymentType === "mentor_registration" && (
+            <div className="border-b border-gray-200 pb-6 mb-6">
+              <h3 className="text-lg font-semibold text-gray-800 mb-3 flex items-center">
+                <FiCheck className="mr-2 text-green-500" />
+                Trạng thái tải lên CV
+              </h3>
+              <div className="bg-gray-50 rounded-lg p-4 space-y-4">
+                {/* CV Upload Status */}
+                {registrationData?.cv && (
                   <div className="flex items-center justify-between">
                     <span className="text-gray-600 flex items-center">
                       <FiUpload className="mr-2" />
@@ -501,14 +699,24 @@ const PaymentSuccess = () => {
                       )}
                     </div>
                   </div>
-                  {cvUploadError && (
-                    <p className="mt-2 text-sm text-amber-600 bg-amber-50 p-2 rounded">
-                      {cvUploadError}
+                )}
+
+                {/* Error Messages */}
+                {cvUploadError && (
+                  <div className="mt-3 text-sm text-amber-600 bg-amber-50 p-3 rounded border border-amber-200">
+                    <p className="font-medium mb-1">Lỗi khi tải lên CV:</p>
+                    <p>{cvUploadError}</p>
+                    <p className="mt-2 text-xs">
+                      Vui lòng liên hệ hỗ trợ với mã giao dịch:{" "}
+                      <code className="bg-amber-100 px-1 py-0.5 rounded text-xs font-mono">
+                        {finalTransactionId}
+                      </code>
                     </p>
-                  )}
-                </div>
+                  </div>
+                )}
               </div>
-            )} */}
+            </div>
+          )}
           {/* 
             {finalPaymentType === "lesson_booking" && bookingData && (
               <div className="bg-gray-50 rounded-lg p-4">
