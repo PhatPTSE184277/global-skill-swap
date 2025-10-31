@@ -5,6 +5,7 @@ import {
   Calendar as CalendarIcon,
   Clock,
   User,
+  Plus,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import bookingService from "../../services/bookingService";
@@ -616,15 +617,26 @@ const CalendarSchedule = ({
 
   // Lấy tất cả timeslots đã tạo (cho mentor)
   const createdTimeslots = timeslots
+    .filter((slot) => {
+      // Nếu có selectedDate, chỉ hiển thị timeslots của ngày đó
+      if (selectedDate) {
+        const selectedDateObj = new Date(selectedDate);
+        selectedDateObj.setHours(0, 0, 0, 0);
+        const slotDate = new Date(slot.date);
+        slotDate.setHours(0, 0, 0, 0);
+        return slotDate.getTime() === selectedDateObj.getTime();
+      }
+      return true; // Hiển thị tất cả nếu không có ngày được chọn
+    })
     .sort((a, b) => b.date - a.date) // Sort by date descending
     .slice(0, 10);
 
   return (
-    <div className="flex gap-4 bg-white rounded-lg max-w-7xl mx-auto h-[calc(100vh-350px)]">
+    <div className="flex gap-4 bg-white rounded-lg max-w-7xl mx-auto h-[calc(100vh-200px)]">
       {/* Calendar Section */}
       <div className="flex-1 bg-white rounded-lg border border-gray-200 p-4 overflow-y-auto no-scrollbar">
         {/* Header */}
-        <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center justify-between mb-7">
           <h2 className="text-lg font-bold text-gray-800">
             {monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}
           </h2>
@@ -648,40 +660,6 @@ const CalendarSchedule = ({
               <ChevronRight className="w-4 h-4 text-gray-600" />
             </button>
           </div>
-        </div>
-
-        {/* View Tabs */}
-        <div className="flex gap-1 mb-3">
-          <button
-            onClick={() => setView("month")}
-            className={`px-3 py-1.5 rounded text-xs font-medium transition-colors ${
-              view === "month"
-                ? "bg-purple-900 text-white"
-                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-            }`}
-          >
-            Tháng
-          </button>
-          <button
-            onClick={() => setView("week")}
-            className={`px-3 py-1.5 rounded text-xs font-medium transition-colors ${
-              view === "week"
-                ? "bg-purple-900 text-white"
-                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-            }`}
-          >
-            Tuần
-          </button>
-          <button
-            onClick={() => setView("day")}
-            className={`px-3 py-1.5 rounded text-xs font-medium transition-colors ${
-              view === "day"
-                ? "bg-purple-900 text-white"
-                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-            }`}
-          >
-            Ngày
-          </button>
         </div>
 
         {/* Calendar Grid */}
@@ -778,19 +756,6 @@ const CalendarSchedule = ({
             })}
           </div>
         </div>
-
-        {/* Add Event Button (chỉ cho mentor VÀ chỉ khi là owner) */}
-        {userType === "mentor" && isOwner && (
-          <div className="mt-3 flex justify-end">
-            <button
-              onClick={handleOpenCreateModal}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-purple-900 text-white rounded hover:bg-purple-800 transition-colors"
-            >
-              <span className="text-base">+</span>
-              Thêm sự kiện
-            </button>
-          </div>
-        )}
       </div>
 
       {/* Events Sidebar */}
@@ -808,6 +773,16 @@ const CalendarSchedule = ({
                 : "Lịch đã tạo"}
             </h3>
           </div>
+          {/* Add Event Button (chỉ cho mentor VÀ chỉ khi là owner và tab upcoming) */}
+          {userType === "mentor" && isOwner && mentorTab === "upcoming" && (
+            <button
+              onClick={handleOpenCreateModal}
+              className="flex items-center gap-1.5 px-2 py-1.5 text-xs bg-purple-900 text-white rounded hover:bg-purple-800 transition-colors"
+            >
+              <Plus className="w-3 h-3" />
+              Thêm sự kiện
+            </button>
+          )}
         </div>
 
         {/* Tab buttons for mentor - CHỈ hiển thị khi đang xem profile của chính mình */}
@@ -827,7 +802,7 @@ const CalendarSchedule = ({
               onClick={() => setMentorTab("created")}
               className={`flex-1 px-3 py-2 rounded text-xs font-medium transition-colors ${
                 mentorTab === "created"
-                  ? "bg-purple-900 text-white"
+                  ? "bg-orange-600 text-white"
                   : "bg-gray-100 text-gray-600 hover:bg-gray-200"
               }`}
             >
@@ -836,58 +811,31 @@ const CalendarSchedule = ({
           </div>
         )}
 
+        {/* Hiển thị thông báo khi đã chọn ngày trong tab "Lịch đã tạo" */}
+        {userType === "mentor" &&
+          isOwner &&
+          mentorTab === "created" &&
+          selectedDate && (
+            <div className="mb-4 flex-shrink-0 bg-purple-50 border border-purple-200 rounded-lg p-3">
+              <div className="flex items-center justify-between">
+                <div className="flex-1">
+                  <p className="text-xs text-purple-900 font-medium">
+                    Hiển thị lịch ngày {selectedDate.getDate()}/
+                    {selectedDate.getMonth() + 1}/{selectedDate.getFullYear()}
+                  </p>
+                </div>
+                <button
+                  onClick={() => setSelectedDate(null)}
+                  className="text-xs text-purple-900 hover:text-purple-700 font-medium underline ml-2"
+                >
+                  Xem tất cả
+                </button>
+              </div>
+            </div>
+          )}
+
         {/* Filter by status for mentor when in upcoming tab - CHỈ khi là owner */}
         {userType === "mentor" && isOwner && mentorTab === "upcoming" && (
-          <div className="mb-4 flex-shrink-0">
-            <Select
-              value={bookingStatus}
-              onChange={(value) => setBookingStatus(value)}
-              style={{ width: "100%" }}
-              size="middle"
-              options={[
-                {
-                  value: "PENDING",
-                  label: (
-                    <div className="flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-full bg-orange-500"></span>
-                      <span>Chờ xác nhận</span>
-                    </div>
-                  ),
-                },
-                {
-                  value: "CONFIRMED",
-                  label: (
-                    <div className="flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-full bg-blue-500"></span>
-                      <span>Đã xác nhận</span>
-                    </div>
-                  ),
-                },
-                {
-                  value: "COMPLETED",
-                  label: (
-                    <div className="flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-full bg-green-500"></span>
-                      <span>Hoàn thành</span>
-                    </div>
-                  ),
-                },
-                {
-                  value: "CANCELLED",
-                  label: (
-                    <div className="flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-full bg-red-500"></span>
-                      <span>Đã hủy</span>
-                    </div>
-                  ),
-                },
-              ]}
-            />
-          </div>
-        )}
-
-        {/* Filter by status for students */}
-        {userType === "student" && (
           <div className="mb-4 flex-shrink-0">
             <Select
               value={bookingStatus}
@@ -1272,6 +1220,10 @@ const CalendarSchedule = ({
                     ? "Không có lịch học sắp tới"
                     : mentorTab === "upcoming"
                     ? "Không có sự kiện sắp tới"
+                    : selectedDate
+                    ? `Không có lịch đã tạo cho ngày ${selectedDate.getDate()}/${
+                        selectedDate.getMonth() + 1
+                      }/${selectedDate.getFullYear()}`
                     : "Không có lịch đã tạo"}
                 </p>
               </div>
