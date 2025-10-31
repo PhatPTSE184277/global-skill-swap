@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useRef, useState } from "react";
+import React, { useContext, useEffect, useRef, useState, useMemo } from "react";
 import { useSelector } from "react-redux";
 import { useParams } from "react-router-dom";
 import { authSelector } from "../../reduxs/reducers/AuthReducer";
@@ -61,13 +61,14 @@ const UserDetail = () => {
     fetchUserProfile();
   }, [userId, authUser?._id]);
 
-  const getTabsForUser = (userData) => {
+  // Sử dụng useMemo để cache tabs, tránh tạo mảng mới mỗi lần render
+  const tabs = useMemo(() => {
     const baseTabs = [
       { key: "about", label: "Giới thiệu" },
       { key: "posts", label: "Bài viết" },
     ];
 
-    if (userData?.accountRole === "TEACHER") {
+    if (displayUser?.accountRole === "TEACHER") {
       baseTabs.push(
         { key: "lectures", label: "Bài giảng" },
         { key: "reviews", label: "Đánh giá" },
@@ -75,19 +76,12 @@ const UserDetail = () => {
       );
     }
 
-    if (userData?.accountRole === "USER" && isOwnProfile) {
+    if (displayUser?.accountRole === "USER" && isOwnProfile) {
       baseTabs.push({ key: "my-schedule", label: "Lịch học" });
     }
 
     return baseTabs;
-  };
-
-  const tabs = getTabsForUser(displayUser);
-
-  // Debug thêm về tabs và roles
-  console.log("Tabs available:", tabs);
-  console.log("Display User Role:", displayUser?.accountRole);
-  console.log("Is Own Profile:", isOwnProfile);
+  }, [displayUser?.accountRole, isOwnProfile]);
 
   useEffect(() => {
     if (activeTab === "posts") {

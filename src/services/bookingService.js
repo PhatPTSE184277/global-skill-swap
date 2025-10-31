@@ -108,6 +108,17 @@ const bookingService = {
     }
   },
 
+  // Cập nhật timeslot (mentor)
+  updateTimeslot: async (timeslotId, timeslotData) => {
+    try {
+      const response = await axiosClient.put(`/timeslot/${timeslotId}`, timeslotData);
+      return response?.data;
+    } catch (error) {
+      console.error('Error updating timeslot:', error);
+      throw error;
+    }
+  },
+
   // Lấy calendar của một user cụ thể theo accountId
   getCalendarByAccountId: async (accountId, params = {}) => {
     try {
