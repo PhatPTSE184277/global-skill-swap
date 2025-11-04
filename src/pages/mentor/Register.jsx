@@ -63,6 +63,13 @@ const MentorRegister = () => {
         const userData = response?.data || response;
 
         if (userData) {
+          // Kiểm tra nếu user đã có role TEACHER thì không cho vào trang này
+          if (userData.accountRole === "TEACHER") {
+            message.info("Bạn đã là Mentor rồi!");
+            navigate("/"); // Chuyển về trang chủ
+            return;
+          }
+
           // Lưu toàn bộ data từ API để giữ nguyên các field khác
           setCurrentUserData(userData);
 
@@ -100,7 +107,7 @@ const MentorRegister = () => {
       }
     };
     loadCurrentUser();
-  }, []);
+  }, [navigate]);
 
   const steps = [
     { id: 1, title: "Thông tin cá nhân", icon: FiUser },
@@ -234,30 +241,60 @@ const MentorRegister = () => {
           JSON.stringify(updateData, null, 2)
         );
 
-        // Gọi API update user
+        // Gọi API update user trước khi thanh toán
         await userService.updateCurrentUser(updateData);
-
-        // Upload CV nếu có
-        if (formData.cv) {
-          console.log("Uploading CV:", formData.cv.name);
-          await userService.uploadCV(formData.cv);
-        }
 
         message.success("Cập nhật thông tin thành công!");
 
-        // Chuyển đến trang thanh toán
-        navigate("/mentor/package", {
+        // Upload CV trước khi chuyển đến trang thanh toán
+        if (formData.cv) {
+          try {
+            console.log("Uploading CV before payment:", formData.cv.name);
+            const cvResponse = await userService.uploadCV(formData.cv);
+            console.log("CV Upload Response:", cvResponse);
+
+            // Kiểm tra applicationStatus từ response
+            const applicationStatus =
+              cvResponse?.data?.applicationStatus ||
+              cvResponse?.applicationStatus;
+
+            if (applicationStatus === "RE_SUBMIT") {
+              // Nếu là RE_SUBMIT, chuyển đến trang thông báo thành công
+              setLoading(false);
+
+              navigate("/mentor/cv-submit-success", {
+                state: {
+                  registrationData: formData,
+                },
+              });
+              return;
+            }
+
+            message.success("Tải lên CV thành công!");
+          } catch (error) {
+            console.error("Error uploading CV:", error);
+            const errorMessage =
+              error.response?.data?.message ||
+              "Có lỗi xảy ra khi tải lên CV. Vui lòng thử lại.";
+            message.error(errorMessage);
+            setLoading(false);
+            return; // Dừng lại nếu upload CV thất bại
+          }
+        }
+
+        // Chuyển đến trang thanh toán (CV đã upload thành công và không phải RE_SUBMIT)
+        navigate("/payment", {
           state: {
-            registrationData: formData,
+            registrationData: {
+              ...formData,
+              cvUploaded: true, // Đánh dấu CV đã upload
+            },
+            productId: "1", // ID mặc định cho gói mentor
           },
         });
       } catch (error) {
-        console.error("Error updating user:", error);
-        console.error("Error response:", error.response?.data);
-        message.error(
-          error.response?.data?.message ||
-            "Có lỗi xảy ra khi cập nhật thông tin. Vui lòng thử lại."
-        );
+        console.error("Error preparing registration data:", error);
+        message.error("Có lỗi xảy ra khi chuẩn bị dữ liệu. Vui lòng thử lại.");
       } finally {
         setLoading(false);
       }

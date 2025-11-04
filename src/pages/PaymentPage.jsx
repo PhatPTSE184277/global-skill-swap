@@ -27,10 +27,15 @@ const PaymentPage = () => {
     [location.state?.bookingData]
   );
 
+  const productId = useMemo(
+    () => location.state?.productId || "1",
+    [location.state?.productId]
+  );
+
   const paymentType = useMemo(() => {
     if (registrationData.fullName && registrationData.expertise) {
       return "mentor_registration";
-    } else if (bookingData.mentor || bookingData.course) {
+    } else if (bookingData.mentorId || bookingData.timeslotId) {
       return "lesson_booking";
     }
     return "unknown";
@@ -51,7 +56,7 @@ const PaymentPage = () => {
         return {
           title: "Thanh toán đăng ký buổi học",
           packageName: bookingData.course?.title || "Buổi học",
-          amount: bookingData.amount || 200000,
+          amount: bookingData.amount || 150000,
           originalAmount: null,
           successRoute: "/payment-success",
           cancelRoute: "/payment-cancel",
@@ -93,7 +98,14 @@ const PaymentPage = () => {
     const initPayment = async () => {
       try {
         setIsProcessing(true);
-        const response = await paymentService.createPayment();
+
+        // Lấy orderId từ bookingId (id của booking response)
+        const orderId = bookingData.bookingId || null;
+
+        console.log("Creating payment with:", { productId, orderId });
+
+        // Truyền productId và orderId (booking ID) vào createPayment
+        const response = await paymentService.createPayment(productId, orderId);
 
         if (response.success && response.data) {
           setInvoiceData(response.data);
@@ -119,7 +131,7 @@ const PaymentPage = () => {
     };
 
     initPayment();
-  }, [paymentType, config.amount]);
+  }, [paymentType, config.amount, productId, bookingData.bookingId]);
 
   // Fetch current user (buyer) to include in payment state
   useEffect(() => {
@@ -240,20 +252,31 @@ const PaymentPage = () => {
   };
 
   const goBack = () => {
-    navigate(-1);
+    // Nếu là lesson booking, quay về profile của mentor
+    if (paymentType === "lesson_booking" && bookingData?.mentorId) {
+      navigate(`/profile/${bookingData.mentorId}`);
+    } else {
+      navigate(-1);
+    }
   };
 
   const handleCancel = () => {
     message.warning("Bạn đã hủy thanh toán");
-    navigate(config.cancelRoute, {
-      state: {
-        reason: "user_cancelled",
-        paymentType,
-        registrationData:
-          paymentType === "mentor_registration" ? registrationData : null,
-        bookingData: paymentType === "lesson_booking" ? bookingData : null,
-      },
-    });
+
+    // Nếu là lesson booking, quay về profile của mentor thay vì trang cancel
+    if (paymentType === "lesson_booking" && bookingData?.mentorId) {
+      navigate(`/profile/${bookingData.mentorId}`);
+    } else {
+      navigate(config.cancelRoute, {
+        state: {
+          reason: "user_cancelled",
+          paymentType,
+          registrationData:
+            paymentType === "mentor_registration" ? registrationData : null,
+          bookingData: paymentType === "lesson_booking" ? bookingData : null,
+        },
+      });
+    }
   };
 
   return (

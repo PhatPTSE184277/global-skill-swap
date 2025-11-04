@@ -20,6 +20,16 @@ const UserPageRoutes = [
         ),
       },
       {
+        path: ":userId",
+        element: (
+          <PostProvider>
+            <CommentProvider>
+              <UserDetail />
+            </CommentProvider>
+          </PostProvider>
+        ),
+      },
+      {
         path: "edit",
         element: <UserEditPage />,
       },

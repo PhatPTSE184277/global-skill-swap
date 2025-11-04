@@ -2,12 +2,20 @@ import axiosClient from '../apis/axiosClient';
 
 const paymentService = {
   // Tạo hóa đơn thanh toán
-  createPayment: async () => {
+  createPayment: async (productId = "1", orderId = null) => {
     try {
-      // Sử dụng product ID duy nhất từ hệ thống
-      const response = await axiosClient.post('/invoice', {
-        productId: "1"  // ID cho "Upgrade user role" - 100000 VND
-      });
+      // Sử dụng product ID từ tham số hoặc mặc định là "1"
+      const payload = {
+        productId: productId.toString()  // "1" cho "Upgrade user role" - 100000 VND, "2" cho booking lessons
+      };
+      
+      // Tạo URL với orderId nếu có (orderId = booking ID)
+      let url = '/invoice';
+      if (orderId) {
+        url = `/invoice?orderId=${orderId}`;
+      }
+      
+      const response = await axiosClient.post(url, payload);
       return response.data;
     } catch (error) {
       throw error.response?.data || error.message;
@@ -15,11 +23,11 @@ const paymentService = {
   },
 
   // Xử lý thanh toán ZaloPay
-  processZaloPayPayment: async () => {
+  processZaloPayPayment: async (productId = "1") => {
     try {
       // Tạo hóa đơn và nhận paymentUrl trực tiếp
       const invoice = await axiosClient.post('/invoice', {
-        productId: "1"  // "Upgrade user role" - 100000 VND
+        productId: productId.toString()  // "1" cho "Upgrade user role", "2" cho booking
       });
 
       // Chuyển hướng đến paymentUrl từ invoice response
@@ -34,11 +42,11 @@ const paymentService = {
   },
 
   // Xử lý thanh toán VNPay
-  processVNPayPayment: async () => {
+  processVNPayPayment: async (productId = "1") => {
     try {
       // Tạo hóa đơn và nhận paymentUrl trực tiếp
       const invoice = await axiosClient.post('/invoice', {
-        productId: "1"  // "Upgrade user role" - 100000 VND
+        productId: productId.toString()  // "1" cho "Upgrade user role", "2" cho booking
       });
 
       // Chuyển hướng đến paymentUrl từ invoice response

@@ -6,9 +6,11 @@ export const fetchAllMentorCVs = async ({
   sortBy = "id",
   sortDir = "desc",
   isActive,
+  applicationStatus,
 } = {}) => {
   const params = { page, size, sortBy, sortDir };
   if (isActive !== undefined) params.isActive = isActive;
+  if (applicationStatus) params.applicationStatus = applicationStatus;
   const response = await axiosClient.get("/user/cv", { params });
   return response?.data;
 };
