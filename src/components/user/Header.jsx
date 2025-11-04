@@ -1,18 +1,49 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { MessageCircleMore } from "lucide-react";
-import { useSelector } from "react-redux";
-import { useNavigate } from "react-router-dom";
-import { authSelector } from "../../reduxs/reducers/AuthReducer";
+import { useNavigate, useParams } from "react-router-dom";
+import axiosClient from "../../apis/axiosClient";
 
 const UserHeader = () => {
-  const user = useSelector(authSelector);
+  const { id } = useParams();
+  const [user, setUser] = useState(null);
   const displayName = user?.username || "User";
   const navigate = useNavigate();
 
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const res = await axiosClient.get(`/user/${id}`);
+        console.log("User data:", res.data);
+        setUser(res.data.data);
+      } catch (error) {
+        setUser(null);
+      }
+    };
+    if (id) fetchUser();
+  }, [id]);
+
   const handleChatClick = () => {
-    // navigate(`/messages/${user?._id || user?.id || ""}`);
-     navigate(`/messages`);
+    // Truyền thông tin user qua state khi navigate
+    navigate(`/messages`, {
+      state: {
+        recipientId: parseInt(id),
+        recipientInfo: {
+          id: parseInt(id),
+          username: user?.username,
+          fullName: user?.fullName || user?.username,
+          avatarUrl: user?.avatarUrl || user?.avatar
+        }
+      }
+    });
   };
+
+  if (!user) {
+    return (
+      <div className="pt-10 pb-0 px-8 rounded-b-3xl text-center text-gray-500">
+        Không tìm thấy người dùng
+      </div>
+    );
+  }
 
   return (
     <div className="pt-10 pb-0 px-8 rounded-b-3xl">
@@ -26,7 +57,7 @@ const UserHeader = () => {
           alt={displayName}
           className="w-32 h-32 rounded-full object-cover border-4 border-white shadow"
         />
-        <div className="flex-1">
+        <div className="flex-1 flex flex-col justify-center">
           <div className="flex items-center justify-between gap-5">
             <div className="flex flex-col">
               <div className="flex items-center gap-10">
@@ -42,11 +73,11 @@ const UserHeader = () => {
               {user?.email && (
                 <span className="text-sm text-gray-500">{user.email}</span>
               )}
+              <p className="text-gray-700 mt-4">
+                {user?.bio || user?.description || "Chưa có thông tin giới thiệu"}
+              </p>
             </div>
-            <div className="flex gap-3">
-              <button className="bg-orange-500 text-white px-5 py-1 rounded-xl font-medium flex items-center justify-center hover:bg-orange-600 transition-all duration-200">
-                Theo Dõi
-              </button>
+            <div className="flex gap-3 items-start">
               <button
                 className="bg-[#4D2C5E] text-white px-4 py-1 rounded-xl font-medium flex items-center justify-center hover:bg-[#6d3bbd] transition-all duration-200"
                 onClick={handleChatClick}
@@ -55,23 +86,7 @@ const UserHeader = () => {
               </button>
             </div>
           </div>
-
-          <div className="flex gap-8 text-base font-medium mt-3 mb-6">
-            <span>
-              <span className="font-bold">{user?.postsCount || 0}</span> bài viết
-            </span>
-            <span>
-              <span className="font-bold">{user?.followersCount || 0}</span> người theo dõi
-            </span>
-            <span>
-              Đang theo dõi <span className="font-bold">{user?.followingCount || 0}</span> người dùng
-            </span>
-          </div>
-
-          <p className="text-gray-700">
-            {user?.bio || user?.description || "Chưa có thông tin giới thiệu"}
-          </p>
-          <div className="flex gap-3 mb-4">
+          <div className="flex gap-3 mb-4 mt-4">
             <a href="#" className="text-gray-400 hover:text-orange-500">
               <i className="fab fa-facebook-f"></i>
             </a>
