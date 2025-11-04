@@ -1,12 +1,18 @@
 import React from "react";
 import { MessageCircleMore } from "lucide-react";
 import { useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom";
 import { authSelector } from "../../reduxs/reducers/AuthReducer";
 
 const UserHeader = () => {
   const user = useSelector(authSelector);
-
   const displayName = user?.username || "User";
+  const navigate = useNavigate();
+
+  const handleChatClick = () => {
+    // navigate(`/messages/${user?._id || user?.id || ""}`);
+     navigate(`/messages`);
+  };
 
   return (
     <div className="pt-10 pb-0 px-8 rounded-b-3xl">
@@ -41,7 +47,10 @@ const UserHeader = () => {
               <button className="bg-orange-500 text-white px-5 py-1 rounded-xl font-medium flex items-center justify-center hover:bg-orange-600 transition-all duration-200">
                 Theo Dõi
               </button>
-              <button className="bg-[#4D2C5E] text-white px-4 py-1 rounded-xl font-medium flex items-center justify-center hover:bg-[#6d3bbd] transition-all duration-200">
+              <button
+                className="bg-[#4D2C5E] text-white px-4 py-1 rounded-xl font-medium flex items-center justify-center hover:bg-[#6d3bbd] transition-all duration-200"
+                onClick={handleChatClick}
+              >
                 <MessageCircleMore size={20} />
               </button>
             </div>
