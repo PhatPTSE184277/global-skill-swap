@@ -2,12 +2,20 @@ import axiosClient from '../apis/axiosClient';
 
 const paymentService = {
   // Tạo hóa đơn thanh toán
-  createPayment: async (productId = "1") => {
+  createPayment: async (productId = "1", orderId = null) => {
     try {
       // Sử dụng product ID từ tham số hoặc mặc định là "1"
-      const response = await axiosClient.post('/invoice', {
+      const payload = {
         productId: productId.toString()  // "1" cho "Upgrade user role" - 100000 VND, "2" cho booking lessons
-      });
+      };
+      
+      // Tạo URL với orderId nếu có (orderId = booking ID)
+      let url = '/invoice';
+      if (orderId) {
+        url = `/invoice?orderId=${orderId}`;
+      }
+      
+      const response = await axiosClient.post(url, payload);
       return response.data;
     } catch (error) {
       throw error.response?.data || error.message;

@@ -23,10 +23,9 @@ const CalendarSchedule = ({
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(null);
   const [events, setEvents] = useState([]);
-  const [mentorBookings, setMentorBookings] = useState([]);
   const [timeslots, setTimeslots] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [bookingStatus, setBookingStatus] = useState("PENDING");
+  const [bookingStatus] = useState("CONFIRMED"); // Cố định là CONFIRMED, không cho thay đổi
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedDateEvents, setSelectedDateEvents] = useState([]);
   const [mentorTab, setMentorTab] = useState("upcoming");
@@ -38,6 +37,7 @@ const CalendarSchedule = ({
     startTime: null,
     endTime: null,
     linkUrlRoom: "",
+    language: "ENGLISH", // Mặc định là tiếng Anh
   });
 
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
@@ -118,7 +118,6 @@ const CalendarSchedule = ({
             if (booking.bookingStatus === "COMPLETED") color = "green";
             const tags = [];
             if (booking.bookingStatus === "PENDING") tags.push("Chờ xác nhận");
-            if (booking.bookingStatus === "CONFIRMED") tags.push("Đã xác nhận");
             if (booking.bookingStatus === "CANCELLED") tags.push("Đã hủy");
             if (booking.bookingStatus === "COMPLETED") tags.push("Hoàn thành");
             return {
@@ -135,6 +134,7 @@ const CalendarSchedule = ({
               linkUrlRoom: timeslot.linkUrlRoom,
               slotStatus: timeslot.slotStatus,
               bookingData: booking,
+              language: timeslot.language,
             };
           });
 
@@ -158,84 +158,6 @@ const CalendarSchedule = ({
     fetchBookings();
 
     // Không cần hàm cleanup isMounted = false ở đây nữa, vì đã dùng chung 1 cái
-  }, [userId, userType, bookingStatus, isOwner]);
-
-  // Fetch bookings from API for Mentor (hiển thị người đăng ký)
-  useEffect(() => {
-    const fetchMentorBookings = async () => {
-      if (userType !== "mentor" || !isOwner) {
-        return;
-      }
-      try {
-        // 4. FIX CHO NGUỒN KẸT SỐ 2 (fetch data)
-        if (isMounted.current) setLoading(true);
-
-        const response = await bookingService.getCurrentUserBookings({
-          page: 0,
-          size: 100,
-          sortBy: "id",
-          sortDir: "desc",
-          bookingStatus: bookingStatus,
-        });
-
-        if (response?.success && response?.data?.content) {
-          const bookings = response.data.content;
-          const transformedEvents = bookings.map((booking) => {
-            // ... (giữ nguyên logic map)
-            const timeslot = booking.timeslotResponse;
-            const [year, month, day] = timeslot.slotDate.split("-").map(Number);
-            const bookingDate = new Date(year, month - 1, day);
-            const timeRange = `${timeslot.startTime.slice(
-              0,
-              5
-            )} - ${timeslot.endTime.slice(0, 5)}`;
-            let color = "orange";
-            if (booking.bookingStatus === "CONFIRMED") color = "blue";
-            if (booking.bookingStatus === "CANCELLED") color = "red";
-            if (booking.bookingStatus === "COMPLETED") color = "green";
-            const tags = [];
-            if (booking.bookingStatus === "PENDING") tags.push("Chờ xác nhận");
-            if (booking.bookingStatus === "CONFIRMED") tags.push("Đã xác nhận");
-            if (booking.bookingStatus === "CANCELLED") tags.push("Đã hủy");
-            if (booking.bookingStatus === "COMPLETED") tags.push("Hoàn thành");
-            const studentInfo = booking.studentId || booking.userId || {};
-            const studentName =
-              studentInfo.fullName || studentInfo.username || "Học viên";
-            return {
-              id: booking.id,
-              title: `Buổi học với ${studentName}`,
-              date: bookingDate,
-              time: timeRange,
-              student: studentName,
-              studentAvatar: studentInfo.avatarUrl,
-              studentUsername: studentInfo.username,
-              type: "class",
-              tags: tags,
-              color: color,
-              linkUrlRoom: timeslot.linkUrlRoom,
-              slotStatus: timeslot.slotStatus,
-              bookingData: booking,
-            };
-          });
-
-          if (isMounted.current) {
-            // <--- KIỂM TRA
-            setMentorBookings(transformedEvents);
-          }
-        }
-      } catch (error) {
-        console.error("Error fetching mentor bookings:", error);
-        message.error("Không thể tải danh sách lịch học");
-        if (isMounted.current) setMentorBookings([]); // <--- KIỂM TRA
-      } finally {
-        if (isMounted.current) {
-          // <--- KIỂM TRA
-          setLoading(false);
-        }
-      }
-    };
-
-    fetchMentorBookings();
   }, [userId, userType, bookingStatus, isOwner]);
 
   // Fetch timeslots from API for Mentor
@@ -285,37 +207,75 @@ const CalendarSchedule = ({
             "Slots status breakdown:",
             allSlots.map((s) => ({ id: s.id, status: s.slotStatus }))
           );
-          const transformedSlots = allSlots.map((slot) => {
-            // ... (giữ nguyên logic map)
-            const [year, month, day] = slot.slotDate.split("-").map(Number);
-            const slotDate = new Date(year, month - 1, day);
-            const timeRange = `${slot.startTime.slice(
-              0,
-              5
-            )} - ${slot.endTime.slice(0, 5)}`;
-            let color = "green";
-            if (slot.slotStatus === "BOOKED") color = "blue";
-            if (slot.slotStatus === "CANCELLED") color = "red";
-            const tags = [];
-            if (slot.slotStatus === "AVAILABLE") tags.push("Có sẵn");
-            if (slot.slotStatus === "BOOKED") tags.push("Đã đặt");
-            if (slot.slotStatus === "CANCELLED") tags.push("Đã hủy");
-            return {
-              id: slot.id,
-              title: `Timeslot ${slot.startTime.slice(
+
+          // Transform slots và fetch student info cho các slot BOOKED
+          const transformedSlots = await Promise.all(
+            allSlots.map(async (slot) => {
+              const [year, month, day] = slot.slotDate.split("-").map(Number);
+              const slotDate = new Date(year, month - 1, day);
+              const timeRange = `${slot.startTime.slice(
                 0,
                 5
-              )} - ${slot.endTime.slice(0, 5)}`,
-              date: slotDate,
-              time: timeRange,
-              type: "timeslot",
-              tags: tags,
-              color: color,
-              linkUrlRoom: slot.linkUrlRoom,
-              slotStatus: slot.slotStatus,
-              slotData: slot,
-            };
-          });
+              )} - ${slot.endTime.slice(0, 5)}`;
+              let color = "green";
+              if (slot.slotStatus === "BOOKED") color = "blue";
+              if (slot.slotStatus === "CANCELLED") color = "red";
+              const tags = [];
+              if (slot.slotStatus === "AVAILABLE") tags.push("Có sẵn");
+              if (slot.slotStatus === "BOOKED") tags.push("Đã đặt");
+              if (slot.slotStatus === "CANCELLED") tags.push("Đã hủy");
+
+              // Fetch student info nếu slot đã được book và là owner
+              let studentInfo = null;
+              if (slot.slotStatus === "BOOKED" && isOwner) {
+                try {
+                  const bookingResponse =
+                    await bookingService.getStudentBookedTimeslot(
+                      slot.id,
+                      "CONFIRMED"
+                    );
+                  if (bookingResponse?.success && bookingResponse?.data) {
+                    const booking = bookingResponse.data;
+                    studentInfo = {
+                      username: booking.userId?.username || "Student",
+                      fullName:
+                        booking.userId?.fullName ||
+                        booking.userId?.username ||
+                        "Student",
+                      avatarUrl: booking.userId?.avatarUrl,
+                    };
+                  }
+                } catch (error) {
+                  console.error(
+                    `Error fetching student for slot ${slot.id}:`,
+                    error
+                  );
+                }
+              }
+
+              return {
+                id: slot.id,
+                title: studentInfo
+                  ? `Buổi học với ${studentInfo.fullName}`
+                  : `Timeslot ${slot.startTime.slice(
+                      0,
+                      5
+                    )} - ${slot.endTime.slice(0, 5)}`,
+                date: slotDate,
+                time: timeRange,
+                type: "timeslot",
+                tags: tags,
+                color: color,
+                linkUrlRoom: slot.linkUrlRoom,
+                slotStatus: slot.slotStatus,
+                slotData: slot,
+                student: studentInfo?.fullName,
+                studentUsername: studentInfo?.username,
+                studentAvatar: studentInfo?.avatarUrl,
+                language: slot.language, // Thêm language từ API
+              };
+            })
+          );
 
           console.log("Transformed slots for calendar:", transformedSlots);
           if (isMounted.current) {
@@ -336,16 +296,12 @@ const CalendarSchedule = ({
     };
 
     fetchTimeslots();
-  }, [userId, userType]); // Gộp dependencies của 2 hook cũ lại
+  }, [userId, userType, isOwner]); // Thêm isOwner vào dependencies
 
   // Xử lý tạo timeslot mới (KHÔNG tạo meeting room)
   const handleCreateTimeslot = async () => {
     // Validate input
-    if (
-      !newTimeslot.slotDate ||
-      !newTimeslot.startTime ||
-      !newTimeslot.endTime
-    ) {
+    if (!newTimeslot.slotDate || !newTimeslot.startTime) {
       message.error("Vui lòng điền đầy đủ thông tin ngày và thời gian!");
       return;
     }
@@ -353,11 +309,15 @@ const CalendarSchedule = ({
     try {
       if (isMounted.current) setCreateLoading(true);
 
+      // Tự động tính endTime = startTime + 1 giờ
+      const endTime = dayjs(newTimeslot.startTime).add(1, "hour");
+
       const timeslotData = {
         slotDate: dayjs(newTimeslot.slotDate).format("YYYY-MM-DD"),
         startTime: dayjs(newTimeslot.startTime).format("HH:mm"),
-        endTime: dayjs(newTimeslot.endTime).format("HH:mm"),
+        endTime: endTime.format("HH:mm"), // Tự động + 1 giờ
         linkUrlRoom: "", // Để trống, sẽ tạo khi bắt đầu học
+        language: newTimeslot.language, // Thêm language vào data
       };
 
       // Chỉ tạo timeslot, không tạo meeting room
@@ -490,7 +450,13 @@ const CalendarSchedule = ({
       );
       return slotsForDate;
     }
-    const eventsToShow = userType === "mentor" ? mentorBookings : events;
+
+    // Nếu là mentor và owner, dùng timeslots thay vì mentorBookings
+    const eventsToShow =
+      userType === "mentor"
+        ? timeslots.filter((slot) => slot.slotStatus === "BOOKED") // Chỉ lấy slot đã được book
+        : events;
+
     return eventsToShow.filter(
       (event) =>
         event.date.getDate() === date.getDate() &&
@@ -551,6 +517,7 @@ const CalendarSchedule = ({
       startTime: null,
       endTime: null,
       linkUrlRoom: "",
+      language: "ENGLISH", // Reset về mặc định
     });
   };
   const handleBookTimeslot = (timeslot, event) => {
@@ -562,9 +529,7 @@ const CalendarSchedule = ({
     setIsBookingModalOpen(true);
   };
 
-  // handleConfirmBooking CŨNG LÀ MỘT NGUỒN RỦI RO, NHƯNG ÍT HƠN
-  // Nó setBookingLoading(true) -> navigate. Hàm finally có thể chạy sau unmount
-  // Chúng ta fix nốt cho chắc
+  // handleConfirmBooking - Gọi API tạo booking trước, sau đó chuyển trang payment
   const handleConfirmBooking = async () => {
     if (!selectedTimeslot) return;
 
@@ -580,7 +545,21 @@ const CalendarSchedule = ({
       };
 
       console.log("=== BOOKING DEBUG ===");
-      console.log("Navigating to payment with booking data:", bookingData);
+      console.log("Creating booking with data:", bookingData);
+
+      // Bước 1: Gọi API tạo booking với đúng format
+      const bookingResponse = await bookingService.createBooking({
+        mentorId: userId, // ✅ Thêm mentorId
+        timeslotId: selectedTimeslot.slotData.id,
+      });
+
+      console.log("Booking created successfully:", bookingResponse);
+
+      if (!bookingResponse?.success || !bookingResponse?.data?.id) {
+        throw new Error("Không thể tạo booking");
+      }
+
+      const bookingId = bookingResponse.data.id;
 
       // Close modal first
       if (isMounted.current) {
@@ -589,18 +568,29 @@ const CalendarSchedule = ({
         setBookingLoading(false);
       }
 
-      // Navigate after closing modal
-      console.log("Executing navigate to /payment");
+      // Bước 2: Chuyển sang trang thanh toán với bookingId
+      console.log("Navigating to payment with bookingId:", bookingId);
       navigate("/payment", {
         state: {
-          bookingData: bookingData,
+          bookingData: {
+            ...bookingData,
+            bookingId: bookingId, // Thêm bookingId vào bookingData
+          },
           productId: 2,
         },
       });
+
+      message.success(
+        "Đã tạo booking thành công! Vui lòng thanh toán để hoàn tất."
+      );
     } catch (error) {
-      console.error("Error preparing booking:", error);
+      console.error("Error creating booking:", error);
       if (isMounted.current) {
-        message.error("Không thể chuẩn bị đặt lịch. Vui lòng thử lại!");
+        message.error(
+          error.response?.data?.message ||
+            error.message ||
+            "Không thể tạo booking. Vui lòng thử lại!"
+        );
         setBookingLoading(false);
       }
     }
@@ -753,12 +743,26 @@ const CalendarSchedule = ({
     "Tháng 12",
   ];
 
-  const upcomingEvents = (userType === "student" ? events : mentorBookings)
+  // Lấy sự kiện sắp tới - Nếu là mentor thì lấy từ timeslots với slotStatus = "BOOKED"
+  const upcomingEvents = (
+    userType === "student"
+      ? events
+      : timeslots.filter((slot) => slot.slotStatus === "BOOKED")
+  )
     .filter((event) => {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       const eventDate = new Date(event.date);
       eventDate.setHours(0, 0, 0, 0);
+
+      // Nếu có ngày được chọn (cho mentor), chỉ hiển thị event của ngày đó
+      if (selectedDate && userType === "mentor") {
+        const selectedDateObj = new Date(selectedDate);
+        selectedDateObj.setHours(0, 0, 0, 0);
+        return eventDate.getTime() === selectedDateObj.getTime();
+      }
+
+      // Nếu không có ngày được chọn, hiển thị events từ hôm nay trở đi
       return eventDate >= today;
     })
     .sort((a, b) => a.date - b.date)
@@ -964,76 +968,23 @@ const CalendarSchedule = ({
           </div>
         )}
 
-        {/* Hiển thị thông báo khi đã chọn ngày trong tab "Lịch đã tạo" */}
-        {userType === "mentor" &&
-          isOwner &&
-          mentorTab === "created" &&
-          selectedDate && (
-            <div className="mb-4 flex-shrink-0 bg-purple-50 border border-purple-200 rounded-lg p-3">
-              <div className="flex items-center justify-between">
-                <div className="flex-1">
-                  <p className="text-xs text-purple-900 font-medium">
-                    Hiển thị lịch ngày {selectedDate.getDate()}/
-                    {selectedDate.getMonth() + 1}/{selectedDate.getFullYear()}
-                  </p>
-                </div>
-                <button
-                  onClick={() => setSelectedDate(null)}
-                  className="text-xs text-purple-900 hover:text-purple-700 font-medium underline ml-2"
-                >
-                  Xem tất cả
-                </button>
+        {/* Hiển thị thông báo khi đã chọn ngày - CHO CẢ 2 TAB */}
+        {userType === "mentor" && isOwner && selectedDate && (
+          <div className="mb-4 flex-shrink-0 bg-purple-50 border border-purple-200 rounded-lg p-3">
+            <div className="flex items-center justify-between">
+              <div className="flex-1">
+                <p className="text-xs text-purple-900 font-medium">
+                  Hiển thị lịch ngày {selectedDate.getDate()}/
+                  {selectedDate.getMonth() + 1}/{selectedDate.getFullYear()}
+                </p>
               </div>
+              <button
+                onClick={() => setSelectedDate(null)}
+                className="text-xs text-purple-900 hover:text-purple-700 font-medium underline ml-2"
+              >
+                Xem tất cả
+              </button>
             </div>
-          )}
-
-        {/* Filter by status for mentor when in upcoming tab - CHỈ khi là owner */}
-        {userType === "mentor" && isOwner && mentorTab === "upcoming" && (
-          <div className="mb-4 flex-shrink-0">
-            <Select
-              value={bookingStatus}
-              onChange={(value) => setBookingStatus(value)}
-              style={{ width: "100%" }}
-              size="middle"
-              options={[
-                {
-                  value: "PENDING",
-                  label: (
-                    <div className="flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-full bg-orange-500"></span>
-                      <span>Chờ xác nhận</span>
-                    </div>
-                  ),
-                },
-                {
-                  value: "CONFIRMED",
-                  label: (
-                    <div className="flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-full bg-blue-500"></span>
-                      <span>Đã xác nhận</span>
-                    </div>
-                  ),
-                },
-                {
-                  value: "COMPLETED",
-                  label: (
-                    <div className="flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-full bg-green-500"></span>
-                      <span>Hoàn thành</span>
-                    </div>
-                  ),
-                },
-                {
-                  value: "CANCELLED",
-                  label: (
-                    <div className="flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-full bg-red-500"></span>
-                      <span>Đã hủy</span>
-                    </div>
-                  ),
-                },
-              ]}
-            />
           </div>
         )}
 
@@ -1197,6 +1148,11 @@ const CalendarSchedule = ({
               upcomingEvents.map((event) => (
                 <div
                   key={event.id}
+                  onClick={(e) =>
+                    userType === "mentor"
+                      ? handleSlotClick(event, e)
+                      : undefined
+                  }
                   className="relative bg-white rounded-lg border border-gray-200 p-3 hover:shadow-md transition-shadow cursor-pointer overflow-hidden"
                 >
                   {/* Color indicator dot */}
@@ -1240,6 +1196,17 @@ const CalendarSchedule = ({
                       </div>
                     )}
 
+                    {/* Language */}
+                    {event.language && (
+                      <div className="flex items-center gap-2 mb-1.5">
+                        <span className="text-xs text-gray-600">
+                          {event.language === "ENGLISH"
+                            ? "Tiếng Anh"
+                            : "Tiếng Trung"}
+                        </span>
+                      </div>
+                    )}
+
                     {/* Display mentor name for students, student name for mentors */}
                     {userType === "student" && event.mentor && (
                       <div className="flex items-center gap-2 mb-1.5">
@@ -1255,6 +1222,34 @@ const CalendarSchedule = ({
                         <span className="text-xs text-gray-600">
                           {event.student}
                         </span>
+                      </div>
+                    )}
+
+                    {/* Link URL Room */}
+                    {event.linkUrlRoom && (
+                      <div className="flex items-center gap-2 mb-1.5">
+                        <a
+                          href={`/meeting/${event.linkUrlRoom}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={(e) => e.stopPropagation()}
+                          className="inline-flex items-center gap-1.5 text-xs text-blue-600 hover:text-blue-800 hover:underline"
+                        >
+                          <svg
+                            className="w-3.5 h-3.5"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"
+                            />
+                          </svg>
+                          Vào phòng học
+                        </a>
                       </div>
                     )}
 
@@ -1333,6 +1328,17 @@ const CalendarSchedule = ({
                         <Clock className="w-3.5 h-3.5 text-gray-500 flex-shrink-0" />
                         <span className="text-xs text-gray-600">
                           {slot.time}
+                        </span>
+                      </div>
+                    )}
+
+                    {/* Language */}
+                    {slot.language && (
+                      <div className="flex items-center gap-2 mb-1.5">
+                        <span className="text-xs text-gray-600">
+                          {slot.language === "ENGLISH"
+                            ? "Tiếng Anh"
+                            : "Tiếng Trung"}
                         </span>
                       </div>
                     )}
@@ -1514,6 +1520,39 @@ const CalendarSchedule = ({
         width={500}
       >
         <div className="space-y-4 mt-4">
+          {/* Chọn ngôn ngữ */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Ngôn ngữ <span className="text-red-500">*</span>
+            </label>
+            <Select
+              value={newTimeslot.language}
+              onChange={(value) =>
+                setNewTimeslot({ ...newTimeslot, language: value })
+              }
+              placeholder="Chọn ngôn ngữ"
+              className="w-full"
+              options={[
+                {
+                  value: "ENGLISH",
+                  label: (
+                    <div className="flex items-center gap-2">
+                      <span>Tiếng Anh</span>
+                    </div>
+                  ),
+                },
+                {
+                  value: "CHINESE",
+                  label: (
+                    <div className="flex items-center gap-2">
+                      <span>Tiếng Trung</span>
+                    </div>
+                  ),
+                },
+              ]}
+            />
+          </div>
+
           {/* Chọn ngày */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -1549,23 +1588,9 @@ const CalendarSchedule = ({
               className="w-full"
               minuteStep={15}
             />
-          </div>
-
-          {/* Chọn giờ kết thúc */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Giờ kết thúc <span className="text-red-500">*</span>
-            </label>
-            <TimePicker
-              value={newTimeslot.endTime}
-              onChange={(time) =>
-                setNewTimeslot({ ...newTimeslot, endTime: time })
-              }
-              format="HH:mm"
-              placeholder="Chọn giờ kết thúc"
-              className="w-full"
-              minuteStep={15}
-            />
+            <p className="text-xs text-gray-500 mt-1">
+              Thời gian học: 1 giờ (kết thúc tự động sau 1 giờ)
+            </p>
           </div>
         </div>
       </Modal>

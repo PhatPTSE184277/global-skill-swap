@@ -12,7 +12,6 @@ import {
 } from "react-icons/fi";
 import { message } from "antd";
 import userService from "../services/userService";
-import bookingService from "../services/bookingService";
 
 const PaymentSuccess = () => {
   const navigate = useNavigate();
@@ -53,9 +52,6 @@ const PaymentSuccess = () => {
   const [isUploadingCV, setIsUploadingCV] = useState(false);
   const [cvUploadSuccess, setCvUploadSuccess] = useState(false);
   const [cvUploadError, setCvUploadError] = useState(null);
-  const [isCreatingBooking, setIsCreatingBooking] = useState(false);
-  const [bookingCreated, setBookingCreated] = useState(false);
-  const [bookingError, setBookingError] = useState(null);
 
   useEffect(() => {
     // Nếu không có transaction ID từ cả state và URL, chuyển về trang chủ
@@ -106,14 +102,10 @@ const PaymentSuccess = () => {
       }
     }
 
-    // Tạo booking sau khi thanh toán thành công (chỉ cho lesson booking)
-    if (finalPaymentType === "lesson_booking" && bookingData) {
-      console.log("Triggering createBooking...");
-      createBooking();
-    } else if (finalPaymentType === "lesson_booking" && !bookingData) {
-      console.error(
-        "Payment type is lesson_booking but bookingData is missing!"
-      );
+    // Hiển thị thông báo thành công cho lesson booking
+    if (finalPaymentType === "lesson_booking") {
+      console.log("Lesson booking payment successful");
+      message.success("Thanh toán đặt lịch học thành công!");
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [finalTransactionId, navigate, finalPaymentType, paymentStatus]);
@@ -147,82 +139,6 @@ const PaymentSuccess = () => {
       }
     } else {
       console.log("No CV file to upload");
-    }
-  };
-
-  const createBooking = async () => {
-    // Detailed validation
-    console.log("=== Booking Validation ===");
-    console.log("bookingData exists:", !!bookingData);
-    console.log("bookingData.mentorId:", bookingData?.mentorId);
-    console.log("bookingData.timeslotId:", bookingData?.timeslotId);
-    console.log("Full bookingData:", JSON.stringify(bookingData, null, 2));
-
-    if (!bookingData) {
-      console.error("❌ bookingData is null/undefined");
-      setBookingError("Thiếu thông tin đặt lịch");
-      return;
-    }
-
-    if (!bookingData.mentorId) {
-      console.error("❌ mentorId is missing");
-      setBookingError("Thiếu thông tin mentor");
-      return;
-    }
-
-    if (!bookingData.timeslotId) {
-      console.error("❌ timeslotId is missing");
-      setBookingError("Thiếu thông tin timeslot");
-      return;
-    }
-
-    try {
-      setIsCreatingBooking(true);
-      setBookingError(null);
-
-      // Prepare booking data for API
-      const apiBookingData = {
-        mentorId: bookingData.mentorId,
-        timeslotId: bookingData.timeslotId,
-      };
-
-      console.log("=== Creating Booking ===");
-      console.log("API Booking Data:", JSON.stringify(apiBookingData, null, 2));
-      console.log("Full Booking Data:", JSON.stringify(bookingData, null, 2));
-
-      const response = await bookingService.createBooking(apiBookingData);
-
-      console.log("=== Booking Response ===");
-      console.log("Response:", JSON.stringify(response, null, 2));
-
-      if (response?.success) {
-        setBookingCreated(true);
-        message.success("Đặt lịch thành công!");
-      } else {
-        // API trả về nhưng success = false
-        const errorMsg = response?.message || "Không thể tạo booking";
-        console.error("❌ Booking failed:", errorMsg);
-        setBookingError(errorMsg);
-        message.error(errorMsg);
-      }
-    } catch (error) {
-      console.error("=== Error Creating Booking ===");
-      console.error("Error object:", error);
-      console.error("Error response:", error.response);
-      console.error("Error response data:", error.response?.data);
-      console.error("Error message:", error.message);
-      console.error("Error stack:", error.stack);
-
-      const errorMessage =
-        error.response?.data?.message ||
-        error.response?.data?.error ||
-        error.message ||
-        "Có lỗi xảy ra khi tạo booking. Vui lòng liên hệ hỗ trợ.";
-
-      setBookingError(errorMessage);
-      message.error(errorMessage);
-    } finally {
-      setIsCreatingBooking(false);
     }
   };
 
@@ -551,42 +467,6 @@ const PaymentSuccess = () => {
                 Trạng thái đặt lịch
               </h3>
               <div className="bg-gray-50 rounded-lg p-4">
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-600 flex items-center">
-                    Tạo booking:
-                  </span>
-                  <div className="flex items-center">
-                    {isCreatingBooking && (
-                      <div className="flex items-center text-blue-600">
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2"></div>
-                        <span className="text-sm">Đang tạo booking...</span>
-                      </div>
-                    )}
-                    {bookingCreated && !isCreatingBooking && (
-                      <div className="flex items-center text-green-600">
-                        <FiCheck className="mr-1" />
-                        <span className="text-sm font-medium">
-                          Đã tạo booking thành công
-                        </span>
-                      </div>
-                    )}
-                    {bookingError && !isCreatingBooking && (
-                      <div className="flex items-center text-red-600">
-                        <span className="text-sm">Có lỗi xảy ra</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-                {bookingError && (
-                  <div className="mt-3 text-sm text-red-600 bg-red-50 p-3 rounded border border-red-200">
-                    <p className="font-medium mb-1">Lỗi khi tạo booking:</p>
-                    <p>{bookingError}</p>
-                    <p className="mt-2 text-xs">
-                      Vui lòng liên hệ hỗ trợ với mã giao dịch:{" "}
-                      {finalTransactionId}
-                    </p>
-                  </div>
-                )}
                 {bookingData && (
                   <div className="mt-4 pt-4 border-t border-gray-200">
                     <p className="text-sm text-gray-600 mb-2">

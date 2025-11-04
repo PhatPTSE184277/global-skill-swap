@@ -142,6 +142,21 @@ const bookingService = {
       console.error('Error fetching calendar by account ID:', error);
       throw error;
     }
+  },
+
+  // Lấy thông tin student đã book timeslot (cho mentor)
+  getStudentBookedTimeslot: async (timeslotId, bookingStatus = 'CONFIRMED') => {
+    try {
+      const response = await axiosClient.get(`/booking/current-teacher/${timeslotId}`, {
+        params: {
+          bookingStatus
+        }
+      });
+      return response?.data;
+    } catch (error) {
+      console.error('Error fetching student booked timeslot:', error);
+      throw error;
+    }
   }
 };
 

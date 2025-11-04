@@ -98,7 +98,14 @@ const PaymentPage = () => {
     const initPayment = async () => {
       try {
         setIsProcessing(true);
-        const response = await paymentService.createPayment(productId);
+
+        // Lấy orderId từ bookingId (id của booking response)
+        const orderId = bookingData.bookingId || null;
+
+        console.log("Creating payment with:", { productId, orderId });
+
+        // Truyền productId và orderId (booking ID) vào createPayment
+        const response = await paymentService.createPayment(productId, orderId);
 
         if (response.success && response.data) {
           setInvoiceData(response.data);
@@ -124,7 +131,7 @@ const PaymentPage = () => {
     };
 
     initPayment();
-  }, [paymentType, config.amount, productId]);
+  }, [paymentType, config.amount, productId, bookingData.bookingId]);
 
   // Fetch current user (buyer) to include in payment state
   useEffect(() => {
