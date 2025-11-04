@@ -65,7 +65,7 @@ const Header = () => {
           <div className="flex items-center gap-2 cursor-pointer">
             <span className="inline-block bg-purple-900 rounded-lg p-2">
               <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
-                <rect width="24" height="24" rx="6" fill="#6D28D9"/>
+                <rect width="24" height="24" rx="6" fill="#6D28D9" />
                 <text x="7" y="18" fontSize="14" fill="#fff" fontWeight="bold">G</text>
               </svg>
             </span>
@@ -88,7 +88,7 @@ const Header = () => {
         >
           <span className="inline-block bg-purple-900 rounded-lg p-2">
             <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
-              <rect width="24" height="24" rx="6" fill="#6D28D9"/>
+              <rect width="24" height="24" rx="6" fill="#6D28D9" />
               <text x="7" y="18" fontSize="14" fill="#fff" fontWeight="bold">G</text>
             </svg>
           </span>
@@ -114,9 +114,8 @@ const Header = () => {
             >
               Dịch Vụ
               <ChevronDown
-                className={`w-4 h-4 transition-transform ${
-                  showServicesDropdown ? "rotate-180" : ""
-                }`}
+                className={`w-4 h-4 transition-transform ${showServicesDropdown ? "rotate-180" : ""
+                  }`}
               />
             </div>
             {showServicesDropdown && (
@@ -176,9 +175,8 @@ const Header = () => {
                 </span>
               </div>
               <ChevronDown
-                className={`w-4 h-4 ml-1 text-purple-700 transition-transform ${
-                  showDropdown ? "rotate-180" : ""
-                }`}
+                className={`w-4 h-4 ml-1 text-purple-700 transition-transform ${showDropdown ? "rotate-180" : ""
+                  }`}
               />
             </div>
             {showDropdown && (
@@ -205,7 +203,7 @@ const Header = () => {
                 </div>
                 <button
                   className="flex items-center gap-2 w-full px-4 py-3 text-sm text-gray-700 hover:bg-purple-50 transition rounded-none cursor-pointer"
-                  onClick={() => navigate(`/profile`)}
+                  onClick={() => navigate(`/profile/${user.id || user._id}`)}
                 >
                   <User className="w-4 h-4 text-purple-700" />
                   Thông tin cá nhân
@@ -214,22 +212,12 @@ const Header = () => {
                   className="flex items-center gap-2 w-full px-4 py-3 text-sm text-indigo-700 hover:bg-indigo-50 transition rounded-none cursor-pointer"
                   onClick={() => {
                     setShowDropdown(false);
-                    navigate("/profile/change-password");
+                    navigate("/messages");
                   }}
                 >
-                  <KeyRound className="w-4 h-4 text-indigo-700" />
-                  Đổi mật khẩu
+                  <MessageSquare className="w-4 h-4 text-indigo-700" />
+                  Tin nhắn
                 </button>
-                {/* <button
-                  className="flex items-center gap-2 w-full px-4 py-3 text-sm text-indigo-700 hover:bg-indigo-50 transition rounded-none cursor-pointer"
-                  onClick={() => {
-                    setShowDropdown(false);
-                    navigate("/profile/edit");
-                  }}
-                >
-                  <Pencil className="w-4 h-4 text-indigo-700" />
-                  Sửa thông tin cá nhân
-                </button> */}
                 {user.accountRole === "ADMIN" && (
                   <button
                     className="flex items-center gap-2 w-full px-4 py-3 text-sm text-amber-700 hover:bg-amber-50 transition rounded-none cursor-pointer"

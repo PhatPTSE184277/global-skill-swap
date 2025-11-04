@@ -1,8 +1,52 @@
 import React, { useEffect, useState } from "react";
 import { MessageCircleMore } from "lucide-react";
+import { useNavigate, useParams } from "react-router-dom";
+import axiosClient from "../../apis/axiosClient";
+
+const UserHeader = () => {
+  const { id } = useParams();
+  const [user, setUser] = useState(null);
+  const displayName = user?.username || "User";
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const res = await axiosClient.get(`/user/${id}`);
+        console.log("User data:", res.data);
+        setUser(res.data.data);
+      } catch (error) {
+        setUser(null);
+      }
+    };
+    if (id) fetchUser();
+  }, [id]);
+
+  const handleChatClick = () => {
+    // Truyền thông tin user qua state khi navigate
+    navigate(`/messages`, {
+      state: {
+        recipientId: parseInt(id),
+        recipientInfo: {
+          id: parseInt(id),
+          username: user?.username,
+          fullName: user?.fullName || user?.username,
+          avatarUrl: user?.avatarUrl || user?.avatar
+        }
+      }
+    });
+  };
+
+  if (!user) {
+    return (
+      <div className="pt-10 pb-0 px-8 rounded-b-3xl text-center text-gray-500">
+        Không tìm thấy người dùng
+      </div>
+    );
+  }
+
 import { useSelector } from "react-redux";
 import { authSelector } from "../../reduxs/reducers/AuthReducer";
-import axiosClient from "../../apis/axiosClient";
 
 const UserHeader = ({ userId }) => {
   const authUser = useSelector(authSelector);
@@ -89,40 +133,21 @@ const UserHeader = ({ userId }) => {
               {user?.email && (
                 <span className="text-xs text-gray-500">{user.email}</span>
               )}
+              <p className="text-gray-700 mt-4">
+                {user?.bio || user?.description || "Chưa có thông tin giới thiệu"}
+              </p>
             </div>
-            {!isOwnProfile && (
-              <div className="flex gap-2">
-                <button className="bg-orange-500 text-white px-4 py-1.5 rounded-lg text-sm font-medium flex items-center justify-center hover:bg-orange-600 transition-all duration-200">
-                  Theo Dõi
-                </button>
-                <button className="bg-[#4D2C5E] text-white px-3 py-1.5 rounded-lg text-sm font-medium flex items-center justify-center hover:bg-[#6d3bbd] transition-all duration-200">
-                  <MessageCircleMore size={16} />
-                </button>
-              </div>
-            )}
+            <div className="flex gap-3 items-start">
+              <button
+                className="bg-[#4D2C5E] text-white px-4 py-1 rounded-xl font-medium flex items-center justify-center hover:bg-[#6d3bbd] transition-all duration-200"
+                onClick={handleChatClick}
+              >
+                <MessageCircleMore size={20} />
+              </button>
+            </div>
           </div>
-
-          <div className="flex gap-6 text-sm font-medium mt-2 mb-3">
-            <span>
-              <span className="font-bold">{user?.postsCount || 0}</span> bài
-              viết
-            </span>
-            <span>
-              <span className="font-bold">{user?.followersCount || 0}</span>{" "}
-              người theo dõi
-            </span>
-            <span>
-              Đang theo dõi{" "}
-              <span className="font-bold">{user?.followingCount || 0}</span>{" "}
-              người dùng
-            </span>
-          </div>
-
-          <p className="text-sm text-gray-700 line-clamp-2">
-            {user?.bio || user?.description || "Chưa có thông tin giới thiệu"}
-          </p>
-          <div className="flex gap-3 mt-2 mb-2">
-            <a href="#" className="text-gray-400 hover:text-orange-500 text-sm">
+          <div className="flex gap-3 mb-4 mt-4">
+            <a href="#" className="text-gray-400 hover:text-orange-500">
               <i className="fab fa-facebook-f"></i>
             </a>
             <a href="#" className="text-gray-400 hover:text-orange-500 text-sm">

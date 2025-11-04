@@ -8,6 +8,7 @@ import MentorPageRoutes from './MentorPageRoutes';
 import PaymentPageRoutes from './PaymentPageRoutes';
 
 import AdminPageRoutes from './admin/AdminPageRoutes';
+import MessagePageRoutes from './MessagePageRoutes';
 
 const routes = [
     ...HomePageRoutes,
@@ -17,6 +18,7 @@ const routes = [
     ...MeetingPageRoutes,
     ...MentorPageRoutes,
     ...PaymentPageRoutes,
+    ...MessagePageRoutes,
 
     ...AdminPageRoutes,
 

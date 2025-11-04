@@ -10,7 +10,7 @@ const UserPageRoutes = [
     element: <UserPageLayout />,
     children: [
       {
-        path: "",
+        path: ":id",
         element: (
           <PostProvider>
             <CommentProvider>

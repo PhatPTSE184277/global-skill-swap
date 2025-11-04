@@ -58,7 +58,16 @@ const AdminTransactionShow = ({ transaction }) => {
         </span>
       </td>
       <td className="px-6 py-5 text-sm text-gray-600">
-        {transaction.createdAt ? new Date(transaction.createdAt).toLocaleDateString('vi-VN') : ''}
+        {transaction.createdAt
+          ? new Date(transaction.createdAt).toLocaleString('vi-VN', {
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric'
+          })
+          : ''}
       </td>
       <td className="px-6 py-5">
         <div className="flex items-center justify-end gap-2">
