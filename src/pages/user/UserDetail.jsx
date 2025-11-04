@@ -12,7 +12,7 @@ import PostList from "../../components/user/UserDetail/Post/PostList";
 import PostContext from "../../contexts/PostContext";
 
 const UserDetail = () => {
-  const { userId } = useParams(); // Lấy userId từ URL params
+  const { id, userId } = useParams(); // Lấy cả id và userId từ URL params
   const { fetchPosts } = useContext(PostContext);
   const authUser = useSelector(authSelector);
   const [activeTab, setActiveTab] = useState("about");
@@ -22,16 +22,30 @@ const UserDetail = () => {
   const [profileUser, setProfileUser] = useState(null); // User đang được xem
   const [loading, setLoading] = useState(false);
 
-  // Xác định user hiện tại: nếu có userId từ URL thì dùng userId đó, không thì dùng authUser
-  const currentUserId = userId || authUser?._id;
-  const isOwnProfile = !userId || userId === authUser?._id;
+  // Xác định user hiện tại: ưu tiên id, sau đó userId, cuối cùng authUser
+  const paramUserId = id || userId;
+
+  // Kiểm tra xem paramUserId có phải là số hay username
+  const isNumericId = paramUserId && !isNaN(paramUserId);
+
+  // So sánh với authUser: nếu là số thì so sánh id, nếu là string thì so sánh username
+  const isOwnProfile =
+    !paramUserId ||
+    (isNumericId && parseInt(paramUserId) === parseInt(authUser?._id)) ||
+    (!isNumericId && paramUserId === authUser?.username);
+
+  const currentUserId = paramUserId || authUser?._id;
   const displayUser = isOwnProfile ? authUser : profileUser; // User để hiển thị thông tin
   const isTeacherOwner = isOwnProfile && authUser?.accountRole === "TEACHER";
 
   // Debug log
   console.log("UserDetail Debug:", {
+    id,
     userId,
+    paramUserId,
+    isNumericId,
     authUserId: authUser?._id,
+    authUsername: authUser?.username,
     currentUserId,
     isOwnProfile,
     displayUser: displayUser?._id,
@@ -41,10 +55,11 @@ const UserDetail = () => {
   // Fetch thông tin user nếu đang xem profile người khác
   useEffect(() => {
     const fetchUserProfile = async () => {
-      if (userId && userId !== authUser?._id) {
+      if (paramUserId && !isOwnProfile) {
         setLoading(true);
         try {
-          const response = await axiosClient.get(`/user/${userId}`);
+          // API có thể nhận cả id (number) hoặc username (string)
+          const response = await axiosClient.get(`/user/${paramUserId}`);
           console.log("UserDetail fetch response:", response.data);
           // API trả về {success, message, data}, cần lấy data.data
           const userData = response.data?.data || response.data;
@@ -52,6 +67,7 @@ const UserDetail = () => {
           console.log("Profile user set to:", userData);
         } catch (error) {
           console.error("Error fetching user profile:", error);
+          setProfileUser(null);
         } finally {
           setLoading(false);
         }
@@ -59,7 +75,7 @@ const UserDetail = () => {
     };
 
     fetchUserProfile();
-  }, [userId, authUser?._id]);
+  }, [paramUserId, isOwnProfile]);
 
   // Sử dụng useMemo để cache tabs, tránh tạo mảng mới mỗi lần render
   const tabs = useMemo(() => {
@@ -135,7 +151,7 @@ const UserDetail = () => {
   return (
     <div className="font-['Noto Sans'] ">
       {/* Thêm UserHeader vào đây */}
-      <UserHeader userId={currentUserId} />
+      <UserHeader userId={paramUserId} />
 
       <div>
         {/* Tab Bar */}
