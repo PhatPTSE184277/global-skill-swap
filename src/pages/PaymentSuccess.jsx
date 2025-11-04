@@ -94,9 +94,16 @@ const PaymentSuccess = () => {
     console.log("URL Params:", Object.fromEntries(searchParams.entries()));
     console.log("================================");
 
-    // Upload CV sau khi thanh toán thành công (chỉ cho mentor registration)
+    // Kiểm tra nếu là mentor registration
     if (finalPaymentType === "mentor_registration" && registrationData) {
-      uploadCV();
+      if (registrationData.cvUploaded) {
+        console.log("CV already uploaded before payment");
+        message.success("Thanh toán thành công! CV đã được tải lên.");
+      } else {
+        // Fallback: Upload CV nếu chưa được upload (trường hợp cũ)
+        console.log("CV not uploaded yet, uploading now...");
+        uploadCV();
+      }
     }
 
     // Tạo booking sau khi thanh toán thành công (chỉ cho lesson booking)
