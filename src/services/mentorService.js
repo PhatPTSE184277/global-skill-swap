@@ -5,6 +5,13 @@ export const fetchLanguages = async () => {
   return response?.data;
 };
 
+export const fetchTopMentors = async (limit = 10) => {
+  const response = await axiosClient.get("/booking/top/mentors", {
+    params: { limit }
+  });
+  return response?.data;
+};
+
 export const fetchMentors = async ({
   page = 0,
   size = 10,

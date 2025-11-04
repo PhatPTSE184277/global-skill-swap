@@ -6,10 +6,9 @@ import {
   X,
   ChevronDown,
 } from "lucide-react";
-import { fetchLanguages, fetchMentors } from "../../services/mentorService";
+import { fetchLanguages, fetchMentors, fetchTopMentors } from "../../services/mentorService";
 import { useNavigate } from "react-router-dom";
 
-// Custom Dropdown Component
 const CustomDropdown = ({
   value,
   onChange,
@@ -70,8 +69,8 @@ const CustomDropdown = ({
                   transition={{ delay: index * 0.02 }}
                   onClick={() => handleSelect(option)}
                   className={`w-full text-left px-4 py-3 text-sm hover:bg-orange-50 transition-colors border-b border-gray-50 last:border-b-0 ${selectedOption.value === option.value
-                      ? "bg-orange-50 text-orange-600 font-medium"
-                      : "text-gray-700"
+                    ? "bg-orange-50 text-orange-600 font-medium"
+                    : "text-gray-700"
                     }`}
                 >
                   {option.label}
@@ -98,16 +97,14 @@ const FindingMentor = () => {
 
   const [mentors, setMentors] = useState([]);
   const [totalMentors, setTotalMentors] = useState(0);
+  const [topMentors, setTopMentors] = useState([]);
 
-  // Default avatar for mentors without avatarUrl
   const defaultAvatar =
     "https://i.pinimg.com/736x/b3/c2/77/b3c2779d6b6195793b72bf73e284b3e8.jpg";
 
-  // Minimal setup
   useEffect(() => {
     document.title = "Find Your Perfect Mentor";
 
-    // ESC to close modal
     const handleEsc = (e) => {
       if (e.key === "Escape") {
         setShowSearchModal(false);
@@ -139,6 +136,19 @@ const FindingMentor = () => {
         ]);
       }
     });
+
+    const fetchTopMentorsData = async () => {
+      try {
+        const res = await fetchTopMentors(10);
+        if (res?.data) {
+          setTopMentors(res.data);
+        }
+      } catch (error) {
+        setTopMentors([]);
+        console.error("Lỗi lấy top mentor:", error);
+      }
+    };
+    fetchTopMentorsData();
   }, []);
 
   useEffect(() => {
@@ -654,7 +664,7 @@ const FindingMentor = () => {
                         </div>
 
                         {/* Actions */}
-                         <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-3">
                           <motion.button
                             whileHover={{ scale: 1.05 }}
                             whileTap={{ scale: 0.95 }}
@@ -720,9 +730,10 @@ const FindingMentor = () => {
                 Top Giảng viên
               </h3>
               <div className="space-y-4">
-                {mentors.slice(0, 3).map((mentor) => (
+                {topMentors.map((mentor) => (
                   <div
                     key={mentor.id}
+                    onClick={() => navigate(`/profile/${mentor.id}`)}
                     className="flex items-start space-x-3 p-3 hover:bg-gray-50 rounded-lg transition-colors cursor-pointer"
                   >
                     <img
@@ -740,13 +751,11 @@ const FindingMentor = () => {
                       <p className="text-xs text-gray-500 mb-1">
                         @{mentor.username}
                       </p>
-                      <span className="text-xs text-purple-700 bg-purple-50 px-2 py-1 rounded-md">
-                        {mentor.language === "english"
-                          ? "Tiếng Anh"
-                          : mentor.language === "chinese"
-                            ? "Tiếng Trung"
-                            : mentor.language}
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-purple-700 bg-purple-50 px-2 py-1 rounded-md">
+                          {mentor.confirmedCount} buổi học
+                        </span>
+                      </div>
                     </div>
                   </div>
                 ))}
