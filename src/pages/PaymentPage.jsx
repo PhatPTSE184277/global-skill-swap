@@ -166,12 +166,17 @@ const PaymentPage = () => {
     if (!invoiceData || !invoiceData.sePayResponse) return;
 
     const calculateTimeRemaining = () => {
-      const timeLimit = invoiceData.sePayResponse.timeLimit;
-      if (!timeLimit) return null;
+      // Enforce a maximum countdown of 15 minutes (900 seconds).
+      const MAX_SECONDS = 15 * 60; // 15 minutes
+
+      const timeLimit = invoiceData.sePayResponse?.timeLimit;
+      if (!timeLimit) return MAX_SECONDS;
 
       const [hours, minutes, seconds] = timeLimit.split(":").map(Number);
       const totalSeconds = hours * 3600 + minutes * 60 + seconds;
-      return totalSeconds;
+
+      // Use the smaller of server-provided limit and our 15-minute cap
+      return Math.min(totalSeconds, MAX_SECONDS);
     };
 
     let remaining = calculateTimeRemaining();
